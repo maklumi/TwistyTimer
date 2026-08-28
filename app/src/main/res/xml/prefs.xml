@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_category_title_locale">
+
+        <Preference
+            android:icon="@drawable/ic_translate_black_24dp"
+            android:key="@string/pk_locale"
+            android:title="@string/preference_application_language_title"
+            android:widgetLayout="@layout/item_locale_preference" />
+
+    </PreferenceCategory>
+
+    <Preference android:layout="@layout/divider_preference_category" />
+
+    <PreferenceCategory android:title="@string/pref_category_title_timer">
+
+        <!-- Pseudo-preference that will trigger the opening of the sub-settings. -->
+        <PreferenceScreen
+            android:icon="@drawable/ic_av_timer_teal_24dp"
+            android:key="@string/pk_open_inspection_behavior_settings"
+            android:persistent="false"
+            android:title="@string/pref_screen_title_inspection_behavior">
+
+            <PreferenceCategory android:title="@string/pref_category_title_inspection">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_inspectionEnabled"
+                    android:key="@string/pk_inspection_enabled"
+                    android:title="@string/inspectionEnabledTitle" />
+
+                <Preference
+                    android:defaultValue="@integer/default_inspectionTime"
+                    android:dependency="@string/pk_inspection_enabled"
+                    android:key="@string/pk_inspection_time"
+
+                    android:summary="@string/inspectionTimeSummary"
+                    android:title="@string/inspectionTimeTitle" />
+
+            </PreferenceCategory>
+
+            <Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory android:title="@string/pref_category_title_alerts">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_inspectionAlertEnabled"
+                    android:dependency="@string/pk_inspection_enabled"
+                    android:key="@string/pk_inspection_alert_enabled"
+                    android:summary="@string/pref_inspection_alert_summary"
+                    android:title="@string/pref_inspection_alert_title" />
+
+                <ListPreference
+                    android:defaultValue="@string/pk_inspection_alert_vibration"
+                    android:dependency="@string/pk_inspection_alert_enabled"
+                    android:entries="@array/pref_array_inspection_alert"
+                    android:entryValues="@array/pk_pref_array_inspection_alert"
+                    android:key="@string/pk_inspection_alert_type"
+                    android:summary="@string/pref_inspection_alert_type_summary"
+                    android:title="@string/pref_inspection_alert_type_title" />
+
+            </PreferenceCategory>
+
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:icon="@drawable/ic_add_alarm_teal_24dp"
+            android:key="@string/pk_open_timer_behavior_settings"
+            android:title="@string/pref_screen_title_timer_behavior">
+
+            <PreferenceCategory android:title="@string/pref_category_title_control">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="false"
+                    android:key="@string/pk_enable_manual_entry"
+                    android:title="@string/pref_title_manual_mode"
+                    android:summary="@string/pref_summary_manual_mode" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_startCue"
+                    android:key="@string/pk_start_cue_enabled"
+                    android:summary="@string/startCueSummary"
+                    android:title="@string/startCueTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_holdEnabled"
+                    android:key="@string/pk_hold_to_start_enabled"
+                    android:summary="@string/holdEnabledSummary"
+                    android:title="@string/holdEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_backCancelEnabled"
+                    android:key="@string/pk_back_button_cancel_solve_enabled"
+                    android:summary="@string/backCancelEnabledSummary"
+                    android:title="@string/backCancelEnabledTitle" />
+
+            </PreferenceCategory>
+
+            <Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory android:title="@string/pref_category_title_scramble">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_scrambleEnabled"
+                    android:key="@string/pk_scramble_enabled"
+                    android:summary="@string/scrambleEnabledSummary"
+                    android:title="@string/scrambleEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_showHints"
+                    android:dependency="@string/pk_scramble_enabled"
+                    android:key="@string/pk_show_scramble_hints"
+                    android:summary="@string/showHintsSummary"
+                    android:title="@string/showHintsTitle" />
+
+                <Preference
+                    android:dependency="@string/pk_show_scramble_hints"
+                    android:key="@string/pk_options_show_scramble_hints"
+                    android:summary="@string/option_show_scramble_hints_summary"
+                    android:title="@string/option_show_scramble_hints" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_showHintsXCross"
+                    android:dependency="@string/pk_show_scramble_hints"
+                    android:key="@string/pk_show_scramble_x_cross_hints"
+                    android:title="@string/showHintsXCrossTitle" />
+
+            </PreferenceCategory>
+
+            <Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory android:title="@string/pref_category_title_alerts">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_bestSolve"
+                    android:key="@string/pk_show_best_time"
+                    android:summary="@string/bestSolveEnabledSummary"
+                    android:title="@string/bestSolveEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_showAverageRecordEnabled"
+                    android:key="@string/pk_show_average_record_enabled"
+                    android:summary="@string/averageRecordsEnabledSummary"
+                    android:title="@string/averageRecordsEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_worstSolve"
+                    android:key="@string/pk_show_worst_time"
+                    android:summary="@string/worstSolveEnabledSummary"
+                    android:title="@string/worstSolveEnabledTitle" />
+
+            </PreferenceCategory>
+
+            <Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory android:title="@string/pref_category_title_other">
+
+                <Preference
+                    android:defaultValue="@integer/defaultAnimationDuration"
+                    android:key="@string/pk_timer_animation_duration"
+                    android:summary="@string/pref_animation_duration_summary"
+                    android:title="@string/pref_animation_duration_title" />
+
+            </PreferenceCategory>
+
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:icon="@drawable/ic_format_shapes_black_24dp"
+            android:key="@string/pref_screen_title_timer_appearance_settings"
+            android:title="@string/pref_screen_title_timer_appearance">
+
+            <PreferenceCategory android:title="@string/pref_category_title_features">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_buttonEnabled"
+                    android:key="@string/pk_show_scramble_image"
+                    android:summary="@string/scrambleImageEnabledSummary"
+                    android:title="@string/scrambleImageEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_buttonEnabled"
+                    android:key="@string/pk_show_session_stats"
+                    android:summary="@string/sessionStatsEnabledSummary"
+                    android:title="@string/sessionStatsEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_buttonEnabled"
+                    android:key="@string/pk_show_quick_actions"
+                    android:summary="@string/buttonsEnabledSummary"
+                    android:title="@string/buttonsEnabledTitle" />
+
+            </PreferenceCategory>
+
+            <Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory android:title="@string/pref_category_title_other">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_hideTime"
+                    android:key="@string/pk_hide_time_while_running"
+                    android:summary="@string/hideTimeSummary"
+                    android:title="@string/hideTimeTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="false"
+                    android:key="@string/pk_show_scramble_background"
+                    android:title="@string/pref_scramble_box_title"
+                    android:summary="@string/pref_scramble_box_description"/>
+
+                <Preference
+                    android:defaultValue="@integer/defaultScrambleTextSize"
+                    android:key="@string/pk_scramble_text_size"
+                    android:summary="@string/scramble_text_size_summary"
+                    android:title="@string/scramble_text_size" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_millisecondsEnabled"
+                    android:key="@string/pk_show_hi_res_timer"
+                    android:summary="@string/millisecondsEnabledSummary"
+                    android:title="@string/millisecondsEnabledTitle" />
+
+            </PreferenceCategory>
+
+            <Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory android:title="@string/pref_category_title_advanced">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/defaultAdvancedEnabled"
+                    android:key="@string/pk_advanced_timer_settings_enabled"
+                    android:title="@string/enable_advanced" />
+
+                <Preference
+                    android:defaultValue="@integer/defaultTimeTextSize"
+                    android:dependency="@string/pk_advanced_timer_settings_enabled"
+                    android:key="@string/pk_timer_text_size"
+                    android:summary="@string/timer_text_size_summary"
+                    android:title="@string/timer_text_size" />
+
+                <Preference
+                    android:defaultValue="@integer/defaultScrambleImageSize"
+                    android:dependency="@string/pk_advanced_timer_settings_enabled"
+                    android:key="@string/pk_scramble_image_size"
+                    android:summary="@string/scrambleImageSize_summary"
+                    android:title="@string/scrambleImageSize_text" />
+
+            </PreferenceCategory>
+
+        </PreferenceScreen>
+
+    </PreferenceCategory>
+
+    <Preference android:layout="@layout/divider_preference_category" />
+
+    <PreferenceCategory android:title="@string/pref_category_title_other">
+
+        <PreferenceScreen
+            android:icon="@drawable/ic_outline_settings_pref"
+            android:key="@string/pref_screen_other_general"
+            android:title="@string/pref_screen_title_general">
+
+            <PreferenceCategory android:title="@string/pref_screen_title_general">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/default_pagerEnabled"
+                    android:key="@string/pk_tab_swiping_enabled"
+                    android:summary="@string/pagerEnabledSummary"
+                    android:title="@string/pagerEnabledTitle" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="false"
+                    android:key="@string/pk_tint_navigation_bar"
+                    android:summary="@string/pref_summary_tint_navigation"
+                    android:title="@string/pref_title_tint_navigation" />
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="false"
+                    android:key="@string/pk_menu_background"
+                    android:summary="@string/pref_summary_menu_background"
+                    android:title="@string/pref_title_menu_background" />
+
+            </PreferenceCategory>
+
+        </PreferenceScreen>
+
+        <PreferenceScreen
+            android:icon="@drawable/ic_outline_timeline_24px_teal"
+            android:key="@string/pref_screen_other_statistics"
+            android:title="@string/pref_screen_title_statistics">
+
+            <PreferenceCategory
+                android:title="@string/pref_screen_title_statistics">
+
+            <Preference
+                android:defaultValue="@integer/defaultTrimSize"
+                android:key="@string/pk_stat_trim_size"
+                android:summary="@string/pref_summary_stat_trim"
+                android:title="@string/pref_title_stat_trim" />
+
+            <!--SwitchPreferenceCompat
+                android:defaultValue="@bool/defaultEnableDisqualifyDNF"
+                android:key="@string/pk_stat_disqualify_dnf"
+                android:summary="@string/pref_summary_disqualify_dnf"
+                android:title="@string/pref_title_disqualify_dnf" />
+
+            <Preference
+                android:defaultValue="@integer/defaultAcceptableDNFSize"
+                android:dependency="@string/pk_stat_disqualify_dnf"
+                android:key="@string/pk_stat_acceptable_dnf_size"
+                android:summary="@string/pref_summary_acceptable_dnf"
+                android:title="@string/pref_title_acceptable_dnf" /-->
+
+            </PreferenceCategory>
+
+            <!--Preference android:layout="@layout/divider_preference_category" />
+
+            <PreferenceCategory
+                android:title="@string/pref_screen_title_graph">
+
+                <SwitchPreferenceCompat
+                    android:defaultValue="@bool/pk_default_stat_discrete_graph_dataset"
+                    android:key="@string/pk_stat_discrete_graph_dataset"
+                    android:title="@string/pref_title_discrete_graph"
+                    android:summary="@string/pref_summary_discrete_graph" />
+
+            </PreferenceCategory-->
+
+        </PreferenceScreen>
+
+    </PreferenceCategory>
+
+    <PreferenceScreen
+        android:icon="@drawable/ic_outline_list_alt_pref"
+        android:key="@string/pref_screen_other_list"
+        android:title="@string/pref_screen_title_list">
+
+        <PreferenceCategory android:title="@string/pref_screen_title_list">
+
+            <SwitchPreferenceCompat
+                android:defaultValue="@bool/default_clearEnabled"
+                android:key="@string/pk_show_clear_button"
+                android:title="@string/clearEnabledTitle"
+                android:summary="@string/clearEnabledSummary"/>
+
+        </PreferenceCategory>
+
+    </PreferenceScreen>
+
+</PreferenceScreen>

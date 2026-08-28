@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="puzzles">
+        <item>@string/cube_222</item>
+        <item>@string/cube_333</item>
+        <item>@string/cube_444</item>
+        <item>@string/cube_555</item>
+        <item>@string/cube_666</item>
+        <item>@string/cube_777</item>
+        <item>@string/cube_skewb</item>
+        <item>@string/cube_mega</item>
+        <item>@string/cube_pyra</item>
+        <item>@string/cube_sq1</item>
+        <item>@string/cube_clock</item>
+    </string-array>
+
+    <string-array name="stats_column_average">
+        <item>3</item>
+        <item>5</item>
+        <item>12</item>
+        <item>50</item>
+        <item>100</item>
+        <item>1000</item>
+    </string-array>
+
+    <string-array name="stats_column_improvement">
+        <item>@string/graph_stats_label_deviation</item>
+        <item>@string/graph_stats_label_ao12_full</item>
+        <item>@string/graph_stats_label_ao50_full</item>
+        <item>@string/graph_stats_label_ao100_full</item>
+        <item>@string/graph_stats_label_best</item>
+        <item>@string/graph_stats_label_solve_count</item>
+    </string-array>
+
+    <string-array name="stats_column_other">
+        <item>@string/graph_stats_label_best</item>
+        <item>@string/graph_stats_label_worst</item>
+        <item>@string/graph_stats_label_deviation</item>
+        <item>@string/graph_stats_label_mean</item>
+        <item>@string/graph_stats_label_total_time</item>
+        <item>@string/graph_stats_label_solve_count</item>
+    </string-array>
+
+    <string-array name="timer_detail_stats">
+        <item>@string/graph_legend_avg_prefix</item>
+        <item>@string/graph_legend_avg_prefix</item>
+        <item>@string/graph_legend_avg_prefix</item>
+        <item>@string/graph_legend_avg_prefix</item>
+        <item>@string/graph_stats_label_deviation</item>
+        <item>@string/graph_stats_label_mean</item>
+        <item>@string/graph_stats_label_best</item>
+        <item>@string/graph_stats_label_solve_count</item>
+    </string-array>
+
+    <string-array name="pref_array_inspection_alert">
+        <item>@string/pref_inspection_alert_vibration</item>
+        <item>@string/pref_inspection_alert_sound</item>
+        <item>@string/pref_inspection_alert_both</item>
+    </string-array>
+
+    <string-array name="pk_pref_array_inspection_alert">
+        <item>@string/pk_inspection_alert_vibration</item>
+        <item>@string/pk_inspection_alert_sound</item>
+        <item>@string/pk_inspection_alert_both</item>
+    </string-array>
+
+</resources>

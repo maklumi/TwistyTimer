@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?graph_stats_card_divider"
+    android:baselineAligned="true">
+
+    <ImageView
+        app:layout_constraintHorizontal_weight="2"
+        android:id="@+id/stats_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?graph_stats_card_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="6dp"
+        android:tint="?graph_stats_card_text_color"
+        app:layout_constraintEnd_toStartOf="@+id/stats_global"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_sigma" />
+
+    <TextView
+        android:textColor="?graph_stats_card_text_color"
+        android:id="@+id/stats_global"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginLeft="1dp"
+        android:background="?graph_stats_card_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:padding="6dp"
+        android:textSize="12sp"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        android:text="@string/graph_stats_title_global"
+        android:tint="?graph_stats_card_text_color"
+        app:layout_constraintBottom_toBottomOf="@+id/stats_label"
+        app:layout_constraintEnd_toStartOf="@+id/stats_session"
+        app:layout_constraintHorizontal_weight="3"
+        app:layout_constraintStart_toEndOf="@+id/stats_label"
+        app:layout_constraintTop_toTopOf="@+id/stats_label"
+        app:srcCompat="@drawable/ic_alpha_g_box_outline" />
+
+    <TextView
+        android:textColor="?graph_stats_card_text_color"
+        android:id="@+id/stats_session"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginLeft="1dp"
+        android:background="?graph_stats_card_background"
+        android:clickable="true"
+        android:textSize="12sp"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        android:text="@string/graph_stats_title_session"
+        android:gravity="center"
+        android:focusable="true"
+        android:padding="6dp"
+        android:tint="?graph_stats_card_text_color"
+        app:layout_constraintBottom_toBottomOf="@+id/stats_label"
+        app:layout_constraintEnd_toStartOf="@+id/stats_current"
+        app:layout_constraintHorizontal_weight="3"
+        app:layout_constraintStart_toEndOf="@+id/stats_global"
+        app:layout_constraintTop_toTopOf="@+id/stats_global"
+        app:srcCompat="@drawable/ic_alpha_s_box_outline" />
+
+    <TextView
+        android:textColor="?graph_stats_card_text_color"
+        android:id="@+id/stats_current"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginLeft="1dp"
+        android:textSize="12sp"
+        android:ellipsize="marquee"
+        android:singleLine="true"
+        android:text="@string/graph_stats_title_current"
+        android:gravity="center"
+        android:background="?graph_stats_card_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="6dp"
+        android:tint="?graph_stats_card_text_color"
+        app:layout_constraintBottom_toBottomOf="@+id/stats_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_weight="3"
+        app:layout_constraintStart_toEndOf="@+id/stats_session"
+        app:layout_constraintTop_toTopOf="@+id/stats_session"
+        app:srcCompat="@drawable/ic_alpha_c_box_outline" />
+
+
+    <com.aricneto.twistytimer.layout.StaticGridView
+        android:id="@+id/stats_gridView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?graph_stats_card_divider"
+        android:gravity="center"
+        android:horizontalSpacing="1dp"
+        android:numColumns="3"
+        android:stretchMode="columnWidth"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/stats_global"
+        app:layout_constraintTop_toBottomOf="@+id/stats_label"
+        tools:layout_height="130dp" />
+
+    <com.aricneto.twistytimer.layout.StaticGridView
+        android:id="@+id/stats_label_gridView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?graph_stats_card_background_alt"
+        android:gravity="center"
+        android:layout_marginRight="1dp"
+        android:numColumns="1"
+        android:stretchMode="columnWidth"
+        app:layout_constraintEnd_toStartOf="@id/stats_global"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/stats_label"
+        tools:layout_height="130dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

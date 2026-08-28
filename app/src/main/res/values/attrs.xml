@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BaseTwistyTheme">
+        <attr format="color" name="colorMainGradientStart"/>
+        <attr format="color" name="colorMainGradientEnd"/>
+        <attr format="color" name="colorTimerText"/>
+        
+        <attr format="reference" name="statTextStyle"/>
+        <attr format="reference" name="defaultFontFamily"/>
+
+        <attr format="color" name="colorBackgroundList"/>
+        <attr format="color" name="colorTimerDetailText"/>
+        <attr format="color" name="colorItemListText"/>
+        <attr format="color" name="colorItemListTextAction"/>
+        <attr format="color" name="colorItemListBackgroundSelected"/>
+        <attr format="color" name="colorItemListBackground"/>
+        <attr format="color" name="mainColorBackground"/>
+        <attr format="color" name="textColorContrastBackground"/>
+    
+        <attr format="dimension" name="tabBarSize"/>
+        <attr format="dimension" name="tabBarPadding"/>
+        <attr format="dimension" name="actionBarPadding"/>
+        <attr format="dimension" name="qaButtonSize"/>
+        <attr format="color" name="colorTabBar"/>
+        <attr format="color" name="colorActionBar"/>
+        <attr format="color" name="colorActionBarText"/>
+    
+        <attr format="boolean" name="isLightTheme"/>
+    </declare-styleable>
+
+    <attr format="color" name="colorTabIconSelected"/>
+    <attr format="color" name="colorTabIconFaded"/>
+
+    <attr name="colorCardBackgroundWarn" format="color"/>
+    <attr name="colorCardText" format="color"/>
+    <attr name="colorCardBackgroundFaded" format="color"/>
+
+    <attr format="color" name="colorChartAllTimes"/>
+    <attr format="color" name="colorChartBestTimes"/>
+    <attr format="color" name="colorChartMeanTime"/>
+
+    <attr format="color" name="colorChartGrid"/>
+    <attr format="color" name="colorChartAxis"/>
+    <attr format="color" name="colorChartText"/>
+
+    <attr format="color" name="colorChartExtra1"/>
+    <attr format="color" name="colorChartExtra2"/>
+    <attr format="color" name="colorChartExtra3"/>
+
+
+    <declare-styleable name="Cube">
+        <attr name="cube_corner_radius" format="dimension"/>
+        <attr name="cube_sticker_corner_radius" format="dimension"/>
+    </declare-styleable>
+
+    <declare-styleable name="RippleBackgroundView">
+        <attr name="rb_color" format="color"/>
+        <attr name="rb_strokeWidth" format="dimension"/>
+        <attr name="rb_radius" format="dimension"/>
+        <attr name="rb_duration" format="integer"/>
+        <attr name="rb_rippleAmount" format="integer"/>
+        <attr name="rb_scale" format="float"/>
+        <attr name="rb_type" format="enum">
+            <enum name="fillRipple" value="0"/>
+            <enum name="strokeRipple" value="1"/>
+        </attr>
+    </declare-styleable>
+
+
+    <!-- TODO: add this attr for all themes -->
+    <!-- An accent color that provides a clear contrast against a white background.
+    Ideally, should just be a darker version of the current accent, if possible-->
+    <attr format="color" name="colorAccentWhiteContrast"/>
+    <!-- A color for text that provides clear contrast against the accent color-->
+    <attr format="color" name="colorTextContrastAccent"/>
+
+    <attr format="color" name="graph_stats_card_background"/>
+    <attr format="color" name="graph_stats_card_background_alt"/>
+    <attr format="color" name="graph_stats_card_background_faded"/>
+    <attr format="color" name="graph_stats_card_divider"/>
+    <attr format="color" name="graph_stats_card_text_color_faded"/>
+    <attr format="color" name="graph_stats_card_text_color"/>
+
+</resources>

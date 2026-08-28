@@ -1,0 +1,90 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'com.aricneto.twistify'
+    signingConfigs {
+        config {
+        }
+    }
+    compileSdk 37
+    buildToolsVersion '36.0.0'
+    defaultConfig {
+        applicationId "com.aricneto.twistytimer"
+        minSdk 23
+        targetSdk 37
+        versionCode 60
+        versionName "4.7.0"
+        vectorDrawables.useSupportLibrary = true
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+            resValue "string", "app_name", "Twisty Timer"
+            resValue "string", "file_provider_authority", "com.aricneto.twistytimer.fileprovider"
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            resValue "string", "app_name", "Twisty Timer (Debug)"
+            resValue "string", "file_provider_authority", "com.aricneto.twistytimer.debug.fileprovider"
+        }
+    }
+    productFlavors {
+    }
+    lintOptions {
+        disable 'MissingTranslation'
+        disable 'ExtraTranslation'
+    }
+    buildFeatures {
+        resValues = true
+        buildConfig = true
+        viewBinding = true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.fork = true
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED"
+        options.forkOptions.jvmArgs << "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'org.worldcubeassociation.tnoodle:lib-scrambles:0.19.2'
+    implementation 'com.opencsv:opencsv:5.12.0'
+    implementation 'androidx.appcompat:appcompat:1.8.0'
+    implementation "androidx.appcompat:appcompat-resources:1.8.0"
+    implementation 'androidx.activity:activity:1.13.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    implementation 'com.google.android.material:material:1.14.0'
+    implementation "androidx.annotation:annotation:1.10.0"
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
+    implementation 'androidx.preference:preference:1.2.1'
+    // Material Drawer
+    implementation "com.mikepenz:materialdrawer:9.0.2"
+    implementation "com.mikepenz:fastadapter:5.7.0"
+    // Joda-time
+    implementation 'net.danlew:android.joda:2.14.2.1'
+    // Android SVG
+    implementation 'com.caverock:androidsvg:1.4'
+    // MPAndroidChart
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    // Material color picker
+    implementation "com.github.skydoves:colorpickerview:2.4.0"
+
+    testImplementation 'junit:junit:4.13.2'
+}

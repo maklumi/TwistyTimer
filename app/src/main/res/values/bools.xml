@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <bool name="default_buttonEnabled">true</bool>
+    <bool name="default_inspectionEnabled">false</bool>
+    <bool name="default_worstSolve">false</bool>
+    <bool name="default_bestSolve">true</bool>
+    <bool name="default_backgroundEnabled">true</bool>
+    <bool name="default_holdEnabled">false</bool>
+    <bool name="default_scrambleEnabled">true</bool>
+    <bool name="default_millisecondsEnabled">true</bool>
+    <bool name="default_pagerEnabled">true</bool>
+    <bool name="default_clearEnabled">false</bool>
+    <bool name="defaultAdvancedEnabled">false</bool>
+    <bool name="default_startCue">false</bool>
+    <bool name="default_large_quickaction">false</bool>
+    <bool name="default_hideTime">false</bool>
+    <bool name="default_showHints">true</bool>
+    <bool name="default_showHintsXCross">false</bool>
+    <bool name="default_backCancelEnabled">true</bool>
+
+    <bool name="default_crossHintTopEnabled">true</bool>
+    <bool name="default_crossHintLeftEnabled">false</bool>
+    <bool name="default_crossHintFrontEnabled">false</bool>
+    <bool name="default_crossHintRightEnabled">false</bool>
+    <bool name="default_crossHintBackEnabled">false</bool>
+    <bool name="default_crossHintDownEnabled">false</bool>
+    <bool name="default_showAverageRecordEnabled">true</bool>
+
+    <bool name="default_inspectionAlertEnabled">false</bool>
+    <bool name="defaultEnableDisqualifyDNF">true</bool>
+    <bool name="pk_default_stat_discrete_graph_dataset">false</bool>
+</resources>

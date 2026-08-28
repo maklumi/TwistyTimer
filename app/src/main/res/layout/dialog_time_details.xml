@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="32dp"
+    android:paddingBottom="32dp">
+
+    <RelativeLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/outline_background_card_smoother">
+
+        <TextView
+            android:id="@+id/timeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="8dp"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            tools:text="35.50" />
+
+        <TextView
+            android:id="@+id/puzzlePenaltyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/timeText"
+            android:layout_marginLeft="8dp"
+            android:layout_toRightOf="@id/timeText"
+            android:textColor="@color/red_material"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            tools:text="+2" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/dateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/timeText"
+            android:layout_alignParentRight="true"
+            android:alpha="0.70"
+            app:drawableLeftCompat="@drawable/ic_outline_date_range_18px"
+            android:drawablePadding="8dp"
+            android:gravity="center_vertical"
+            android:paddingTop="4dp"
+            android:paddingRight="16dp"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            tools:text="7 Aug 2016\n18:56" />
+
+        <include
+            android:id="@+id/divider01"
+            layout="@layout/view_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_below="@id/timeText"
+            android:layout_marginTop="8dp" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/commentText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/divider01"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginRight="16dp"
+            app:drawableLeftCompat="@drawable/ic_outline_insert_comment_18px"
+            android:drawablePadding="16dp"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Got a PLL skip"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/scrambleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/commentText"
+            android:layout_marginLeft="16dp"
+            android:paddingTop="16dp"
+            android:layout_marginRight="16dp"
+            app:drawableLeftCompat="@drawable/ic_outline_casino_18px"
+            app:drawableRightCompat="@drawable/ic_keyboard_arrow_down_black_18dp"
+            android:drawablePadding="16dp"
+            android:gravity="center_vertical"
+            android:textSize="14sp"
+            tools:text="D2 U' R2 U2 R2 F2 U' B2 U' F2 U' R' B L D B' U' R U' R2 F U'" />
+
+        <ImageView
+            android:id="@+id/scramble_image"
+            android:layout_below="@id/scrambleText"
+            tools:background="@color/colorAccent"
+            android:layerType="software"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:scaleType="fitCenter"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="150dp" />
+
+        <include
+            android:id="@+id/divider02"
+            layout="@layout/view_divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="16dp"
+            android:layout_below="@id/scramble_image" />
+
+        <ImageView
+            android:id="@+id/editButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/divider02"
+            android:layout_alignParentRight="true"
+
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:padding="16dp"
+            app:srcCompat="@drawable/ic_outline_flag_18px" />
+
+        <ImageView
+            android:id="@+id/commentButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/divider02"
+            android:layout_toLeftOf="@id/editButton"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:padding="16dp"
+            app:srcCompat="@drawable/ic_outline_insert_comment_18px" />
+
+        <ImageView
+            android:id="@+id/overflowButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/divider02"
+            android:layout_alignParentLeft="true"
+            android:alpha="0.70"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:padding="16dp"
+            app:srcCompat="@drawable/ic_outline_more_horiz_18px" />
+
+
+    </RelativeLayout>
+</ScrollView>
