@@ -1,9 +1,9 @@
-package com.aricneto.twistytimer.solver;
+package com.aricneto.twistytimer.solver
 
 
-public interface Tip {
-    String getTipId();
-    String getPuzzleId();
-    String getTipDescription();
-    String getTip(String scramble);
+interface Tip {
+    val tipId: String
+    val puzzleId: String
+    val tipDescription: String
+    fun getTip(scramble: String): String
 }

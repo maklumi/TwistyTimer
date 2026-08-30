@@ -1,0 +1,64 @@
+package com.aricneto.twistytimer.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.database.SolveRepository
+import com.aricneto.twistytimer.items.Solve
+import com.aricneto.twistytimer.utils.TTIntent
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+
+class TimerViewModel : ViewModel() {
+
+    data class SolveParams(
+        val type: String? = null,
+        val subtype: String? = null,
+        val history: Boolean = false,
+        val search: String = "",
+        val orderByKey: String = DatabaseHandler.KEY_DATE,
+        val orderByDir: String = DatabaseHandler.DIR_DESC
+    )
+
+    private val repository = SolveRepository(TwistyTimer.getDBHandler())
+
+    private val _params = MutableStateFlow(SolveParams())
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val solves: StateFlow<List<Solve>> = _params
+        .flatMapLatest { params ->
+            if (params.type != null && params.subtype != null) {
+                repository.getSolves(
+                    params.type,
+                    params.subtype,
+                    params.history,
+                    params.search,
+                    params.orderByKey,
+                    params.orderByDir
+                )
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun updateParams(
+        type: String?,
+        subtype: String?,
+        history: Boolean,
+        search: String = "",
+        key: String = DatabaseHandler.KEY_DATE,
+        dir: String = DatabaseHandler.DIR_DESC
+    ) {
+        _params.value = SolveParams(type, subtype, history, search, key, dir)
+    }
+
+    fun deleteSolves(ids: List<Long>) {
+        viewModelScope.launch {
+            TwistyTimer.getDBHandler().deleteSolvesByID(ids.toMutableList(), null)
+            TTIntent.broadcast(TTIntent.CATEGORY_TIME_DATA_CHANGES, TTIntent.ACTION_TIMES_MODIFIED)
+        }
+    }
+}

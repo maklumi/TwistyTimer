@@ -1,121 +1,131 @@
-package com.aricneto.twistytimer.spans;
+package com.aricneto.twistytimer.spans
 
-import android.app.Dialog;
-import android.os.Bundle;
-import android.view.Gravity;
-import android.widget.LinearLayout;
-
-import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.fragment.app.DialogFragment;
-
-import com.aricneto.twistify.R;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.skydoves.colorpickerview.ColorPickerView;
-import com.skydoves.colorpickerview.sliders.BrightnessSlideBar;
+import android.app.Dialog
+import android.content.DialogInterface
+import android.os.Bundle
+import android.view.Gravity
+import android.widget.LinearLayout
+import androidx.annotation.ColorInt
+import androidx.fragment.app.DialogFragment
+import com.aricneto.twistify.R
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.skydoves.colorpickerview.ColorPickerView
+import com.skydoves.colorpickerview.sliders.BrightnessSlideBar
 
 /**
  * Replacement for ChromaDialog using ColorPickerView
  */
-public class ChromaDialogFixed extends DialogFragment {
-
-    private final static String ARG_INITIAL_COLOR = "arg_initial_color";
-
-    public interface OnColorSelectedListener {
-        void onColorSelected(@ColorInt int color);
+class ChromaDialogFixed : DialogFragment() {
+    interface OnColorSelectedListener {
+        fun onColorSelected(@ColorInt color: Int)
     }
 
     // Stubs for compatibility with old code
-    public enum ColorMode { RGB, HSV, ARGB, CMYK }
-    public enum IndicatorMode { HEX, DECIMAL }
-
-    private OnColorSelectedListener listener;
-
-    public static ChromaDialogFixed newInstance(@ColorInt int initialColor) {
-        ChromaDialogFixed fragment = new ChromaDialogFixed();
-        Bundle args = new Bundle();
-        args.putInt(ARG_INITIAL_COLOR, initialColor);
-        fragment.setArguments(args);
-        return fragment;
+    enum class ColorMode {
+        RGB, HSV, ARGB, CMYK
     }
 
-    public static class Builder {
-        private @ColorInt int initialColor = 0xFFFFFFFF;
-        private OnColorSelectedListener listener = null;
+    enum class IndicatorMode {
+        HEX, DECIMAL
+    }
 
-        public Builder initialColor(@ColorInt int initialColor) {
-            this.initialColor = initialColor;
-            return this;
+    private var listener: OnColorSelectedListener? = null
+
+    class Builder {
+        @ColorInt
+        private var initialColor = -0x1
+        private var listener: OnColorSelectedListener? = null
+
+        fun initialColor(@ColorInt initialColor: Int): Builder {
+            this.initialColor = initialColor
+            return this
         }
 
         // Methods for compatibility, currently ignored as skydoves has different config
-        public Builder colorMode(ColorMode colorMode) { return this; }
-        public Builder indicatorMode(IndicatorMode indicatorMode) { return this; }
-
-        public Builder onColorSelected(OnColorSelectedListener listener) {
-            this.listener = listener;
-            return this;
+        fun colorMode(colorMode: ColorMode?): Builder {
+            return this
         }
 
-        public ChromaDialogFixed create() {
-            ChromaDialogFixed fragment = newInstance(initialColor);
-            fragment.setListener(listener);
-            return fragment;
+        fun indicatorMode(indicatorMode: IndicatorMode?): Builder {
+            return this
+        }
+
+        fun onColorSelected(listener: OnColorSelectedListener?): Builder {
+            this.listener = listener
+            return this
+        }
+
+        fun create(): ChromaDialogFixed {
+            val fragment: ChromaDialogFixed = newInstance(initialColor)
+            fragment.setListener(listener)
+            return fragment
         }
     }
 
-    public void setListener(OnColorSelectedListener listener) {
-        this.listener = listener;
+    fun setListener(listener: OnColorSelectedListener?) {
+        this.listener = listener
     }
 
-    @NonNull
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        int initialColor = getArguments() != null ? getArguments().getInt(ARG_INITIAL_COLOR) : 0xFFFFFFFF;
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val initialColor =
+            if (arguments != null) requireArguments().getInt(ARG_INITIAL_COLOR) else -0x1
 
-        float density = getResources().getDisplayMetrics().density;
-        int pickerSize = (int) (260 * density);
-        int margin = (int) (16 * density);
+        val density = resources.displayMetrics.density
+        val pickerSize = (260 * density).toInt()
+        val margin = (16 * density).toInt()
 
-        LinearLayout container = new LinearLayout(getActivity());
-        container.setOrientation(LinearLayout.VERTICAL);
-        container.setGravity(Gravity.CENTER_HORIZONTAL);
-        container.setPadding(margin, margin, margin, margin);
+        val container = LinearLayout(requireContext())
+        container.orientation = LinearLayout.VERTICAL
+        container.gravity = Gravity.CENTER_HORIZONTAL
+        container.setPadding(margin, margin, margin, margin)
 
-        BrightnessSlideBar brightnessSlideBar = new BrightnessSlideBar(getActivity());
-        LinearLayout.LayoutParams sliderParams = new LinearLayout.LayoutParams(
-                pickerSize,
-                (int) (32 * density)
-        );
-        sliderParams.topMargin = margin;
-        brightnessSlideBar.setLayoutParams(sliderParams);
+        val brightnessSlideBar = BrightnessSlideBar(requireContext())
+        val sliderParams = LinearLayout.LayoutParams(
+            pickerSize,
+            (32 * density).toInt()
+        )
+        sliderParams.topMargin = margin
+        brightnessSlideBar.layoutParams = sliderParams
 
-        ColorPickerView colorPickerView = new ColorPickerView.Builder(getActivity())
-                .setInitialColor(initialColor)
-                .setWidth(260)
-                .setHeight(260)
-                .setSelectorSize(20)
-                .setBrightnessSlideBar(brightnessSlideBar)
-                .build();
-        
-        container.addView(colorPickerView);
-        container.addView(brightnessSlideBar);
+        val colorPickerView = ColorPickerView.Builder(requireContext())
+            .setInitialColor(initialColor)
+            .setWidth(260)
+            .setHeight(260)
+            .setSelectorSize(20)
+            .setBrightnessSlideBar(brightnessSlideBar)
+            .build()
 
-        return new MaterialAlertDialogBuilder(getActivity())
-                .setTitle(R.string.color_picker_title)
-                .setView(container)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                    if (listener != null) {
-                        listener.onColorSelected(colorPickerView.getColor());
-                    }
+        container.addView(colorPickerView)
+        container.addView(brightnessSlideBar)
+
+        return MaterialAlertDialogBuilder(requireActivity())
+            .setTitle(R.string.color_picker_title)
+            .setView(container)
+            .setPositiveButton(
+                android.R.string.ok,
+                DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
+                    listener?.onColorSelected(colorPickerView.color)
                 })
-                .setNegativeButton(android.R.string.cancel, (dialog, which) -> dismiss())
-                .create();
+            .setNegativeButton(
+                android.R.string.cancel,
+                DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int -> dismiss() })
+            .create()
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        listener = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        listener = null
+    }
+
+    companion object {
+        private const val ARG_INITIAL_COLOR = "arg_initial_color"
+
+        fun newInstance(@ColorInt initialColor: Int): ChromaDialogFixed {
+            val fragment = ChromaDialogFixed()
+            val args = Bundle()
+            args.putInt(ARG_INITIAL_COLOR, initialColor)
+            fragment.setArguments(args)
+            return fragment
+        }
     }
 }

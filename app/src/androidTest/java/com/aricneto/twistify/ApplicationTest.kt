@@ -1,13 +1,13 @@
-package com.aricneto.twistify;
+package com.aricneto.twistify
 
-import android.app.Application;
-import android.test.ApplicationTestCase;
+import android.app.Application
+import android.test.ApplicationTestCase
 
 /**
- * <a href="http://d.android.com/tools/testing/testing_android.html">Testing Fundamentals</a>
+ * [Testing Fundamentals](http://d.android.com/tools/testing/testing_android.html)
  */
-public class ApplicationTest extends ApplicationTestCase<Application> {
-    public ApplicationTest() {
-        super(Application.class);
+class ApplicationTest : ApplicationTestCase<Application>(Application::class.java) {
+    init {
+        // This is needed for the legacy ApplicationTestCase
     }
 }

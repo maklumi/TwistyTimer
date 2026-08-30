@@ -1,66 +1,29 @@
-package com.aricneto.twistytimer.items;
+package com.aricneto.twistytimer.items
+
+import android.database.Cursor
+import com.aricneto.twistytimer.database.DatabaseHandler
 
 /**
  * Stores an algorithm for use in the alg list
  */
-public class Algorithm {
-    long id;
-    String subset;  // case subset (oll/pll)
-    String name;    // case name
-    String state;   // sticker colors
-    String algs;
-    int progress;
-
-    public Algorithm(long id, String subset, String name, String state, String algs, int progress) {
-        this.id = id;
-        this.subset = subset;
-        this.name = name;
-        this.state = state;
-        this.algs = algs;
-        this.progress = progress;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public String getSubset() {
-        return subset;
-    }
-
-    public void setSubset(String subset) {
-        this.subset = subset;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getAlgs() {
-        return algs;
-    }
-
-    public void setAlgs(String algs) {
-        this.algs = algs;
-    }
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public void setProgress(int progress) {
-        this.progress = progress;
+data class Algorithm(
+    val id: Long,
+    var subset: String = "",
+    var name: String = "",
+    var state: String = "",
+    var algs: String = "",
+    var progress: Int
+) {
+    companion object {
+        fun fromCursor(cursor: Cursor): Algorithm {
+            return Algorithm(
+                id = cursor.getLong(0),
+                subset = cursor.getString(1),
+                name = cursor.getString(2),
+                state = cursor.getString(3),
+                algs = cursor.getString(4),
+                progress = cursor.getInt(5)
+            )
+        }
     }
 }

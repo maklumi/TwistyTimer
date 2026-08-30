@@ -1,73 +1,55 @@
-package com.aricneto.twistytimer.utils;
+package com.aricneto.twistytimer.utils
 
 /**
- * A simple wrapper for other objects. This is useful when using a {@code Loader} with an activity
+ * A simple wrapper for other objects. This is useful when using a `Loader` with an activity
  * or fragment if the same loaded object can be modified and returned as "new" data when a change
- * to the data is notified. In this case, the {@code LoaderManager} will not call
- * {@code onLoadFinished} unless the loaded object is different from the one previously delivered.
- * To work around this, the same data can be returned, but in a different {@code Wrapper} each time,
- * so {@code onLoadFinished} will be fired as expected.
+ * to the data is notified. In this case, the `LoaderManager` will not call
+ * `onLoadFinished` unless the loaded object is different from the one previously delivered.
+ * To work around this, the same data can be returned, but in a different `Wrapper` each time,
+ * so `onLoadFinished` will be fired as expected.
  *
- * @param <T> The type of the content object being wrapped.
+ * @param T The type of the content object being wrapped.
  *
  * @author damo
  */
-public class Wrapper<T> {
-    /**
-     * The content being wrapped.
-     */
-    private final T mContent;
-
-    /**
-     * Creates a new wrapper object around the given content object.
-     *
-     * @param content The content for the wrapper. May be {@code null}.
-     */
-    private Wrapper(T content) {
-        mContent = content;
-    }
-
-    /**
-     * Creates a new wrapper around the given content object.
-     *
-     * @param content
-     *     The content object for the wrapper. May be {@code null}.
-     * @param <T>
-     *     The type of the content object.
-     *
-     * @return
-     *     The new wrapper containing {@code content}.
-     */
-    public static <T> Wrapper<T> wrap(T content) {
-        return new Wrapper<>(content);
-    }
+class Wrapper<T> private constructor(private val mContent: T?) {
 
     /**
      * Gets the content object from the wrapper.
      *
-     * @return The content object. May be {@code null}.
+     * @return The content object. May be `null`.
      */
-    public T content() {
-        return mContent;
-    }
+    fun content(): T? = mContent
 
     /**
-     * Indicates if the content object is {@code null} or not.
+     * Indicates if the content object is `null` or not.
      *
-     * @return {@code true} if the content object is {@code null}; {@code false} otherwise.
+     * @return `true` if the content object is `null`; `false` otherwise.
      */
-    public boolean isEmpty() {
-        return mContent == null;
-    }
+    fun isEmpty(): Boolean = mContent == null
 
     /**
      * Creates a new wrapper around the content object taken from this wrapper. The content object
-     * may be {@code null}.
+     * may be `null`.
      *
      * @return
-     *     The new wrapper containing the same content object as this (old) wrapper.
+     * The new wrapper containing the same content object as this (old) wrapper.
      */
-    public Wrapper<T> rewrap() {
-        return new Wrapper<>(content());
+    fun rewrap(): Wrapper<T> = Wrapper(content())
+
+    companion object {
+        /**
+         * Creates a new wrapper around the given content object.
+         *
+         * @param content
+         * The content object for the wrapper. May be `null`.
+         * @param T
+         * The type of the content object.
+         *
+         * @return
+         * The new wrapper containing `content`.
+         */
+        @JvmStatic
+        fun <T> wrap(content: T?): Wrapper<T> = Wrapper(content)
     }
 }

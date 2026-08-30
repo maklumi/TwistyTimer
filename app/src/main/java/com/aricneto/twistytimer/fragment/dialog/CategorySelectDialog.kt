@@ -1,252 +1,409 @@
-package com.aricneto.twistytimer.fragment.dialog;
+package com.aricneto.twistytimer.fragment.dialog
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.view.LayoutInflater;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.content.Context
+import android.content.DialogInterface
+import android.graphics.Color
+import android.os.Bundle
+import android.preference.PreferenceManager
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.AdapterView.OnItemLongClickListener
+import androidx.appcompat.widget.PopupMenu
+import androidx.fragment.app.DialogFragment
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.DialogCategorySelectBinding
+import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.adapter.BottomSheetSpinnerAdapter
+import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.fragment.TimerFragment
+import com.aricneto.twistytimer.items.Solve
+import com.aricneto.twistytimer.listener.DialogListenerMessage
+import com.aricneto.twistytimer.puzzle.TrainerScrambler
+import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
+import com.aricneto.twistytimer.utils.PuzzleUtils
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import androidx.core.graphics.drawable.toDrawable
 
-import androidx.appcompat.app.AlertDialog;
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.DialogCategorySelectBinding;
-import com.aricneto.twistytimer.TwistyTimer;
-import com.aricneto.twistytimer.adapter.BottomSheetSpinnerAdapter;
-import com.aricneto.twistytimer.database.DatabaseHandler;
-import com.aricneto.twistytimer.fragment.TimerFragment;
-import com.aricneto.twistytimer.items.Solve;
-import com.aricneto.twistytimer.listener.DialogListenerMessage;
-import com.aricneto.twistytimer.puzzle.TrainerScrambler;
-import com.aricneto.twistytimer.utils.PuzzleUtils;
-import com.aricneto.twistytimer.utils.ThemeUtils;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
-
-import java.util.List;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.view.menu.MenuBuilder;
-import androidx.appcompat.view.menu.MenuPopupHelper;
-import androidx.fragment.app.DialogFragment;
-
-public class CategorySelectDialog extends DialogFragment {
-
-    private static final String KEY_SAVEDSUBTYPE = "savedSubtype";
-
-    private DialogCategorySelectBinding binding;
+class CategorySelectDialog : DialogFragment() {
+    private var binding: DialogCategorySelectBinding? = null
 
     // Puzzle and subtypes that are currently selected
-    private String                         currentPuzzle;
-    private String                         currentSubtype;
-    private String                         currentTimerMode;
-    private TrainerScrambler.TrainerSubset currentSubset;
-    private List<String>                   subtypeList;
+    private var currentPuzzle: String? = null
+    private var currentSubtype: String? = null
+    private var currentTimerMode: String? = null
+    private var currentSubset: TrainerSubset? = null
+    private var subtypeList: MutableList<String>? = null
 
     // Subtype that's currently being edited
-    private String currentEditSubtype = "";
+    private var currentEditSubtype: String? = ""
 
-    private DialogListenerMessage dialogListenerMessage;
+    private var dialogListenerMessage: DialogListenerMessage? = null
 
-    private BottomSheetSpinnerAdapter mAdapter;
-    private AdapterView.OnItemClickListener mItemClickListener;
-    private AdapterView.OnItemLongClickListener mItemLongClickListener;
-    private View.OnClickListener mOnClickListener;
-    private Context mContext;
+    private var mAdapter: BottomSheetSpinnerAdapter? = null
+    private val mItemClickListener: OnItemClickListener? = null
+    private val mItemLongClickListener: OnItemLongClickListener? = null
+    private val mOnClickListener: View.OnClickListener? = null
+    private var mContext: Context? = null
 
-    public static CategorySelectDialog newInstance(String currentPuzzle, String currentPuzzleSubtype, String currentTimerMode, TrainerScrambler.TrainerSubset currentSubset) {
-        CategorySelectDialog dialog = new CategorySelectDialog();
-        Bundle args = new Bundle();
-        args.putString("puzzle", currentPuzzle);
-        args.putString("subtype", currentPuzzleSubtype);
-        args.putString("mode", currentTimerMode);
-        args.putSerializable("subset", currentSubset);
-        dialog.setArguments(args);
-        return dialog;
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_TITLE, 0)
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setStyle(DialogFragment.STYLE_NO_TITLE, 0);
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = DialogCategorySelectBinding.inflate(inflater, container, false)
+        mContext = context
+
+        return binding!!.getRoot()
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = DialogCategorySelectBinding.inflate(inflater, container, false);
-        mContext = getContext();
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        return binding.getRoot();
-    }
-
-    @SuppressWarnings("RestrictedApi")
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
         // retrieve arguments
-        currentPuzzle = getArguments().getString("puzzle");
-        currentSubtype = getArguments().getString("subtype");
-        currentTimerMode = getArguments().getString("mode");
-        currentSubset = (TrainerScrambler.TrainerSubset) getArguments().getSerializable("subset");
+        currentPuzzle = requireArguments().getString("puzzle")
+        currentSubtype = requireArguments().getString("subtype")
+        currentTimerMode = requireArguments().getString("mode")
+        currentSubset = requireArguments().getSerializable("subset") as TrainerSubset?
 
-        DatabaseHandler dbHandler = TwistyTimer.getDBHandler();
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getContext());
-        SharedPreferences.Editor editor = sharedPreferences.edit();
+        val dbHandler = TwistyTimer.getDBHandler()
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val editor = sharedPreferences.edit()
 
         // get a list of all subtypes
-        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle);
+        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!)
 
-        if (subtypeList.size() == 0) {
+        if (subtypeList!!.isEmpty()) {
             // if subtype list is empty, create a new entry
-            dbHandler.addSolve(new Solve(1, currentPuzzle, "Normal", 0L, "", PuzzleUtils.PENALTY_HIDETIME, "", true));
-        } else if (subtypeList.size() == 1) {
-            currentSubtype = subtypeList.get(0);
+            dbHandler.addSolve(
+                Solve(
+                    1,
+                    currentPuzzle!!,
+                    "Normal",
+                    0L,
+                    "",
+                    PuzzleUtils.PENALTY_HIDETIME,
+                    "",
+                    true
+                )
+            )
+        } else if (subtypeList!!.size == 1) {
+            currentSubtype = subtypeList!![0]
         }
 
-        updateList(dbHandler);
+        updateList(dbHandler)
 
         // Create subtype
-        View createSubtypeView = LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null);
-        TextInputEditText createSubtypeEditText = createSubtypeView.findViewById(R.id.edit_text);
-        createSubtypeEditText.setHint(R.string.enter_type_name);
+        val createSubtypeView = layoutInflater.inflate(R.layout.dialog_input, null)
+        val createSubtypeEditText =
+            createSubtypeView.findViewById<TextInputEditText>(R.id.edit_text)
+        createSubtypeEditText.setHint(R.string.enter_type_name)
 
-        AlertDialog createSubtypeDialog = new MaterialAlertDialogBuilder(mContext)
-                .setTitle(R.string.enter_type_name)
-                .setView(createSubtypeView)
-                .setPositiveButton(R.string.action_done, (dialog, which) -> {
-                    String input = createSubtypeEditText.getText().toString();
-                    if (input.length() >= 2 && input.length() <= 32) {
-                        // add a single hidden solve with that category name to save it
-                        dbHandler.addSolve(new Solve(1, currentPuzzle, input, 0L, "", PuzzleUtils.PENALTY_HIDETIME, "", true));
-                        currentSubtype = input;
-                        updateList(dbHandler);
+        val createSubtypeDialog = MaterialAlertDialogBuilder(mContext!!)
+            .setTitle(R.string.enter_type_name)
+            .setView(createSubtypeView)
+            .setPositiveButton(
+                R.string.action_done
+            ) { _: DialogInterface?, _: Int ->
+                val input = createSubtypeEditText.getText().toString()
+                if (input.length in 2..32) {
+                    // add a single hidden solve with that category name to save it
+                    dbHandler.addSolve(
+                        Solve(
+                            1,
+                            currentPuzzle!!,
+                            input,
+                            0L,
+                            "",
+                            PuzzleUtils.PENALTY_HIDETIME,
+                            "",
+                            true
+                        )
+                    )
+                    currentSubtype = input
+                    updateList(dbHandler)
 
-                        editor.putString(KEY_SAVEDSUBTYPE + currentPuzzle, currentSubtype);
-                        editor.apply();
-                        if (dialogListenerMessage != null)
-                            dialogListenerMessage.onUpdateDialog(currentSubtype);
-                    }
-                })
-                .setNegativeButton(R.string.action_cancel, null)
-                .create();
+                    editor.putString(KEY_SAVED_SUBTYPE + currentPuzzle, currentSubtype)
+                    editor.apply()
+                    if (dialogListenerMessage != null) dialogListenerMessage!!.onUpdateDialog(
+                        currentSubtype
+                    )
+                }
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
 
-        Context context = getContext();
+        val context = getContext()
 
         // click listeners
         // select a subtype
-        binding.list.setOnItemClickListener((parent, view1, position, id) -> {
-            // A subtype was selected
-            currentSubtype = subtypeList.get(position);
+        binding!!.list.onItemClickListener =
+            OnItemClickListener { _: AdapterView<*>?, _: View?, position: Int, _: Long ->
+                // A subtype was selected
+                currentSubtype = subtypeList!![position]
 
-            editor.putString(KEY_SAVEDSUBTYPE + currentPuzzle, currentSubtype);
-            editor.apply();
-            dialogListenerMessage.onUpdateDialog(currentSubtype);
-            dismiss();
-        });
+                editor.putString(KEY_SAVED_SUBTYPE + currentPuzzle, currentSubtype)
+                editor.apply()
+                dialogListenerMessage!!.onUpdateDialog(currentSubtype)
+                dismiss()
+            }
 
-        binding.list.setOnItemLongClickListener((parent, view12, position, id) -> {
-            // Create a popup menu for each entry
-            MenuBuilder menuBuilder = new MenuBuilder(context);
-            MenuInflater inflater = new MenuInflater(context);
+        binding!!.list.onItemLongClickListener =
+            OnItemLongClickListener { _, view, position, _ ->
+                // Create a popup menu anchored to the long‑clicked view
+                val popup = PopupMenu(requireContext(), view)
 
-            inflater.inflate(R.menu.menu_category_options, menuBuilder);
-            MenuPopupHelper popupHelper = new MenuPopupHelper(context, menuBuilder, view12);
-            popupHelper.setForceShowIcon(true);
+                // Inflate your menu resource
+                popup.menuInflater.inflate(R.menu.menu_category_options, popup.menu)
 
-            menuBuilder.setCallback(new MenuBuilder.Callback() {
-                @Override
-                public boolean onMenuItemSelected(MenuBuilder menu, MenuItem item) {
-                    switch (item.getItemId()) {
-                        case R.id.rename:
-                            currentEditSubtype = subtypeList.get(position);
+                // Handle menu item clicks
+                popup.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        R.id.rename -> {
+                            currentEditSubtype = subtypeList!!.get(position)
                             //Rename subtype
-                            View renameView = LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null);
-                            TextInputEditText renameEditText = renameView.findViewById(R.id.edit_text);
-                            renameEditText.setText(currentEditSubtype);
+                            val renameView =
+                                LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null)
+                            val renameEditText =
+                                renameView.findViewById<TextInputEditText>(R.id.edit_text)
+                            renameEditText.setText(currentEditSubtype)
 
-                            new MaterialAlertDialogBuilder(mContext)
+                            MaterialAlertDialogBuilder(mContext!!)
+                                .setTitle(R.string.enter_new_name_dialog)
+                                .setView(renameView)
+                                .setPositiveButton(
+                                    R.string.action_done,
+                                    DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
+                                        val input = renameEditText.getText().toString()
+                                        if (input.length >= 2 && input.length <= 32) {
+                                            dbHandler.renameSubtype(
+                                                currentPuzzle!!,
+                                                currentEditSubtype!!,
+                                                input
+                                            )
+                                            currentSubtype = input
+                                            updateList(dbHandler)
+
+                                            editor.putString(
+                                                KEY_SAVED_SUBTYPE + currentPuzzle,
+                                                currentSubtype
+                                            )
+                                            if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) TrainerScrambler.renameCategory(
+                                                currentSubset!!,
+                                                currentEditSubtype!!,
+                                                currentSubtype!!
+                                            )
+                                            editor.apply()
+                                            dialogListenerMessage!!.onUpdateDialog(currentSubtype)
+                                        }
+                                    })
+                                .setNegativeButton(R.string.action_cancel, null)
+                                .show()
+                            true
+                        }
+                        R.id.remove -> {
+                            currentEditSubtype = subtypeList!!.get(position)
+                            // Remove Subtype dialog
+                            MaterialAlertDialogBuilder(mContext!!)
+                                .setTitle(R.string.remove_subtype_confirmation)
+                                .setMessage(
+                                    getString(R.string.remove_subtype_confirmation_content) + " \"" + currentEditSubtype + "\"?\n" + getString(
+                                        R.string.remove_subtype_confirmation_content_continuation
+                                    )
+                                )
+                                .setPositiveButton(
+                                    R.string.action_remove,
+                                    DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
+                                        dbHandler.deleteSubtype(currentPuzzle!!, currentEditSubtype!!)
+                                        // After removing, change current subtype to first of list, if none exist, create "Normal" subtype
+                                        if (subtypeList!!.size > 1) {
+                                            currentSubtype =
+                                                dbHandler.getAllSubtypesFromType(currentPuzzle!!)
+                                                    .get(0)
+                                        } else {
+                                            currentSubtype = "Normal"
+                                        }
+                                        updateList(dbHandler)
+
+                                        editor.putString(
+                                            KEY_SAVED_SUBTYPE + currentPuzzle,
+                                            currentSubtype
+                                        )
+                                        editor.apply()
+                                        dialogListenerMessage!!.onUpdateDialog(currentSubtype)
+                                    })
+                                .setNegativeButton(R.string.action_cancel, null)
+                                .show()
+                            true
+                        }
+                        else -> false
+                    }
+                }
+
+                // Optional: force icons to show (PopupMenu doesn’t expose this directly)
+                try {
+                    val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+                    fieldPopup.isAccessible = true
+                    val menuPopupHelper = fieldPopup.get(popup)
+                    val setForceIcons = menuPopupHelper.javaClass
+                        .getDeclaredMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
+                    setForceIcons.invoke(menuPopupHelper, true)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
+                popup.show()
+                true
+            }
+
+        /*
+        binding!!.list.onItemLongClickListener =
+            OnItemLongClickListener { _: AdapterView<*>?, view12: View?, position: Int, _: Long ->
+                // Create a popup menu for each entry
+                val menuBuilder = MenuBuilder(context)
+                val inflater = MenuInflater(context)
+
+                inflater.inflate(R.menu.menu_category_options, menuBuilder)
+                val popupHelper = MenuPopupHelper(context!!, menuBuilder, view12!!)
+                popupHelper.setForceShowIcon(true)
+
+                menuBuilder.setCallback(object : MenuBuilder.Callback {
+                    override fun onMenuItemSelected(menu: MenuBuilder, item: MenuItem): Boolean {
+                        when (item.getItemId()) {
+                            R.id.rename -> {
+                                currentEditSubtype = subtypeList!!.get(position)
+                                //Rename subtype
+                                val renameView =
+                                    LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null)
+                                val renameEditText =
+                                    renameView.findViewById<TextInputEditText>(R.id.edit_text)
+                                renameEditText.setText(currentEditSubtype)
+
+                                MaterialAlertDialogBuilder(mContext!!)
                                     .setTitle(R.string.enter_new_name_dialog)
                                     .setView(renameView)
-                                    .setPositiveButton(R.string.action_done, (dialog, which) -> {
-                                        String input = renameEditText.getText().toString();
-                                        if (input.length() >= 2 && input.length() <= 32) {
-                                            dbHandler.renameSubtype(currentPuzzle, currentEditSubtype, input);
-                                            currentSubtype = input;
-                                            updateList(dbHandler);
+                                    .setPositiveButton(
+                                        R.string.action_done,
+                                        DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
+                                            val input = renameEditText.getText().toString()
+                                            if (input.length >= 2 && input.length <= 32) {
+                                                dbHandler.renameSubtype(
+                                                    currentPuzzle!!,
+                                                    currentEditSubtype!!,
+                                                    input
+                                                )
+                                                currentSubtype = input
+                                                updateList(dbHandler)
 
-                                            editor.putString(KEY_SAVEDSUBTYPE + currentPuzzle, currentSubtype);
-                                            if (currentTimerMode.equals(TimerFragment.TIMER_MODE_TRAINER))
-                                                TrainerScrambler.renameCategory(currentSubset, currentEditSubtype, currentSubtype);
-                                            editor.apply();
-                                            dialogListenerMessage.onUpdateDialog(currentSubtype);
-                                        }
-                                    })
+                                                editor.putString(
+                                                    KEY_SAVEDSUBTYPE + currentPuzzle,
+                                                    currentSubtype
+                                                )
+                                                if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) TrainerScrambler.renameCategory(
+                                                    currentSubset!!,
+                                                    currentEditSubtype,
+                                                    currentSubtype
+                                                )
+                                                editor.apply()
+                                                dialogListenerMessage!!.onUpdateDialog(currentSubtype)
+                                            }
+                                        })
                                     .setNegativeButton(R.string.action_cancel, null)
-                                    .show();
-                            break;
-                        case R.id.remove:
-                            currentEditSubtype = subtypeList.get(position);
-                            // Remove Subtype dialog
-                            new MaterialAlertDialogBuilder(mContext)
+                                    .show()
+                            }
+
+                            R.id.remove -> {
+                                currentEditSubtype = subtypeList!!.get(position)
+                                // Remove Subtype dialog
+                                MaterialAlertDialogBuilder(mContext!!)
                                     .setTitle(R.string.remove_subtype_confirmation)
-                                    .setMessage(getString(R.string.remove_subtype_confirmation_content) + " \"" + currentEditSubtype + "\"?\n" + getString(R.string.remove_subtype_confirmation_content_continuation))
-                                    .setPositiveButton(R.string.action_remove, (dialog, which) -> {
-                                        dbHandler.deleteSubtype(currentPuzzle, currentEditSubtype);
-                                        // After removing, change current subtype to first of list, if none exist, create "Normal" subtype
-                                        if (subtypeList.size() > 1) {
-                                            currentSubtype = dbHandler.getAllSubtypesFromType(currentPuzzle).get(0);
-                                        } else {
-                                            currentSubtype = "Normal";
-                                        }
-                                        updateList(dbHandler);
+                                    .setMessage(
+                                        getString(R.string.remove_subtype_confirmation_content) + " \"" + currentEditSubtype + "\"?\n" + getString(
+                                            R.string.remove_subtype_confirmation_content_continuation
+                                        )
+                                    )
+                                    .setPositiveButton(
+                                        R.string.action_remove,
+                                        DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
+                                            dbHandler.deleteSubtype(currentPuzzle!!, currentEditSubtype!!)
+                                            // After removing, change current subtype to first of list, if none exist, create "Normal" subtype
+                                            if (subtypeList!!.size > 1) {
+                                                currentSubtype =
+                                                    dbHandler.getAllSubtypesFromType(currentPuzzle!!)
+                                                        .get(0)
+                                            } else {
+                                                currentSubtype = "Normal"
+                                            }
+                                            updateList(dbHandler)
 
-                                        editor.putString(KEY_SAVEDSUBTYPE + currentPuzzle, currentSubtype);
-                                        editor.apply();
-                                        dialogListenerMessage.onUpdateDialog(currentSubtype);
-                                    })
+                                            editor.putString(
+                                                KEY_SAVEDSUBTYPE + currentPuzzle,
+                                                currentSubtype
+                                            )
+                                            editor.apply()
+                                            dialogListenerMessage!!.onUpdateDialog(currentSubtype)
+                                        })
                                     .setNegativeButton(R.string.action_cancel, null)
-                                    .show();
-                            break;
+                                    .show()
+                            }
+                        }
+                        return false
                     }
-                    return false;
-                }
 
-                @Override
-                public void onMenuModeChange(MenuBuilder menu) {
+                    override fun onMenuModeChange(menu: MenuBuilder) {
+                    }
+                })
 
-                }
-            });
-
-            popupHelper.show();
-            return true;
-        });
-        binding.addCategory.setOnClickListener(v -> createSubtypeDialog.show());
+                popupHelper.show()
+                true
+            }*/
+        binding!!.addCategory.setOnClickListener { _: View? -> createSubtypeDialog.show() }
     }
 
-    private void updateList(DatabaseHandler dbHandler) {
-        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle);
-        int[] icons = {};
-        mAdapter = new BottomSheetSpinnerAdapter(getContext(), subtypeList.toArray(new String[0]), icons);
-        binding.list.setAdapter(mAdapter);
+    private fun updateList(dbHandler: DatabaseHandler) {
+        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!)
+        val icons = intArrayOf()
+        mAdapter =
+            BottomSheetSpinnerAdapter(requireContext(), subtypeList!!.toTypedArray<String?>(), icons)
+        binding!!.list.adapter = mAdapter
     }
 
-    public void setDialogListener(DialogListenerMessage dialogListener) {
-        this.dialogListenerMessage = dialogListener;
+    fun setDialogListener(dialogListener: DialogListenerMessage?) {
+        this.dialogListenerMessage = dialogListener
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    companion object {
+        private const val KEY_SAVED_SUBTYPE = "savedSubtype"
+
+        fun newInstance(
+            currentPuzzle: String?,
+            currentPuzzleSubtype: String?,
+            currentTimerMode: String?,
+            currentSubset: TrainerSubset?
+        ): CategorySelectDialog {
+            val dialog = CategorySelectDialog()
+            val args = Bundle()
+            args.putString("puzzle", currentPuzzle)
+            args.putString("subtype", currentPuzzleSubtype)
+            args.putString("mode", currentTimerMode)
+            args.putSerializable("subset", currentSubset)
+            dialog.setArguments(args)
+            return dialog
+        }
     }
 }

@@ -1,84 +1,64 @@
-package com.aricneto.twistytimer;
+package com.aricneto.twistytimer
 
-import android.app.Application;
-import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-
-import com.aricneto.twistytimer.database.DatabaseHandler;
-import com.aricneto.twistytimer.utils.LocaleUtils;
-
-import net.danlew.android.joda.JodaTimeAndroid;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.SecureRandom;
-import java.security.SecureRandomSpi;
-import java.security.Security;
+import android.app.Application
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.utils.LocaleUtils
+import java.security.NoSuchAlgorithmException
+import java.security.Provider
+import java.security.SecureRandom
+import java.security.SecureRandomSpi
+import java.security.Security
 
 /**
  * Created by Ari on 28/07/2015.
  */
-public class TwistyTimer extends Application {
-    /**
-     * The singleton instance of the database access handler.
-     */
-    private static DatabaseHandler sDBHandler;
-
-    /**
-     * The cached reference to the application context.
-     */
-    private static Context sAppContext;
+class TwistyTimer : Application() {
 
     /**
      * A proxy implementation of "SecureRandomSpi" that delegates to the default "SHA1PRNG"
      * implementation. This is needed to satisfy the "TNoodle" library, which explicitly requests
      * the "SUN" provider for "SHA1PRNG" (which is not available on Android).
      */
-    public static class SecureRandomSHA1PRNG extends SecureRandomSpi {
-        private final SecureRandom delegate;
+    class SecureRandomSHA1PRNG : SecureRandomSpi() {
+        private val delegate: SecureRandom
 
-        public SecureRandomSHA1PRNG() {
-            SecureRandom temp;
+        init {
+            var temp: SecureRandom
             try {
-                temp = SecureRandom.getInstance("SHA1PRNG");
-            } catch (NoSuchAlgorithmException e) {
-                temp = new SecureRandom();
+                temp = SecureRandom.getInstance("SHA1PRNG")
+            } catch (_: NoSuchAlgorithmException) {
+                temp = SecureRandom()
             }
-            delegate = temp;
+            delegate = temp
         }
 
-        @Override
-        protected void engineSetSeed(byte[] seed) {
-            delegate.setSeed(seed);
+        override fun engineSetSeed(seed: ByteArray) {
+            delegate.setSeed(seed)
         }
 
-        @Override
-        protected void engineNextBytes(byte[] bytes) {
-            delegate.nextBytes(bytes);
+        override fun engineNextBytes(bytes: ByteArray) {
+            delegate.nextBytes(bytes)
         }
 
-        @Override
-        protected byte[] engineGenerateSeed(int numBytes) {
-            return delegate.generateSeed(numBytes);
+        override fun engineGenerateSeed(numBytes: Int): ByteArray {
+            return delegate.generateSeed(numBytes)
         }
     }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+    override fun onCreate() {
+        super.onCreate()
 
         if (Security.getProvider("SUN") == null) {
-            Security.addProvider(new Provider("SUN", 1.0, "SUN provider proxy for Android") {
-                {
-                    put("SecureRandom.SHA1PRNG", SecureRandomSHA1PRNG.class.getName());
+            Security.addProvider(object : Provider("SUN", 1.0, "SUN provider proxy for Android") {
+                init {
+                    put("SecureRandom.SHA1PRNG", SecureRandomSHA1PRNG::class.java.name)
                 }
-            });
+            })
         }
 
-        JodaTimeAndroid.init(this);
-        //LeakCanary.install(this);
-
-        sAppContext = getApplicationContext();
+        sAppContext = applicationContext
 
         // Create a singleton instance of the "DatabaseHandler" using the application context. This
         // avoids memory leaks elsewhere and is more convenient. There is ABSOLUTELY NO NEED to
@@ -92,41 +72,56 @@ public class TwistyTimer extends Application {
         // be cached (by "SQLiteOpenHelper", which is the base class of "DatabaseHandler"). Those
         // two methods should really only be called from a background task, though, as opening the
         // database (particularly for the first time) can take some time.
-        sDBHandler = new DatabaseHandler();
+        sDBHandler = DatabaseHandler()
 
-        LocaleUtils.updateLocale(getAppContext());
+        LocaleUtils.updateLocale(getAppContext())
     }
 
-    /**
-     * Gets the singleton instance of the database access handler. Do not close any database after
-     * use!
-     *
-     * @return The database handler.
-     */
-    public static DatabaseHandler getDBHandler() {
-        return sDBHandler;
-    }
+    companion object {
+        /**
+         * The singleton instance of the database access handler.
+         */
+        private var sDBHandler: DatabaseHandler? = null
 
-    /**
-     * Gets a read-only database handle. Do <i>not</i> close the database when it is no longer
-     * needed.
-     *
-     * @return A handle on a readable database.
-     */
-    public static SQLiteDatabase getReadableDB() {
-        return getDBHandler().getReadableDatabase();
-    }
+        /**
+         * The cached reference to the application context.
+         */
+        private var sAppContext: Context? = null
 
-    /**
-     * Gets the application context. This is a convenience for cases where a full activity context
-     * is not required. A full activity context is required to access theme attributes or inflate
-     * layouts, but for other uses, such as accessing string resources, databases, broadcast
-     * receivers, the application context is sufficient. Using the application context also avoid
-     * memory leaks that can occur if an activity context is used inappropriately.
-     *
-     * @return The application context.
-     */
-    public static Context getAppContext() {
-        return sAppContext;
+        /**
+         * Gets the singleton instance of the database access handler. Do not close any database after
+         * use!
+         *
+         * @return The database handler.
+         */
+        @JvmStatic
+        fun getDBHandler(): DatabaseHandler {
+            return sDBHandler!!
+        }
+
+        /**
+         * Gets a read-only database handle. Do <i>not</i> close the database when it is no longer
+         * needed.
+         *
+         * @return A handle on a readable database.
+         */
+        @JvmStatic
+        fun getReadableDB(): SQLiteDatabase {
+            return getDBHandler().readableDatabase
+        }
+
+        /**
+         * Gets the application context. This is a convenience for cases where a full activity context
+         * is not required. A full activity context is required to access theme attributes or inflate
+         * layouts, but for other uses, such as accessing string resources, databases, broadcast
+         * receivers, the application context is sufficient. Using the application context also avoid
+         * memory leaks that can occur if an activity context is used inappropriately.
+         *
+         * @return The application context.
+         */
+        @JvmStatic
+        fun getAppContext(): Context {
+            return sAppContext!!
+        }
     }
 }

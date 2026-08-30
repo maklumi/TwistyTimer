@@ -1,258 +1,228 @@
-package com.aricneto.twistytimer.fragment.dialog;
+package com.aricneto.twistytimer.fragment.dialog
 
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.GradientDrawable;
-import android.os.Bundle;
-
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
-import android.widget.TextView;
-
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.DialogThemeSelectBinding;
-import com.aricneto.twistytimer.items.Theme;
-import com.aricneto.twistytimer.utils.Prefs;
-import com.aricneto.twistytimer.utils.TTIntent;
-import com.aricneto.twistytimer.utils.ThemeUtils;
-
-import androidx.annotation.Nullable;
-import androidx.annotation.StyleRes;
-import androidx.fragment.app.DialogFragment;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME;
-import static com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS;
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.graphics.drawable.toDrawable
+import androidx.fragment.app.DialogFragment
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.DialogThemeSelectBinding
+import com.aricneto.twistytimer.items.Theme
+import com.aricneto.twistytimer.utils.Prefs.edit
+import com.aricneto.twistytimer.utils.Prefs.getString
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME
+import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
+import com.aricneto.twistytimer.utils.TTIntent.broadcast
+import com.aricneto.twistytimer.utils.ThemeUtils
+import com.aricneto.twistytimer.utils.ThemeUtils.allThemes
+import com.aricneto.twistytimer.utils.ThemeUtils.dpToPix
+import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
+import com.aricneto.twistytimer.utils.ThemeUtils.fetchBackgroundGradient
+import com.aricneto.twistytimer.utils.ThemeUtils.fetchStyleableAttr
+import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
 
 /**
  * Created by Ari on 09/02/2016.
  */
-public class ThemeSelectDialog extends DialogFragment {
+class ThemeSelectDialog : DialogFragment() {
+    private var binding: DialogThemeSelectBinding? = null
+    private var mContext: Context? = null
 
-    private DialogThemeSelectBinding binding;
-    private Context mContext;
-
-    public static ThemeSelectDialog newInstance() {
-        return new ThemeSelectDialog();
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_TITLE, 0)
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setStyle(DialogFragment.STYLE_NO_TITLE, 0);
-    }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = DialogThemeSelectBinding.inflate(inflater, container, false)
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        binding = DialogThemeSelectBinding.inflate(inflater, container, false);
+        mContext = context
 
-        mContext = getContext();
+        dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        binding!!.list.setHasFixedSize(true)
+        binding!!.list2.setHasFixedSize(true)
 
-        binding.list.setHasFixedSize(true);
-        binding.list2.setHasFixedSize(true);
+        val themeLayoutManager = GridLayoutManager(mContext, 2, GridLayoutManager.HORIZONTAL, false)
+        val textLayoutManager = GridLayoutManager(mContext, 2, GridLayoutManager.HORIZONTAL, false)
 
+        binding!!.list.setLayoutManager(themeLayoutManager)
+        binding!!.list2.setLayoutManager(textLayoutManager)
 
-        GridLayoutManager themeLayoutManager = new GridLayoutManager(mContext, 2, GridLayoutManager.HORIZONTAL, false);
-        GridLayoutManager textLayoutManager = new GridLayoutManager(mContext, 2, GridLayoutManager.HORIZONTAL, false);
+        val themeListAdapter = ThemeListAdapter(allThemes, mContext!!)
+        val textStyleListAdapter =
+            TextStyleListAdapter(ThemeUtils.getAllTextStyles(mContext!!), mContext!!)
+        binding!!.list.setAdapter(themeListAdapter)
+        binding!!.list2.setAdapter(textStyleListAdapter)
 
-        binding.list.setLayoutManager(themeLayoutManager);
-        binding.list2.setLayoutManager(textLayoutManager);
-
-        ThemeListAdapter themeListAdapter = new ThemeListAdapter(ThemeUtils.getAllThemes(), mContext);
-        TextStyleListAdapter textStyleListAdapter = new TextStyleListAdapter(ThemeUtils.getAllTextStyles(mContext), mContext);
-        binding.list.setAdapter(themeListAdapter);
-        binding.list2.setAdapter(textStyleListAdapter);
-
-        int cornerRadius = ThemeUtils.dpToPix(mContext, 20);
+        val cornerRadius = dpToPix(mContext!!, 20f)
 
         // Set Text Style selector background
-        GradientDrawable gradientDrawable = ThemeUtils.fetchBackgroundGradient(mContext, ThemeUtils.getPreferredTheme());
-        gradientDrawable.setCornerRadii(new float[] {0, 0, 0, 0, cornerRadius, cornerRadius, cornerRadius, cornerRadius});
+        val gradientDrawable = fetchBackgroundGradient(mContext!!, preferredTheme)
+        gradientDrawable.cornerRadii = floatArrayOf(
+            0f,
+            0f,
+            0f,
+            0f,
+            cornerRadius.toFloat(),
+            cornerRadius.toFloat(),
+            cornerRadius.toFloat(),
+            cornerRadius.toFloat()
+        )
 
-        binding.list2.setBackground(gradientDrawable);
+        binding!!.list2.background = gradientDrawable
 
-        return binding.getRoot();
+        return binding!!.getRoot()
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    companion object {
+        @JvmStatic
+        fun newInstance(): ThemeSelectDialog {
+            return ThemeSelectDialog()
+        }
     }
 }
 
-class ThemeListAdapter extends RecyclerView.Adapter<ThemeListAdapter.CardViewHolder> {
+internal class ThemeListAdapter(
+    private val themeSet: Array<Theme?>,
+    private val mContext: Context
+) : RecyclerView.Adapter<ThemeListAdapter.CardViewHolder?>() {
+    private val cornerRadius: Int = dpToPix(mContext, 8f)
+    private val strokeWidth: Int = dpToPix(mContext, 1f)
 
-    private Theme[] themeSet;
-    private Context mContext;
-    private int cornerRadius;
-    private int strokeWidth;
+    var currentTheme: String? = getString(R.string.pk_theme, "indigo")
 
-    String currentTheme = Prefs.getString(R.string.pk_theme, "indigo");
-
-    static class CardViewHolder extends RecyclerView.ViewHolder {
-        View view;
-        View themeCard;
-        TextView themeTitle;
-
-        public CardViewHolder(View view) {
-            super(view);
-            this.view = view;
-            this.themeCard = view.findViewById(R.id.card);
-            this.themeTitle = view.findViewById(R.id.title);
-        }
+    internal class CardViewHolder(var view: View) : RecyclerView.ViewHolder(view) {
+        var themeCard: View = view.findViewById(R.id.card)
+        var themeTitle: TextView = view.findViewById(R.id.title)
     }
 
-    ThemeListAdapter(Theme[] themeSet, Context context) {
-        this.themeSet = themeSet;
-        this.mContext = context;
-        this.cornerRadius = ThemeUtils.dpToPix(context, 8);
-        this.strokeWidth = ThemeUtils.dpToPix(context, 1);
-    }
-
-    @Override
-    public ThemeListAdapter.CardViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
         // create a new view
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_theme_select_card, parent, false);
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_theme_select_card, parent, false)
 
-        CardViewHolder viewHolder = new CardViewHolder(view);
-        return viewHolder;
+        return CardViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(CardViewHolder holder, int position) {
+    override fun onBindViewHolder(holder: CardViewHolder, position: Int) {
         // Create gradient drawable
-        GradientDrawable gradientDrawable = ThemeUtils.fetchBackgroundGradient(mContext, themeSet[position].getResId());
-        gradientDrawable.setCornerRadius(cornerRadius);
-        gradientDrawable.setStroke(strokeWidth, Color.BLACK);
+        val gradientDrawable = fetchBackgroundGradient(mContext, themeSet[position]!!.resId)
+        gradientDrawable.cornerRadius = cornerRadius.toFloat()
+        gradientDrawable.setStroke(strokeWidth, Color.BLACK)
 
         // Set card title and background
-        holder.themeTitle.setText(themeSet[position].getName());
-        holder.themeCard.setBackground(gradientDrawable);
+        holder.themeTitle.text = themeSet[position]!!.name
+        holder.themeCard.background = gradientDrawable
 
-        if (themeSet[position].getPrefName().equals(currentTheme)) {
-            holder.themeTitle.setBackgroundResource(R.drawable.outline_background_card_warn);
+        if (themeSet[position]!!.prefName == currentTheme) {
+            holder.themeTitle.setBackgroundResource(R.drawable.outline_background_card_warn)
         } else {
-            holder.themeTitle.setBackground(null);
+            holder.themeTitle.background = null
         }
 
         // Create onClickListener
-        holder.themeCard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String newTheme;
+        holder.themeCard.setOnClickListener {
 
-                newTheme = themeSet[position].getPrefName();
+            val newTheme = themeSet[position]!!.prefName
 
-                if (!newTheme.equals(currentTheme)) {
-                    Prefs.edit().putString(R.string.pk_theme, newTheme).apply();
-                    // Reset text style
-                    Prefs.edit().putString(R.string.pk_text_style, "default").apply();
+            if (newTheme != currentTheme) {
+                edit().putString(R.string.pk_theme, newTheme).apply()
+                // Reset text style
+                edit().putString(R.string.pk_text_style, "default").apply()
 
-                    TTIntent.broadcast(CATEGORY_UI_INTERACTIONS, ACTION_CHANGED_THEME);
-                }
+                broadcast(CATEGORY_UI_INTERACTIONS, ACTION_CHANGED_THEME)
             }
-        });
+        }
     }
 
-    @Override
-    public int getItemCount() {
-        return themeSet.length;
+    override fun getItemCount(): Int {
+        return themeSet.size
     }
 }
 
-class TextStyleListAdapter extends RecyclerView.Adapter<TextStyleListAdapter.CardViewHolder> {
+internal class TextStyleListAdapter(
+    private val themeSet: Array<Theme?>,
+    private val mContext: Context
+) : RecyclerView.Adapter<TextStyleListAdapter.CardViewHolder?>() {
+    private val cornerRadius: Int = dpToPix(mContext, 8f)
+    private val strokeWidth: Int = dpToPix(mContext, 1f)
 
-    private final int cornerRadius;
-    private final int strokeWidth;
-    private Theme[] themeSet;
-    private Context mContext;
+    private val currentTextStyle = getString(R.string.pk_text_style, "default")
 
-    private String currentTextStyle = Prefs.getString(R.string.pk_text_style, "default");
-    private @StyleRes int currentTheme = ThemeUtils.getPreferredTheme();
-    int colorTimerText;
+    var colorTimerText: Int = fetchAttrColor(mContext, R.attr.colorTimerText)
 
-    static class CardViewHolder extends RecyclerView.ViewHolder {
-        View view;
-        TextView themeCard;
-        TextView themeTitle;
-
-        public CardViewHolder(View view) {
-            super(view);
-            this.view = view;
-            this.themeCard = view.findViewById(R.id.card);
-            this.themeTitle = view.findViewById(R.id.title);
-        }
+    internal class CardViewHolder(var view: View) : RecyclerView.ViewHolder(view) {
+        var themeCard: TextView = view.findViewById(R.id.card)
+        var themeTitle: TextView = view.findViewById(R.id.title)
     }
 
-    TextStyleListAdapter(Theme[] themeSet, Context context) {
-        this.themeSet = themeSet;
-        this.mContext = context;
-        colorTimerText = ThemeUtils.fetchAttrColor(mContext, R.attr.colorTimerText);
-        this.cornerRadius = ThemeUtils.dpToPix(context, 8);
-        this.strokeWidth = ThemeUtils.dpToPix(context, 1);
-    }
-
-    @Override
-    public TextStyleListAdapter.CardViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
         // create a new view
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_text_style_card, parent, false);
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_text_style_card, parent, false)
 
-        CardViewHolder viewHolder = new CardViewHolder(view);
-        return viewHolder;
+        return CardViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(CardViewHolder holder, int position) {
+    override fun onBindViewHolder(holder: CardViewHolder, position: Int) {
         // Create gradient drawable
-        GradientDrawable gradientDrawable = new GradientDrawable();
-        gradientDrawable.setColor(Color.TRANSPARENT);
-        gradientDrawable.setCornerRadius(cornerRadius);
-        gradientDrawable.setStroke(strokeWidth, colorTimerText);
+        val gradientDrawable = GradientDrawable()
+        gradientDrawable.setColor(Color.TRANSPARENT)
+        gradientDrawable.cornerRadius = cornerRadius.toFloat()
+        gradientDrawable.setStroke(strokeWidth, colorTimerText)
 
         // Set card title and background
-        holder.themeTitle.setText(themeSet[position].getName());
-        holder.themeCard.setBackground(gradientDrawable);
-        holder.themeCard.setTextColor(ThemeUtils.fetchStyleableAttr(mContext, themeSet[position].getResId(),
-                                                                    R.styleable.BaseTwistyTheme,
-                                                                    R.styleable.BaseTwistyTheme_colorTimerText,
-                                                                    R.attr.colorTimerText));
+        holder.themeTitle.text = themeSet[position]!!.name
+        holder.themeCard.background = gradientDrawable
+        holder.themeCard.setTextColor(
+            fetchStyleableAttr(
+                mContext, themeSet[position]!!.resId,
+                R.styleable.BaseTwistyTheme,
+                R.styleable.BaseTwistyTheme_colorTimerText,
+                R.attr.colorTimerText
+            )
+        )
 
-        if (themeSet[position].getPrefName().equals(currentTextStyle)) {
-            holder.themeTitle.setBackgroundResource(R.drawable.outline_background_card_warn);
-            holder.themeTitle.setTextColor(Color.BLACK);
+        if (themeSet[position]!!.prefName == currentTextStyle) {
+            holder.themeTitle.setBackgroundResource(R.drawable.outline_background_card_warn)
+            holder.themeTitle.setTextColor(Color.BLACK)
         } else {
-            holder.themeTitle.setBackground(null);
-            holder.themeTitle.setTextColor(colorTimerText);
+            holder.themeTitle.background = null
+            holder.themeTitle.setTextColor(colorTimerText)
         }
 
         // Create onClickListener
-        holder.themeCard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String newTheme;
+        holder.themeCard.setOnClickListener {
 
-                newTheme = themeSet[position].getPrefName();
+            val newTheme = themeSet[position]!!.prefName
 
-                if (!newTheme.equals(currentTextStyle)) {
-                    Prefs.edit().putString(R.string.pk_text_style, newTheme).apply();
+            if (newTheme != currentTextStyle) {
+                edit().putString(R.string.pk_text_style, newTheme).apply()
 
-                    TTIntent.broadcast(CATEGORY_UI_INTERACTIONS, ACTION_CHANGED_THEME);
-                }
+                broadcast(CATEGORY_UI_INTERACTIONS, ACTION_CHANGED_THEME)
             }
-        });
+        }
     }
 
-    @Override
-    public int getItemCount() {
-        return themeSet.length;
+    override fun getItemCount(): Int {
+        return themeSet.size
     }
 }
 

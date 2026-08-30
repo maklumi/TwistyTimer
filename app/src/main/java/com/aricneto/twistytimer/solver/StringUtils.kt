@@ -1,17 +1,17 @@
-package com.aricneto.twistytimer.solver;
+package com.aricneto.twistytimer.solver
 
-public class StringUtils {
-    public static String join(String separator, String[] values) {
-        if (values.length == 0) {
-            return "";
+object StringUtils {
+    fun join(separator: String, values: Array<String>): String {
+        if (values.size == 0) {
+            return ""
         }
 
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < values.length - 1; i++) {
-            s.append(values[i]).append(separator);
+        val s = StringBuilder()
+        for (i in 0..<values.size - 1) {
+            s.append(values[i]).append(separator)
         }
-        s.append(values[values.length - 1]);
+        s.append(values[values.size - 1])
 
-        return s.toString();
+        return s.toString()
     }
 }

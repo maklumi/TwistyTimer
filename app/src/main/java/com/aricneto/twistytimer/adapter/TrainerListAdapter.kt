@@ -1,0 +1,113 @@
+package com.aricneto.twistytimer.adapter
+
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import androidx.cardview.widget.CardView
+import androidx.fragment.app.FragmentManager
+import com.aricneto.twistify.R
+import com.aricneto.twistytimer.fragment.dialog.AlgDialog
+import com.aricneto.twistytimer.items.Algorithm
+import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
+import com.aricneto.twistytimer.puzzle.TrainerScrambler.fetchSelectedItems
+import com.aricneto.twistytimer.puzzle.TrainerScrambler.saveSelectedItems
+import com.aricneto.twistytimer.utils.ThemeUtils.createSquareDrawable
+import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
+import java.util.Locale
+
+class TrainerListAdapter(
+    context: Context,
+    private val fragmentManager: FragmentManager,
+    subset: TrainerSubset,
+    category: String
+) : AlgListAdapter(context, fragmentManager) {
+
+    private val selectedItems: MutableList<String> = ArrayList()
+    var currentSubset: TrainerSubset
+    var currentPuzzleCategory: String
+
+    private var cardBackground: Drawable? = null
+    private var selectedCardBackground: Drawable? = null
+
+    init {
+        cardBackground = createSquareDrawable(
+            context,
+            fetchAttrColor(context, R.attr.colorItemListBackground),
+            0, 14, 0f
+        )
+        selectedCardBackground = createSquareDrawable(
+            context,
+            fetchAttrColor(context, R.attr.colorItemListBackgroundSelected),
+            Color.BLACK, 14, 2f
+        )
+
+        val fetched = fetchSelectedItems(subset, category)
+        fetched?.forEach { it.let { name -> selectedItems.add(name) } }
+
+        this.currentSubset = subset
+        this.currentPuzzleCategory = category
+    }
+
+    private fun isSelected(name: String): Boolean {
+        return selectedItems.contains(name)
+    }
+
+    fun unselectAll() {
+        selectedItems.clear()
+        saveSelectedItems(currentSubset, currentPuzzleCategory, selectedItems)
+        notifyDataSetChanged()
+    }
+
+    fun selectAll() {
+        val size = selectedItems.size
+        selectedItems.clear()
+        when (currentSubset) {
+            TrainerSubset.OLL -> if (size != 57) {
+                for (i in 1..57) {
+                    selectedItems.add("OLL " + String.format(Locale.US, "%02d", i))
+                }
+            }
+            TrainerSubset.PLL -> if (size != 21) {
+                val pllCases = arrayOf("H", "Ua", "Ub", "Z", "Aa", "Ab", "E", "F", "Ga", "Gb", "Gc", "Gd", "Ja", "Jb", "Na", "Nb", "Ra", "Rb", "T", "V", "Y")
+                selectedItems.addAll(pllCases)
+            }
+        }
+        saveSelectedItems(currentSubset, currentPuzzleCategory, selectedItems)
+        notifyDataSetChanged()
+    }
+
+    private fun toggleSelection(name: String, card: CardView) {
+        if (!isSelected(name)) {
+            selectedItems.add(name)
+            card.background = selectedCardBackground
+        } else {
+            selectedItems.remove(name)
+            card.background = cardBackground
+        }
+        saveSelectedItems(currentSubset, currentPuzzleCategory, selectedItems)
+    }
+
+    override fun handleAlgorithm(holder: AlgHolder, algorithm: Algorithm) {
+        super.handleAlgorithm(holder, algorithm)
+
+        if (isSelected(algorithm.name)) {
+            holder.binding.card.background = selectedCardBackground
+        } else {
+            holder.binding.card.background = cardBackground
+        }
+
+        holder.binding.itemLayout.setOnClickListener {
+            toggleSelection(algorithm.name, holder.binding.card)
+        }
+
+        holder.binding.itemLayout.setOnLongClickListener {
+            if (!isLocked) {
+                this@TrainerListAdapter.isLocked = true
+                val algDialog = AlgDialog.newInstance(algorithm.id)
+                algDialog.show(fragmentManager, "alg_dialog")
+                algDialog.setDialogListener(this@TrainerListAdapter)
+            }
+            true
+        }
+    }
+}

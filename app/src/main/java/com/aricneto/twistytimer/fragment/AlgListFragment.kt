@@ -1,178 +1,164 @@
-package com.aricneto.twistytimer.fragment;
+package com.aricneto.twistytimer.fragment
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.res.Configuration
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.FragmentAlgListBinding
+import com.aricneto.twistytimer.activity.MainActivity
+import com.aricneto.twistytimer.adapter.AlgListAdapter
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_ALGS_MODIFIED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME
+import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_ALG_DATA_CHANGES
+import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
+import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
+import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
+import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
+import com.aricneto.twistytimer.utils.ThemeUtils
+import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
+import com.aricneto.twistytimer.viewmodel.AlgViewModel
+import kotlinx.coroutines.launch
 
 
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.Configuration;
-import android.database.Cursor;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+class AlgListFragment : BaseFragment() {
+    private var binding: FragmentAlgListBinding? = null
 
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.FragmentAlgListBinding;
-import com.aricneto.twistytimer.activity.MainActivity;
-import com.aricneto.twistytimer.adapter.AlgCursorAdapter;
-import com.aricneto.twistytimer.database.AlgTaskLoader;
-import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver;
-import com.aricneto.twistytimer.utils.ThemeUtils;
+    private var currentSubset: String? = null
+    private var algListAdapter: AlgListAdapter? = null
+    private val viewModel: AlgViewModel by viewModels()
 
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.Loader;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
-
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_ALGS_MODIFIED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME;
-import static com.aricneto.twistytimer.utils.TTIntent.CATEGORY_ALG_DATA_CHANGES;
-import static com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS;
-import static com.aricneto.twistytimer.utils.TTIntent.registerReceiver;
-import static com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver;
-
-public class AlgListFragment extends BaseFragment implements LoaderManager.LoaderCallbacks<Cursor> {
-
-    private static final String KEY_SUBSET = "subset";
-
-    private FragmentAlgListBinding binding;
-
-    private String currentSubset;
-    private AlgCursorAdapter algCursorAdapter;
     // Receives broadcasts about changes to the algorithm data.
-    private TTFragmentBroadcastReceiver mAlgDataChangedReceiver
-            = new TTFragmentBroadcastReceiver(this, CATEGORY_ALG_DATA_CHANGES) {
-        @Override
-        public void onReceiveWhileAdded(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case ACTION_ALGS_MODIFIED:
-                    reloadList();
-                    break;
+    private val mAlgDataChangedReceiver
+            : TTFragmentBroadcastReceiver =
+        object : TTFragmentBroadcastReceiver(this, CATEGORY_ALG_DATA_CHANGES) {
+            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    ACTION_ALGS_MODIFIED -> reloadList()
+                }
             }
         }
-    };
 
     // Receives broadcasts about changes to the time user interface.
-    private TTFragmentBroadcastReceiver mUIInteractionReceiver
-            = new TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-        @Override
-        public void onReceiveWhileAdded(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case ACTION_CHANGED_THEME:
-                    try {
+    private val mUIInteractionReceiver
+            : TTFragmentBroadcastReceiver =
+        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
+            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    ACTION_CHANGED_THEME -> try {
                         // If the theme has been changed, then the activity will need to be recreated. The
                         // theme can only be applied properly during the inflation of the layouts, so it has
                         // to go back to "Activity.updateLocale()" to do that.
-                        ((MainActivity) getActivity()).onRecreateRequired();
-                    } catch (Exception e) {}
-                    break;
+                        (activity as MainActivity).onRecreateRequired()
+                    } catch (_: Exception) {
+                    }
+                }
             }
         }
-    };
 
 
-    public AlgListFragment() {
-        // Required empty public constructor
-    }
-
-    public static AlgListFragment newInstance(String subset) {
-        AlgListFragment fragment = new AlgListFragment();
-        Bundle args = new Bundle();
-        args.putString(KEY_SUBSET, subset);
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            currentSubset = getArguments().getString(KEY_SUBSET);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (arguments != null) {
+            currentSubset = requireArguments().getString(KEY_SUBSET)
         }
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        binding = FragmentAlgListBinding.inflate(inflater, container, false);
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = FragmentAlgListBinding.inflate(inflater, container, false)
 
-        binding.root.setBackground(ThemeUtils.fetchBackgroundGradient(getContext(), ThemeUtils.getPreferredTheme()));
+        binding!!.root.background = ThemeUtils.fetchBackgroundGradient(
+            requireContext(),
+            preferredTheme
+        )
 
-        binding.actionbar.puzzleName.setText(R.string.title_algorithms);
-        binding.actionbar.puzzleCategory.setText(currentSubset);
+        binding!!.actionbar.puzzleName.setText(R.string.title_algorithms)
+        binding!!.actionbar.puzzleCategory.text = currentSubset
 
-        binding.actionbar.spinnerIcon.setVisibility(View.GONE);
-        binding.actionbar.navButtonHistory.setVisibility(View.GONE);
-        binding.actionbar.navButtonCategory.setVisibility(View.GONE);
-        binding.actionbar.navButtonSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getMainActivity().openDrawer();
+        binding!!.actionbar.spinnerIcon.visibility = View.GONE
+        binding!!.actionbar.navButtonHistory.visibility = View.GONE
+        binding!!.actionbar.navButtonCategory.visibility = View.GONE
+        binding!!.actionbar.navButtonSettings.setOnClickListener {
+            mainActivity?.openDrawer()
+        }
+
+        setupRecyclerView()
+
+        viewModel.setSubset(currentSubset)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.algorithms.collect { algs ->
+                    algListAdapter?.submitList(algs)
+                }
             }
-        });
-
-        setupRecyclerView();
-
-        getLoaderManager().initLoader(MainActivity.ALG_LIST_LOADER_ID, null, this);
+        }
 
         // Register a receiver to update if something has changed
-        registerReceiver(mAlgDataChangedReceiver);
-        registerReceiver(mUIInteractionReceiver);
+        registerReceiver(mAlgDataChangedReceiver)
+        registerReceiver(mUIInteractionReceiver)
 
-        return binding.getRoot();
+        return binding!!.getRoot()
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
+    override fun onDestroy() {
+        super.onDestroy()
         // To fix memory leaks
-        unregisterReceiver(mAlgDataChangedReceiver);
-        unregisterReceiver(mUIInteractionReceiver);
-        getLoaderManager().destroyLoader(MainActivity.ALG_LIST_LOADER_ID);
+        unregisterReceiver(mAlgDataChangedReceiver)
+        unregisterReceiver(mUIInteractionReceiver)
     }
 
-    public void reloadList() {
-        getLoaderManager().restartLoader(MainActivity.ALG_LIST_LOADER_ID, null, this);
+    fun reloadList() {
+        viewModel.setSubset(currentSubset)
     }
 
-    @Override
-    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-        return new AlgTaskLoader(currentSubset);
-    }
+    private fun setupRecyclerView() {
+        val parentActivity: Activity? = activity
 
-    @Override
-    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        algCursorAdapter.swapCursor(cursor);
-        binding.list.getAdapter().notifyDataSetChanged();
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        algCursorAdapter.swapCursor(null);
-    }
-
-    private void setupRecyclerView() {
-        Activity parentActivity = getActivity();
-
-        algCursorAdapter = new AlgCursorAdapter(getActivity(), null, this);
+        algListAdapter = AlgListAdapter(requireActivity(), getParentFragmentManager())
 
         // Set different managers to support different orientations
-        StaggeredGridLayoutManager gridLayoutManagerHorizontal =
-                new StaggeredGridLayoutManager(4, StaggeredGridLayoutManager.VERTICAL);
-        StaggeredGridLayoutManager gridLayoutManagerVertical =
-                new StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL);
+        val gridLayoutManagerHorizontal =
+            StaggeredGridLayoutManager(4, StaggeredGridLayoutManager.VERTICAL)
+        val gridLayoutManagerVertical =
+            StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
 
         // Adapt to orientation
-        if (parentActivity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
-            binding.list.setLayoutManager(gridLayoutManagerVertical);
-        else
-            binding.list.setLayoutManager(gridLayoutManagerHorizontal);
+        if (parentActivity!!.resources
+                .configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+        ) binding!!.list.setLayoutManager(gridLayoutManagerVertical)
+        else binding!!.list.setLayoutManager(gridLayoutManagerHorizontal)
 
-        binding.list.setAdapter(algCursorAdapter);
+        binding!!.list.setAdapter(algListAdapter)
+    }
+
+    companion object {
+        private const val KEY_SUBSET = "subset"
+
+        @JvmStatic
+        fun newInstance(subset: String?): AlgListFragment {
+            val fragment = AlgListFragment()
+            val args = Bundle()
+            args.putString(KEY_SUBSET, subset)
+            fragment.setArguments(args)
+            return fragment
+        }
     }
 }

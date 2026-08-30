@@ -12,11 +12,12 @@
     tools:layout_width="140dp">
 
     <RelativeLayout
-        android:id="@+id/root"
+        android:id="@+id/item_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?android:attr/selectableItemBackground"
-        android:clickable="true">
+        android:clickable="true"
+        android:focusable="true">
 
         <TextView
             android:id="@+id/name"
@@ -27,7 +28,7 @@
             android:gravity="center"
             android:text="OLL 21"
             android:textColor="?colorItemListText"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="normal" />
 
         <com.aricneto.twistytimer.layout.Cube

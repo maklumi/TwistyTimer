@@ -108,12 +108,12 @@
         android:layout_centerHorizontal="true"
         android:layout_alignBaseline="@id/chronometer"
         android:background="?selectableItemBackgroundBorderless"
-        android:tint="?colorTimerText"
         android:alpha=".9"
         android:paddingTop="24dp"
         android:paddingBottom="8dp"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
+        app:tint="?colorTimerText"
         tools:visibility="visible"
         android:visibility="gone"/>
 

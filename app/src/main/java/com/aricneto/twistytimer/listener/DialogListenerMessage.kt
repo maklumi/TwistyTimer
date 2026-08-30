@@ -1,5 +1,5 @@
-package com.aricneto.twistytimer.listener;
+package com.aricneto.twistytimer.listener
 
-public interface DialogListenerMessage {
-    void onUpdateDialog(String text);
+interface DialogListenerMessage {
+    fun onUpdateDialog(text: String?)
 }

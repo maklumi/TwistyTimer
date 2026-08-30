@@ -1,19 +1,23 @@
-package com.aricneto.twistytimer.utils;
+package com.aricneto.twistytimer.utils
 
-import java.util.AbstractList;
-import java.util.List;
+import java.util.AbstractList
 
-public class StatUtils {
-    public static List<Long> asList(final long[] l) {
-        return new AbstractList<Long>() {
-            public Long get(int i) {return l[i];}
-            // throws NPE if val == null
-            public Long set(int i, Long val) {
-                Long oldVal = l[i];
-                l[i] = val;
-                return oldVal;
+object StatUtils {
+    @JvmStatic
+    fun asList(l: LongArray): MutableList<Long> {
+        return object : AbstractList<Long>() {
+            override fun get(index: Int): Long {
+                return l[index]
             }
-            public int size() { return l.length;}
-        };
+
+            override fun set(index: Int, element: Long): Long {
+                val oldVal = l[index]
+                l[index] = element
+                return oldVal
+            }
+
+            override val size: Int
+                get() = l.size
+        }
     }
 }

@@ -1,121 +1,118 @@
-package com.aricneto.twistytimer.fragment.dialog;
+package com.aricneto.twistytimer.fragment.dialog
 
-import android.annotation.SuppressLint;
-import android.app.Dialog;
-import android.content.Context;
-import android.graphics.drawable.Drawable;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.FrameLayout;
-
-import com.aricneto.twistytimer.adapter.BottomSheetSpinnerAdapter;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat;
-import com.aricneto.twistify.databinding.DialogPuzzleSpinnerBinding;
+import android.annotation.SuppressLint
+import android.app.Dialog
+import android.content.Context
+import android.content.DialogInterface
+import android.content.DialogInterface.OnShowListener
+import android.graphics.drawable.Drawable
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.View.OnTouchListener
+import android.view.ViewGroup
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.FrameLayout
+import androidx.annotation.DrawableRes
+import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
+import com.aricneto.twistify.databinding.DialogPuzzleSpinnerBinding
+import com.aricneto.twistytimer.adapter.BottomSheetSpinnerAdapter
+import com.google.android.material.R
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 /**
  * Implements a layout for easy creation of spinner-like bottom sheet dialogs (like the ones seen in
  * the puzzle selection screen).
  */
+class BottomSheetSpinnerDialog : BottomSheetDialogFragment() {
+    private var binding: DialogPuzzleSpinnerBinding? = null
 
-public class BottomSheetSpinnerDialog extends BottomSheetDialogFragment {
+    private var mContext: Context? = null
 
-    private DialogPuzzleSpinnerBinding binding;
+    private var mAdapter: BottomSheetSpinnerAdapter? = null
+    private var mClickListener: OnItemClickListener? = null
 
-    private Context mContext;
+    private var titleText: String? = null
+    private var titleIcon = 0
 
-    private BottomSheetSpinnerAdapter mAdapter;
-    private AdapterView.OnItemClickListener mClickListener;
-
-    private String titleText;
-    private int titleIcon;
-
-    public static BottomSheetSpinnerDialog newInstance() {
-        return new BottomSheetSpinnerDialog();
-    }
-
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        BottomSheetDialog dialog = (BottomSheetDialog) super.onCreateDialog(savedInstanceState);
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
 
         // This makes the bottomSheet dialog start in the expanded state
-        dialog.setOnShowListener(dia -> {
-            BottomSheetDialog bottomDialog = (BottomSheetDialog) dia;
-            FrameLayout bottomSheet =  bottomDialog .findViewById(com.google.android.material.R.id.design_bottom_sheet);
-            BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED);
-            BottomSheetBehavior.from(bottomSheet).setSkipCollapsed(true);
-            BottomSheetBehavior.from(bottomSheet).setHideable(true);
-        });
+        dialog.setOnShowListener { dia: DialogInterface? ->
+            val bottomDialog = dia as BottomSheetDialog
+            val bottomSheet = bottomDialog.findViewById<FrameLayout>(R.id.design_bottom_sheet)
+            BottomSheetBehavior.from<FrameLayout>(bottomSheet!!)
+                .setState(BottomSheetBehavior.STATE_EXPANDED)
+            BottomSheetBehavior.from<FrameLayout?>(bottomSheet).skipCollapsed = true
+            BottomSheetBehavior.from<FrameLayout?>(bottomSheet).isHideable = true
+        }
 
-        return dialog;
+        return dialog
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = DialogPuzzleSpinnerBinding.inflate(inflater, container, false);
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = DialogPuzzleSpinnerBinding.inflate(inflater, container, false)
 
-        mContext = getContext();
+        mContext = context
 
-        return binding.getRoot();
+        return binding!!.getRoot()
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        binding.list.setAdapter(mAdapter);
-        binding.list.setOnItemClickListener(mClickListener);
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding!!.list.adapter = mAdapter
+        binding!!.list.onItemClickListener = mClickListener
 
-        binding.title.setText(titleText);
+        binding!!.title.text = titleText
 
         if (titleIcon != 0) {
-            Drawable icon = VectorDrawableCompat.create(mContext.getResources(), titleIcon, null);
-            binding.title.setCompoundDrawablesWithIntrinsicBounds(null, null, icon, null);
+            val icon: Drawable? =
+                VectorDrawableCompat.create(mContext!!.resources, titleIcon, null)
+            binding!!.title.setCompoundDrawablesWithIntrinsicBounds(null, null, icon, null)
         }
 
-        binding.list.setOnTouchListener((v, event) -> {
-            int action = event.getAction();
-            switch (action) {
-                case MotionEvent.ACTION_DOWN:
-                    v.getParent().requestDisallowInterceptTouchEvent(true);
-                    break;
-                case MotionEvent.ACTION_UP:
-                    v.getParent().requestDisallowInterceptTouchEvent(false);
-                    break;
+        binding!!.list.setOnTouchListener { v: View, event: MotionEvent? ->
+            val action = event!!.action
+            when (action) {
+                MotionEvent.ACTION_DOWN -> v.parent.requestDisallowInterceptTouchEvent(true)
+                MotionEvent.ACTION_UP -> v.parent.requestDisallowInterceptTouchEvent(false)
             }
 
-            v.onTouchEvent(event);
-            return true;
-        });
+            v.onTouchEvent(event)
+            true
+        }
     }
 
-    public void setTitle(String title, @DrawableRes int iconRes) {
-        titleText = title;
-        titleIcon = iconRes;
+    fun setTitle(title: String?, @DrawableRes iconRes: Int) {
+        titleText = title
+        titleIcon = iconRes
     }
 
-    public void setListAdapter(BottomSheetSpinnerAdapter adapter) {
-        mAdapter = adapter;
+    fun setListAdapter(adapter: BottomSheetSpinnerAdapter?) {
+        mAdapter = adapter
     }
 
-    public void setListClickListener(AdapterView.OnItemClickListener clickListener) {
-        mClickListener = clickListener;
+    fun setListClickListener(clickListener: OnItemClickListener?) {
+        mClickListener = clickListener
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    companion object {
+        fun newInstance(): BottomSheetSpinnerDialog {
+            return BottomSheetSpinnerDialog()
+        }
     }
 }

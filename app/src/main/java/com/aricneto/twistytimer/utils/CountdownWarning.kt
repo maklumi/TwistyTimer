@@ -1,148 +1,132 @@
-package com.aricneto.twistytimer.utils;
+package com.aricneto.twistytimer.utils
 
-import android.content.Context;
-import android.media.AudioManager;
-import android.media.ToneGenerator;
-import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Vibrator;
-import android.util.Log;
-
-import com.aricneto.twistytimer.TwistyTimer;
+import android.content.Context
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
+import android.os.Vibrator
+import android.util.Log
+import com.aricneto.twistytimer.TwistyTimer
 
 /**
- * A class used to create {@link CountDownTimer}s that vibrates and emits a tone once a specific
- * time has passsed, depending on how it's built. Must be built using
- * {@link CountdownWarning.Builder}.
+ * A class used to create [CountDownTimer]s that vibrates and emits a tone once a specific
+ * time has passed, depending on how it's built. Must be built using
+ * [Builder].
  */
-public class CountdownWarning extends CountDownTimer {
-    private Vibrator vibrator;
-    private ToneGenerator toneGenerator;
+class CountdownWarning private constructor(builder: Builder) :
+    CountDownTimer(builder.secondsInFuture * 1000, 50) {
+    private val vibrator: Vibrator = TwistyTimer.getAppContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    private var toneGenerator: ToneGenerator? = null
 
-    private final boolean vibrateEnabled;
-    private final long vibrateDuration;
+    private val vibrateEnabled: Boolean
+    private val vibrateDuration: Long
 
-    private final boolean toneEnabled;
-    private final int toneDuration;
-    private final int toneCode;
+    private val toneEnabled: Boolean
+    private val toneDuration: Int
+    private val toneCode: Int
 
-    private CountdownWarning(Builder builder) {
-        super(builder.secondsInFuture * 1000, 50);
-        vibrator = (Vibrator) TwistyTimer.getAppContext().getSystemService(Context.VIBRATOR_SERVICE);
+    init {
 
-        this.vibrateEnabled = builder.vibrateEnabled;
-        this.vibrateDuration = builder.vibrateDuration;
+        this.vibrateEnabled = builder.vibrateEnabled
+        this.vibrateDuration = builder.vibrateDuration
 
-        this.toneEnabled = builder.toneEnabled;
-        this.toneDuration = builder.toneDuration;
-        this.toneCode = builder.toneCode;
+        this.toneEnabled = builder.toneEnabled
+        this.toneDuration = builder.toneDuration
+        this.toneCode = builder.toneCode
     }
 
 
-    @Override
-    public void onTick(long l) {
+    override fun onTick(l: Long) {
     }
 
-    @Override
-    public void onFinish() {
-        if (vibrateEnabled)
-            vibrator.vibrate(vibrateDuration);
+    override fun onFinish() {
+        if (vibrateEnabled) vibrator.vibrate(vibrateDuration)
         if (toneEnabled) {
             try {
-                this.toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
-                toneGenerator.startTone(toneCode, toneDuration);
-                Handler handler = new Handler(Looper.getMainLooper());
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (toneGenerator != null) {
-                            Log.d("Countdown", "toneGenerator released");
-                            toneGenerator.release();
-                            toneGenerator = null;
-                        }
+                this.toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+                toneGenerator!!.startTone(toneCode, toneDuration)
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed({
+                    if (toneGenerator != null) {
+                        Log.d("Countdown", "toneGenerator released")
+                        toneGenerator!!.release()
+                        toneGenerator = null
                     }
-
-                }, toneDuration);
-            } catch (Exception e) {
-                Log.d("Countdown", "Exception while playing sound:" + e);
+                }, toneDuration.toLong())
+            } catch (e: Exception) {
+                Log.d("Countdown", "Exception while playing sound:$e")
             }
         }
     }
 
-    public static class Builder {
-        private final long secondsInFuture;
+    class Builder
+    /**
+     * Build a [CountdownWarning] object
+     * 
+     * @param secondsInFuture the countdown duration in seconds
+     */(val secondsInFuture: Long) {
+        var vibrateEnabled = true
+        var vibrateDuration: Long = 300
 
-        private boolean vibrateEnabled = true;
-        private long vibrateDuration = 300;
-
-        private boolean toneEnabled = false;
-        private int toneDuration = 300;
-        private int toneCode = ToneGenerator.TONE_CDMA_PIP;
-
-        /**
-         * Build a {@link CountdownWarning} object
-         *
-         * @param secondsInFuture the countdown duration in seconds
-         */
-        public Builder(long secondsInFuture) {
-            this.secondsInFuture = secondsInFuture;
-        }
+        var toneEnabled = false
+        var toneDuration = 300
+        var toneCode = ToneGenerator.TONE_CDMA_PIP
 
         /**
          * If device should vibrate at the end of countdown
-         *
+         * 
          * @param vibrateEnabled true if device should vibrate
          */
-        public Builder withVibrate(boolean vibrateEnabled) {
-            this.vibrateEnabled = vibrateEnabled;
-            return this;
+        fun withVibrate(vibrateEnabled: Boolean): Builder {
+            this.vibrateEnabled = vibrateEnabled
+            return this
         }
 
         /**
          * If device should emit a tone at the end of countdown
-         *
+         * 
          * @param toneEnabled true if device should emit a tone
          */
-
-        public Builder withTone(boolean toneEnabled) {
-            this.toneEnabled = toneEnabled;
-            return this;
+        fun withTone(toneEnabled: Boolean): Builder {
+            this.toneEnabled = toneEnabled
+            return this
         }
 
         /**
          * Duration, in milliseconds of the vibration (if set)
-         *
+         * 
          * @param vibrateDuration vibrate duration in milliseconds
          */
-        public Builder vibrateDuration(long vibrateDuration) {
-            this.vibrateDuration = vibrateDuration;
-            return this;
+        fun vibrateDuration(vibrateDuration: Long): Builder {
+            this.vibrateDuration = vibrateDuration
+            return this
         }
 
         /**
          * Duration, in milliseconds of the tone (if set)
-         *
+         * 
          * @param toneDuration tone duration in milliseconds
          */
-        public Builder toneDuration(int toneDuration) {
-            this.toneDuration = toneDuration;
-            return this;
+        fun toneDuration(toneDuration: Int): Builder {
+            this.toneDuration = toneDuration
+            return this
         }
 
         /**
          * Code for the tone that should play (if set)
-         * Must be one of {@link ToneGenerator}s tone constants
-         *
-         * @param toneCode the tone code, a {@link ToneGenerator} constant
+         * Must be one of [ToneGenerator]s tone constants
+         * 
+         * @param toneCode the tone code, a [ToneGenerator] constant
          */
-        public Builder toneCode(int toneCode) {
-            this.toneCode = toneCode;
-            return this;
+        fun toneCode(toneCode: Int): Builder {
+            this.toneCode = toneCode
+            return this
         }
 
-        public CountdownWarning build() {
-            return new CountdownWarning(this);
+        fun build(): CountdownWarning {
+            return CountdownWarning(this)
         }
     }
 }

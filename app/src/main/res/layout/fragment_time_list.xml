@@ -51,7 +51,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/buttons_layout"
         android:layout_width="match_parent"
-        android:layout_height="38dp"
+        android:layout_height="48dp"
         android:layout_alignParentTop="true"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="4dp"
@@ -60,9 +60,9 @@
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
         app:cardBackgroundColor="?colorItemListBackground"
-        app:cardPreventCornerOverlap="false"
         app:cardCornerRadius="16dp"
-        app:cardElevation="4dp">
+        app:cardElevation="4dp"
+        app:cardPreventCornerOverlap="false">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -77,8 +77,8 @@
                 android:paddingTop="6dp"
                 android:paddingRight="14dp"
                 android:paddingBottom="6dp"
-                android:tint="?colorItemListText"
-                app:srcCompat="@drawable/ic_outline_alarm_add_18px" />
+                app:srcCompat="@drawable/ic_outline_alarm_add_18px"
+                app:tint="?colorItemListText" />
 
             <View
                 android:layout_width="1dp"
@@ -91,15 +91,15 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_marginRight="42dp"
-                android:textColor="?colorItemListText"
                 android:layout_toLeftOf="@id/archive_button"
                 android:layout_toRightOf="@id/add_time_button"
                 android:background="@android:color/transparent"
-                android:textColorHint="?graph_stats_card_text_color_faded"
                 android:hint="@string/timelist_searchbox_hint"
                 android:inputType="text"
                 android:maxLines="1"
                 android:paddingLeft="16dp"
+                android:textColor="?colorItemListText"
+                android:textColorHint="?graph_stats_card_text_color_faded"
                 android:textSize="14sp" />
 
             <ImageView
@@ -110,29 +110,29 @@
                 android:layout_toLeftOf="@id/archive_button"
                 android:background="?attr/selectableItemBackground"
                 android:paddingLeft="8dp"
-                android:paddingRight="8dp"
                 android:paddingTop="6dp"
+                android:paddingRight="8dp"
                 android:paddingBottom="6dp"
                 android:text="@string/action_add"
-                android:tint="?colorItemListText"
                 android:visibility="gone"
                 app:srcCompat="@drawable/ic_outline_delete_sweep_18px"
+                app:tint="?colorItemListText"
                 tools:visibility="visible" />
 
             <ImageView
                 android:id="@+id/archive_button"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_marginRight="4dp"
                 android:layout_toLeftOf="@id/more_button"
                 android:background="?attr/selectableItemBackground"
                 android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:layout_marginRight="4dp"
                 android:paddingTop="6dp"
+                android:paddingRight="8dp"
                 android:paddingBottom="6dp"
                 android:text="@string/action_add"
-                android:tint="?colorItemListText"
-                app:srcCompat="@drawable/ic_outline_archive_18px" />
+                app:srcCompat="@drawable/ic_outline_archive_18px"
+                app:tint="?colorItemListText" />
 
             <ImageView
                 android:id="@+id/more_button"
@@ -140,14 +140,14 @@
                 android:layout_height="match_parent"
                 android:layout_alignParentRight="true"
                 android:background="?attr/selectableItemBackground"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp"
                 android:paddingLeft="8dp"
+                android:paddingTop="6dp"
                 android:paddingRight="12dp"
+                android:paddingBottom="6dp"
                 android:text="@string/action_add"
-                android:tint="?colorItemListText"
                 android:textColor="?graph_stats_card_text_color"
-                app:srcCompat="@drawable/ic_outline_more_vert_18px" />
+                app:srcCompat="@drawable/ic_outline_more_vert_18px"
+                app:tint="?colorItemListText" />
 
         </RelativeLayout>
 

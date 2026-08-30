@@ -1,135 +1,120 @@
-package com.aricneto.twistytimer.fragment.dialog;
+package com.aricneto.twistytimer.fragment.dialog
 
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-import android.util.Pair;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.DialogSettingsChangeLocaleBinding;
-import com.aricneto.twistytimer.activity.SettingsActivity;
-import com.aricneto.twistytimer.listener.DialogListener;
-import com.aricneto.twistytimer.utils.LocaleUtils;
-
-import java.util.LinkedHashMap;
-
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import android.graphics.Color
+import android.os.Bundle
+import android.util.Pair
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentActivity
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.DialogSettingsChangeLocaleBinding
+import com.aricneto.twistytimer.activity.SettingsActivity
+import com.aricneto.twistytimer.listener.DialogListener
+import com.aricneto.twistytimer.utils.LocaleUtils.locale
+import com.aricneto.twistytimer.utils.LocaleUtils.localeArray
+import com.aricneto.twistytimer.utils.LocaleUtils.localeHashMap
+import androidx.core.graphics.drawable.toDrawable
 
 /**
  * Dialog used to select application language
  */
+class LocaleSelectDialog : DialogFragment(), DialogListener {
+    private var binding: DialogSettingsChangeLocaleBinding? = null
 
-public class LocaleSelectDialog extends DialogFragment implements DialogListener{
-
-    private DialogSettingsChangeLocaleBinding binding;
-
-    public static LocaleSelectDialog newInstance() {
-        return new LocaleSelectDialog();
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_TITLE, 0)
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setStyle(DialogFragment.STYLE_NO_TITLE, 0);
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = DialogSettingsChangeLocaleBinding.inflate(inflater, container, false)
+
+        binding!!.recyclerView.setLayoutManager(GridLayoutManager(context, 2))
+        binding!!.recyclerView.setAdapter(LocaleSelectAdapter(requireActivity(), this))
+
+        return binding!!.getRoot()
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = DialogSettingsChangeLocaleBinding.inflate(inflater, container, false);
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        binding.recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        binding.recyclerView.setAdapter(new LocaleSelectAdapter(getActivity(), this));
-
-        return binding.getRoot();
+        dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
     }
 
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onUpdateDialog() {
     }
 
-    @Override
-    public void onUpdateDialog() {
-
+    override fun onDismissDialog() {
+        dismiss()
     }
 
-    @Override
-    public void onDismissDialog() {
-        dismiss();
+    companion object {
+        @JvmStatic
+        fun newInstance(): LocaleSelectDialog {
+            return LocaleSelectDialog()
+        }
     }
 }
 
-class LocaleSelectAdapter extends RecyclerView.Adapter<LocaleSelectAdapter.CardViewHolder> {
+internal class LocaleSelectAdapter(
+    private val mActivity: FragmentActivity,
+    private val dialogListener: DialogListener
+) : RecyclerView.Adapter<LocaleSelectAdapter.CardViewHolder?>() {
+    private val oldLocale: String? = locale
+    private var newLocale: String? = null
+    private val localeHash: LinkedHashMap<String, Pair<Int, Int>> = localeHashMap
+    private val locales: Array<String> = localeArray
 
-    private FragmentActivity                              mActivity;
-    private String                                        oldLocale;
-    private String                                        newLocale;
-    private LinkedHashMap<String, Pair<Integer, Integer>> localeHash;
-    private String[]                                      locales;
-    private DialogListener                                dialogListener;
-
-    LocaleSelectAdapter(FragmentActivity mActivity, DialogListener listener) {
-        this.mActivity = mActivity;
-        this.oldLocale = LocaleUtils.getLocale();
-        this.localeHash = LocaleUtils.getLocaleHashMap();
-        this.locales = LocaleUtils.getLocaleArray();
-        this.dialogListener = listener;
-    }
-
-    @Override
-    public LocaleSelectAdapter.CardViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
         // create a new view
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_locale, parent, false);
+        val view =
+            LayoutInflater.from(parent.context).inflate(R.layout.item_locale, parent, false)
 
-        return new CardViewHolder(view);
+        return CardViewHolder(view)
     }
 
-    @Override
-    public void onBindViewHolder(CardViewHolder holder, int position) {
-        String itemLocale = locales[position];
-        holder.localeItem.setText(localeHash.get(itemLocale).first);
-        holder.localeItem.setCompoundDrawablesWithIntrinsicBounds(localeHash.get(itemLocale).second, 0, 0, 0);
+    override fun onBindViewHolder(holder: CardViewHolder, position: Int) {
+        val itemLocale = locales[position]
+        holder.localeItem.setText(localeHash[itemLocale]!!.first!!)
+        holder.localeItem.setCompoundDrawablesWithIntrinsicBounds(
+            localeHash[itemLocale]!!.second!!,
+            0,
+            0,
+            0
+        )
 
-        holder.localeItem.setOnClickListener(v -> {
-            newLocale = itemLocale;
+        holder.localeItem.setOnClickListener { _: View? ->
+            newLocale = itemLocale
             // If the locale has been changed, then the activity will need to be recreated. The
             // locale can only be applied properly during the inflation of the layouts, so it has
             // to go back to "Activity.updateLocale()" to do that.
-            if (!newLocale.equals(oldLocale)) {
-                LocaleUtils.setLocale(newLocale);
-                ((SettingsActivity) mActivity).onRecreateRequired();
-                dialogListener.onDismissDialog();
+            if (newLocale != oldLocale) {
+                locale = newLocale
+                (mActivity as SettingsActivity).onRecreateRequired()
+                dialogListener.onDismissDialog()
             }
-        });
-    }
-
-    @Override
-    public int getItemCount() {
-        return locales.length;
-    }
-
-    static class CardViewHolder extends RecyclerView.ViewHolder {
-        TextView localeItem;
-
-        public CardViewHolder(View view) {
-            super(view);
-            this.localeItem = view.findViewById(R.id.locale_item);
         }
+    }
+
+    override fun getItemCount(): Int {
+        return locales.size
+    }
+
+    internal class CardViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        var localeItem: TextView = view.findViewById(R.id.locale_item)
     }
 }

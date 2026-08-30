@@ -1,157 +1,168 @@
-package com.aricneto.twistytimer.solver;
+package com.aricneto.twistytimer.solver
 
-public class IndexMapping {
+object IndexMapping {
     // permutation
-    public static int permutationToIndex(byte[] permutation) {
-        int index = 0;
-        for (int i = 0; i < permutation.length - 1; i++) {
-            index *= permutation.length - i;
-            for (int j = i + 1; j < permutation.length; j++) {
+    fun permutationToIndex(permutation: ByteArray): Int {
+        var index = 0
+        for (i in 0..<permutation.size - 1) {
+            index *= permutation.size - i
+            for (j in i + 1..<permutation.size) {
                 if (permutation[i] > permutation[j]) {
-                    index++;
+                    index++
                 }
             }
         }
 
-        return index;
+        return index
     }
 
-    public static byte[] indexToPermutation(int index, int length) {
-        byte[] permutation = new byte[length];
-        permutation[length - 1] = 0;
-        for (int i = length - 2; i >= 0; i--) {
-            permutation[i] = (byte) (index % (length - i));
-            index /= length - i;
-            for (int j = i + 1; j < length; j++) {
+    fun indexToPermutation(index: Int, length: Int): ByteArray {
+        var index = index
+        val permutation = ByteArray(length)
+        permutation[length - 1] = 0
+        for (i in length - 2 downTo 0) {
+            permutation[i] = (index % (length - i)).toByte()
+            index /= length - i
+            for (j in i + 1..<length) {
                 if (permutation[j] >= permutation[i]) {
-                    permutation[j]++;
+                    permutation[j]++
                 }
             }
         }
 
-        return permutation;
+        return permutation
     }
 
     // even permutation
-    public static int evenPermutationToIndex(byte[] permutation) {
-        int index = 0;
-        for (int i = 0; i < permutation.length - 2; i++) {
-            index *= permutation.length - i;
-            for (int j = i + 1; j < permutation.length; j++) {
+    fun evenPermutationToIndex(permutation: ByteArray): Int {
+        var index = 0
+        for (i in 0..<permutation.size - 2) {
+            index *= permutation.size - i
+            for (j in i + 1..<permutation.size) {
                 if (permutation[i] > permutation[j]) {
-                    index++;
+                    index++
                 }
             }
         }
 
-        return index;
+        return index
     }
 
-    public static byte[] indexToEvenPermutation(int index, int length) {
-        int sum = 0;
-        byte[] permutation = new byte[length];
+    fun indexToEvenPermutation(index: Int, length: Int): ByteArray {
+        var index = index
+        var sum = 0
+        val permutation = ByteArray(length)
 
-        permutation[length - 1] = 1;
-        permutation[length - 2] = 0;
-        for (int i = length - 3; i >= 0; i--) {
-            permutation[i] = (byte) (index % (length - i));
-            sum += permutation[i];
-            index /= length - i;
-            for (int j = i + 1; j < length; j++) {
+        permutation[length - 1] = 1
+        permutation[length - 2] = 0
+        for (i in length - 3 downTo 0) {
+            permutation[i] = (index % (length - i)).toByte()
+            sum += permutation[i].toInt()
+            index /= length - i
+            for (j in i + 1..<length) {
                 if (permutation[j] >= permutation[i]) {
-                    permutation[j]++;
+                    permutation[j]++
                 }
             }
         }
 
         if (sum % 2 != 0) {
-            byte temp = permutation[permutation.length - 1];
-            permutation[permutation.length - 1] = permutation[permutation.length - 2];
-            permutation[permutation.length - 2] = temp;
+            val temp = permutation[permutation.size - 1]
+            permutation[permutation.size - 1] = permutation[permutation.size - 2]
+            permutation[permutation.size - 2] = temp
         }
 
-        return permutation;
+        return permutation
     }
 
     // orientation
-    public static int orientationToIndex(byte[] orientation, int nValues) {
-        int index = 0;
-        for (int i = 0; i < orientation.length; i++) {
-            index = nValues * index + orientation[i];
+    fun orientationToIndex(orientation: ByteArray, nValues: Int): Int {
+        var index = 0
+        for (i in orientation.indices) {
+            index = nValues * index + orientation[i]
         }
 
-        return index;
+        return index
     }
 
-    public static byte[] indexToOrientation(int index, int nValues, int length) {
-        byte[] orientation = new byte[length];
-        for (int i = length - 1; i >= 0; i--) {
-            orientation[i] = (byte) (index % nValues);
-            index /= nValues;
+    fun indexToOrientation(index: Int, nValues: Int, length: Int): ByteArray {
+        var index = index
+        val orientation = ByteArray(length)
+        for (i in length - 1 downTo 0) {
+            orientation[i] = (index % nValues).toByte()
+            index /= nValues
         }
 
-        return orientation;
+        return orientation
     }
 
     // zero sum orientation
-    public static int zeroSumOrientationToIndex(byte[] orientation, int nValues) {
-        int index = 0;
-        for (int i = 0; i < orientation.length - 1; i++) {
-            index = nValues * index + orientation[i];
+    fun zeroSumOrientationToIndex(orientation: ByteArray, nValues: Int): Int {
+        var index = 0
+        for (i in 0..<orientation.size - 1) {
+            index = nValues * index + orientation[i]
         }
 
-        return index;
+        return index
     }
 
-    public static byte[] indexToZeroSumOrientation(int index, int nValues, int length) {
-        byte[] orientation = new byte[length];
-        orientation[length - 1] = 0;
-        for (int i = length - 2; i >= 0; i--) {
-            orientation[i] = (byte) (index % nValues);
-            index /= nValues;
+    fun indexToZeroSumOrientation(index: Int, nValues: Int, length: Int): ByteArray {
+        var index = index
+        val orientation = ByteArray(length)
+        orientation[length - 1] = 0
+        for (i in length - 2 downTo 0) {
+            orientation[i] = (index % nValues).toByte()
+            index /= nValues
 
-            orientation[length - 1] += orientation[i];
+            orientation[length - 1] = (orientation[length - 1] + orientation[i]).toByte()
         }
-        orientation[length - 1] = (byte) ((nValues - orientation[length - 1] % nValues) % nValues);
+        orientation[length - 1] = ((nValues - orientation[length - 1] % nValues) % nValues).toByte()
 
-        return orientation;
+        return orientation
     }
 
     // combinations
-    private static int nChooseK(int n, int k) {
-        int value = 1;
+    private fun nChooseK(n: Int, k: Int): Int {
+        var value = 1
 
-        for (int i = 0; i < k; i++) {
-            value *= n - i;
+        for (i in 0..<k) {
+            value *= n - i
         }
 
-        for (int i = 0; i < k; i++) {
-            value /= k - i;
+        for (i in 0..<k) {
+            value /= k - i
         }
 
-        return value;
+        return value
     }
 
-    public static int combinationToIndex(boolean[] combination, int k) {
-        int index = 0;
-        for (int i = combination.length - 1; i >= 0 && k > 0; i--) {
+    fun combinationToIndex(combination: BooleanArray, k: Int): Int {
+        var k = k
+        var index = 0
+        var i = combination.size - 1
+        while (i >= 0 && k > 0) {
             if (combination[i]) {
-                index += nChooseK(i, k--);
+                index += nChooseK(i, k--)
             }
+            i--
         }
 
-        return index;
+        return index
     }
 
-    public static boolean[] indexToCombination(int index, int k, int length) {
-        boolean[] combination = new boolean[length];
-        for (int i = length - 1; i >= 0 && k >= 0; i--) {
+    fun indexToCombination(index: Int, k: Int, length: Int): BooleanArray {
+        var index = index
+        var k = k
+        val combination = BooleanArray(length)
+        var i = length - 1
+        while (i >= 0 && k >= 0) {
             if (index >= nChooseK(i, k)) {
-                combination[i] = true;
-                index -= nChooseK(i, k--);
+                combination[i] = true
+                index -= nChooseK(i, k--)
             }
+            i--
         }
 
-        return combination;
+        return combination
     }
 }

@@ -1,17 +1,10 @@
-package com.aricneto.twistytimer.puzzle;
+package com.aricneto.twistytimer.puzzle
 
-import org.worldcubeassociation.tnoodle.puzzle.CubePuzzle;
+import org.worldcubeassociation.tnoodle.puzzle.CubePuzzle
 
 /**
  * The TNoodle library only provides default functions up to 4x4 cube puzzles.
  * This class extends the CubePuzzle class by modifying the constructor to allow
  * a custom-sized cube.
  */
-public class NbyNCubePuzzle extends CubePuzzle {
-
-    public NbyNCubePuzzle(int size) {
-        super(size);
-    }
-
-
-}
+class NbyNCubePuzzle(size: Int) : CubePuzzle(size)

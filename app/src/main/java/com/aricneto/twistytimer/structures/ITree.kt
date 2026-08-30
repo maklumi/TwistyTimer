@@ -1,4 +1,4 @@
-package com.aricneto.twistytimer.structures;
+package com.aricneto.twistytimer.structures
 
 /**
  * A tree can be defined recursively (locally) as a collection of nodes (starting at a root node),
@@ -10,7 +10,7 @@ package com.aricneto.twistytimer.structures;
  * <br>
  * @author Justin Wetherell <phishman3579@gmail.com>
  */
-public interface ITree<T> {
+interface ITree<T> {
 
     /**
      * Add value to the tree. Tree can contain multiple equal values.
@@ -18,7 +18,7 @@ public interface ITree<T> {
      * @param value to add to the tree.
      * @return True if successfully added to tree.
      */
-    public boolean add(T value);
+    fun add(value: T): Boolean
 
     /**
      * Remove first occurrence of value in the tree.
@@ -26,12 +26,12 @@ public interface ITree<T> {
      * @param value to remove from the tree.
      * @return T value removed from tree.
      */
-    public T remove(T value);
+    fun remove(value: T): T?
 
     /**
      * Clear the entire stack.
      */
-    public void clear();
+    fun clear()
 
     /**
      * Does the tree contain the value.
@@ -39,41 +39,41 @@ public interface ITree<T> {
      * @param value to locate in the tree.
      * @return True if tree contains value.
      */
-    public boolean contains(T value);
+    fun contains(value: T): Boolean
 
     /**
      * Get number of nodes in the tree.
      *
      * @return Number of nodes in the tree.
      */
-    public int size();
+    fun size(): Int
 
     /**
      * Returns the smallest element of the tree
      *
      * @return Smallest element of the tree
      */
-    public T getLeast();
+    fun getLeast(): T?
 
     /**
      * Returns the greatest element of the tree
      *
      * @return Greatest element of the tree
      */
-    public T getGreatest();
+    fun getGreatest(): T?
 
     /**
      * Validate the tree according to the invariants.
      *
      * @return True if the tree is valid.
      */
-    public boolean validate();
+    fun validate(): Boolean
 
     /**
      * Get Tree as a Java compatible Collection
      *
      * @return Java compatible Collection
      */
-    public java.util.Collection<T> toCollection();
+    fun toCollection(): Collection<T>
 
 }

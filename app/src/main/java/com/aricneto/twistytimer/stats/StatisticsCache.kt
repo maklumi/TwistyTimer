@@ -1,50 +1,57 @@
-package com.aricneto.twistytimer.stats;
+package com.aricneto.twistytimer.stats
 
-import android.database.Observable;
+import android.database.Observable
+import com.aricneto.twistytimer.stats.StatisticsCache.StatisticsObserver
 
 /**
- * <p>
- * A non-persistent cache that maintains a reference to the most recently loaded {@link Statistics}.
- * The statistics can be loaded by an activity using its {@code LoaderManager} and a
- * {@link StatisticsLoader} and then saved to this cache. Other components, typically fragments,
+ * 
+ * 
+ * A non-persistent cache that maintains a reference to the most recently loaded [Statistics].
+ * The statistics can be loaded by an activity using its `LoaderManager` and a
+ * [StatisticsLoader] and then saved to this cache. Other components, typically fragments,
  * can register themselves with this cache to be notified when the statistics are first loaded or
- * updated. The statistics can also be retrieved from the cache. See {@link #getStatistics()} for
+ * updated. The statistics can also be retrieved from the cache. See [.getStatistics] for
  * more details on accessing the statistics.
- * </p>
- * <p>
+ * 
+ * 
+ * 
  * A fragment that wants to access the statistics, needs to be able to accommodate the unpredictable
  * timing of the first availability of the statistics. The fragment should, during its creation,
- * call {@code StatisticsCache.getInstance().getStatistics()} to get the statistics, allowing that
- * it may be {@code null}, and use the statistics (if not {@code null}) as required. It can then,
- * before creation is complete, call {@link #registerObserver} to ensure it is notified of any later
+ * call `StatisticsCache.getInstance().getStatistics()` to get the statistics, allowing that
+ * it may be `null`, and use the statistics (if not `null`) as required. It can then,
+ * before creation is complete, call [.registerObserver] to ensure it is notified of any later
  * updates.
- * </p>
- * <p>
+ * 
+ * 
+ * 
  * When an activity starts loading the statistics, the loading might finish before the fragment is
  * created. In that case, the fragment cannot have been notified of the updated statistics at the
  * time the loading finished, because the fragment was not created. Therefore, the call to
- * {@code getStatistics()} will get that first statistics instance that could not be notified. Any
+ * `getStatistics()` will get that first statistics instance that could not be notified. Any
  * later changes will be notified once the fragment registers itself as an observer.
- * </p>
- * <p>
+ * 
+ * 
+ * 
  * Of course, the loading might finish after the fragment is created. In that case, the call to
- * {@code getStatistics()} will have returned {@code null} and no statistics could be used during
+ * `getStatistics()` will have returned `null` and no statistics could be used during
  * creation. However, as soon as loading completes, the fragment, having registered itself as an
  * observer, will receive notification of the update and can then apply the statistics as required.
- * In the time between detecting that the {@code getStatistics()} returned {@code null} and the
+ * In the time between detecting that the `getStatistics()` returned `null` and the
  * time of the first notification of statistics being available, the fragment could, if appropriate,
  * display a progress indicator.
- * </p>
- * <p>
- * In the above, an {@code Activity} is assumed to be managing the loading process. However, there
- * is no reason why one {@code Fragment} could not manage the loading on behalf of other fragments.
- * </p>
- * <p>
+ * 
+ * 
+ * 
+ * In the above, an `Activity` is assumed to be managing the loading process. However, there
+ * is no reason why one `Fragment` could not manage the loading on behalf of other fragments.
+ * 
+ * 
+ * 
  * For simplicity, the statistics cache is a singleton that can maintain only one instance of
- * {@code Statistics}. This makes it easier to access from the application components, but restricts
+ * `Statistics`. This makes it easier to access from the application components, but restricts
  * all components to a single, common set of statistics.
- * </p>
- *
+ * 
+ * 
  * @author damo
  */
 // IMPLEMENTATION NOTE: While a LocalBroadcastManager could be used to pass around the update
@@ -59,58 +66,22 @@ import android.database.Observable;
 // is taken. However, the "StatisticsCache.getInstance()" access pattern means that none of the
 // fields (other than the singleton reference) are "static", so a change to support multiple cached
 // statistics would require little more in this class than changing the constructor to "public".
-public final class StatisticsCache extends Observable<StatisticsCache.StatisticsObserver> {
+class StatisticsCache
+/**
+ * Private constructor to prevent instantiation of this singleton class.
+ */
+private constructor() : Observable<StatisticsObserver>() {
     /**
      * An interface for components that need to be notified when the statistics are first added to
      * the cache or are later updated.
      */
-    public interface StatisticsObserver {
+    interface StatisticsObserver {
         /**
          * Notifies the observer when the statistics have been updated.
-         *
+         * 
          * @param stats The updated statistics.
          */
-        void onStatisticsUpdated(Statistics stats);
-    }
-
-    /**
-     * The singleton instance of this cache.
-     */
-    private static final StatisticsCache SINGLETON = new StatisticsCache();
-
-    /**
-     * The cached statistics. May be {@code null} if the cache has not been populated.
-     */
-    private Statistics mStatistics;
-
-    /**
-     * Private constructor to prevent instantiation of this singleton class.
-     */
-    private StatisticsCache() {
-    }
-
-    /**
-     * Gets the singleton instance of this cache.
-     *
-     * @return The statistics cache.
-     */
-    public static StatisticsCache getInstance() {
-        return SINGLETON;
-    }
-
-    /**
-     * Updates this cache with the given statistics and notifies any observers of the update.
-     *
-     * @param stats The statistics to be saved to the cache. May be {@code null}.
-     */
-    public void updateAndNotify(Statistics stats) {
-        // Set this first. If an observer calls "getStatistics" instead of using the passed
-        // statistics object, the two will be the same.
-        mStatistics = stats;
-
-        for (StatisticsObserver observer : mObservers) {
-            observer.onStatisticsUpdated(mStatistics);
-        }
+        fun onStatisticsUpdated(stats: Statistics?)
     }
 
     /**
@@ -119,12 +90,41 @@ public final class StatisticsCache extends Observable<StatisticsCache.Statistics
      * that the instance may be reset without notification shortly before updated statistics are
      * delivered. Therefore, the status should be checked before use and perhaps ignored until the
      * new update notification arrives.
-     *
+     * 
      * @return
-     *     The cached statistics. May be {@code null}, if the statistics have not yet been loaded.
-     *     <i>Do not modify this {@code Statistics} instance.</i>
+     * The cached statistics. May be `null`, if the statistics have not yet been loaded.
+     * *Do not modify this `Statistics` instance.*
      */
-    public Statistics getStatistics() {
-        return mStatistics;
+    /**
+     * The cached statistics. May be `null` if the cache has not been populated.
+     */
+    var statistics: Statistics? = null
+        private set
+
+    /**
+     * Updates this cache with the given statistics and notifies any observers of the update.
+     * 
+     * @param stats The statistics to be saved to the cache. May be `null`.
+     */
+    fun updateAndNotify(stats: Statistics?) {
+        // Set this first. If an observer calls "getStatistics" instead of using the passed
+        // statistics object, the two will be the same.
+        this.statistics = stats
+
+        for (observer in mObservers) {
+            observer.onStatisticsUpdated(this.statistics)
+        }
+    }
+
+    companion object {
+        /**
+         * Gets the singleton instance of this cache.
+         * 
+         * @return The statistics cache.
+         */
+        /**
+         * The singleton instance of this cache.
+         */
+        val instance: StatisticsCache = StatisticsCache()
     }
 }

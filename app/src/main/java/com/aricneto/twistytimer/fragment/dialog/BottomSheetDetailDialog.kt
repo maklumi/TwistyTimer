@@ -1,117 +1,119 @@
-package com.aricneto.twistytimer.fragment.dialog;
+package com.aricneto.twistytimer.fragment.dialog
 
-import android.app.Dialog;
-import android.os.Bundle;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
+import android.app.Dialog
+import android.content.DialogInterface
+import android.content.DialogInterface.OnShowListener
+import android.os.Bundle
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import com.aricneto.twistify.databinding.DialogBottomsheetDetailBinding
+import com.google.android.material.R
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+class BottomSheetDetailDialog : BottomSheetDialogFragment() {
+    private var binding: DialogBottomsheetDetailBinding? = null
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+    private var hasHints = false
 
-import com.aricneto.twistify.databinding.DialogBottomsheetDetailBinding;
+    private var detailText: String? = null
+    private var hintText: String? = null
+    private var detailTextSize = 0f
 
-public class BottomSheetDetailDialog extends BottomSheetDialogFragment {
-
-    private DialogBottomsheetDetailBinding binding;
-
-    private boolean hasHints = false;
-
-    private String detailText;
-    private String hintText;
-    private float detailTextSize;
-
-    public static BottomSheetDetailDialog newInstance() {
-        return new BottomSheetDetailDialog();
-    }
-
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        BottomSheetDialog dialog = (BottomSheetDialog) super.onCreateDialog(savedInstanceState);
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
 
         // This makes the bottomSheet dialog start in the expanded state
-        dialog.setOnShowListener(dia -> {
-            BottomSheetDialog bottomDialog = (BottomSheetDialog) dia;
-            FrameLayout bottomSheet =  bottomDialog .findViewById(com.google.android.material.R.id.design_bottom_sheet);
-            BottomSheetBehavior.from(bottomSheet).setState(BottomSheetBehavior.STATE_EXPANDED);
-            BottomSheetBehavior.from(bottomSheet).setSkipCollapsed(true);
-            BottomSheetBehavior.from(bottomSheet).setHideable(true);
-        });
+        dialog.setOnShowListener { dia: DialogInterface? ->
+            val bottomDialog = dia as BottomSheetDialog
+            val bottomSheet = bottomDialog.findViewById<FrameLayout>(R.id.design_bottom_sheet)
+            BottomSheetBehavior.from<FrameLayout>(bottomSheet!!)
+                .setState(BottomSheetBehavior.STATE_EXPANDED)
+            BottomSheetBehavior.from<FrameLayout>(bottomSheet).skipCollapsed = true
+            BottomSheetBehavior.from<FrameLayout>(bottomSheet).isHideable = true
+        }
 
-        return dialog;
+        return dialog
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = DialogBottomsheetDetailBinding.inflate(inflater, container, false);
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = DialogBottomsheetDetailBinding.inflate(inflater, container, false)
 
-        return binding.getRoot();
+        return binding!!.getRoot()
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        binding.detailText.setText(detailText);
-        binding.detailText.setTextSize(TypedValue.COMPLEX_UNIT_PX, binding.detailText.getTextSize() * detailTextSize);
+        binding!!.detailText.text = detailText
+        binding!!.detailText.setTextSize(
+            TypedValue.COMPLEX_UNIT_PX,
+            binding!!.detailText.textSize * detailTextSize
+        )
 
         if (!hasHints) {
-            setHintVisibility(999);
+            setHintVisibility(999)
         } else {
-            setHintVisibility(View.GONE);
+            setHintVisibility(View.GONE)
         }
     }
 
-    public void setDetailText(String text) {
-        detailText = text;
+    fun setDetailText(text: String?) {
+        detailText = text
     }
 
-    public void setHintText(String text) {
-        hintText = text;
-        if (binding != null && binding.hintText != null) {
-            binding.hintText.setText(hintText);
+    fun setHintText(text: String?) {
+        hintText = text
+        if (binding != null) {
+            binding!!.hintText.text = hintText
         }
     }
 
-    public void setDetailTextSize (float size) {
-        this.detailTextSize = size;
+    fun setDetailTextSize(size: Float) {
+        this.detailTextSize = size
     }
 
-    public void hasHints(boolean hasHints) {
-        this.hasHints = hasHints;
+    fun hasHints(hasHints: Boolean) {
+        this.hasHints = hasHints
     }
 
-    public void setHintVisibility(int visibility) {
-        if (binding != null && binding.hintText != null) {
+    fun setHintVisibility(visibility: Int) {
+        if (binding != null) {
             if (visibility == View.VISIBLE) {
-                binding.hintText.setVisibility(View.VISIBLE);
-                binding.hintProgress.setVisibility(View.GONE);
-                binding.hintTitle.setVisibility(View.VISIBLE);
-                binding.hintDivider.setVisibility(View.VISIBLE);
+                binding!!.hintText.visibility = View.VISIBLE
+                binding!!.hintProgress.visibility = View.GONE
+                binding!!.hintTitle.visibility = View.VISIBLE
+                binding!!.hintDivider.visibility = View.VISIBLE
             } else if (visibility == View.GONE) {
-                binding.hintText.setVisibility(View.GONE);
-                binding.hintProgress.setVisibility(View.VISIBLE);
-                binding.hintTitle.setVisibility(View.VISIBLE);
-                binding.hintDivider.setVisibility(View.VISIBLE);
+                binding!!.hintText.visibility = View.GONE
+                binding!!.hintProgress.visibility = View.VISIBLE
+                binding!!.hintTitle.visibility = View.VISIBLE
+                binding!!.hintDivider.visibility = View.VISIBLE
             } else {
-                binding.hintProgress.setVisibility(View.GONE);
-                binding.hintText.setVisibility(View.GONE);
-                binding.hintTitle.setVisibility(View.GONE);
-                binding.hintDivider.setVisibility(View.GONE);
+                binding!!.hintProgress.visibility = View.GONE
+                binding!!.hintText.visibility = View.GONE
+                binding!!.hintTitle.visibility = View.GONE
+                binding!!.hintDivider.visibility = View.GONE
             }
         }
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    companion object {
+        fun newInstance(): BottomSheetDetailDialog {
+            return BottomSheetDetailDialog()
+        }
     }
 }

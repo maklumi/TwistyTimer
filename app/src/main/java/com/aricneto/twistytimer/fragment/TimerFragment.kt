@@ -1,604 +1,642 @@
-package com.aricneto.twistytimer.fragment;
+package com.aricneto.twistytimer.fragment
+
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Context
+import android.content.DialogInterface
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.Point
+import android.graphics.Rect
+import android.graphics.drawable.Drawable
+import android.media.ToneGenerator
+import android.os.AsyncTask
+import android.os.Build
+import android.os.Bundle
+import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
+import android.os.Process
+import android.preference.PreferenceManager
+import android.text.Html
+import android.util.Log
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.Surface
+import android.view.View
+import android.view.View.OnTouchListener
+import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
+import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
+import android.widget.Toast
+import androidx.fragment.app.FragmentManager
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.FragmentTimerBinding
+import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.fragment.dialog.AddTimeDialog
+import com.aricneto.twistytimer.fragment.dialog.BottomSheetDetailDialog
+import com.aricneto.twistytimer.items.Solve
+import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener
+import com.aricneto.twistytimer.puzzle.TrainerScrambler
+import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
+import com.aricneto.twistytimer.solver.RubiksCubeOptimalCross
+import com.aricneto.twistytimer.solver.RubiksCubeOptimalXCross
+import com.aricneto.twistytimer.stats.AverageCalculator
+import com.aricneto.twistytimer.stats.AverageCalculator.Companion.tr
+import com.aricneto.twistytimer.stats.Statistics
+import com.aricneto.twistytimer.stats.StatisticsCache
+import com.aricneto.twistytimer.stats.StatisticsCache.StatisticsObserver
+import com.aricneto.twistytimer.utils.CountdownWarning
+import com.aricneto.twistytimer.utils.DefaultPrefs.getBoolean
+import com.aricneto.twistytimer.utils.Prefs
+import com.aricneto.twistytimer.utils.Prefs.getBoolean
+import com.aricneto.twistytimer.utils.Prefs.getInt
+import com.aricneto.twistytimer.utils.PuzzleUtils
+import com.aricneto.twistytimer.utils.PuzzleUtils.FORMAT_DEFAULT
+import com.aricneto.twistytimer.utils.PuzzleUtils.NO_PENALTY
+import com.aricneto.twistytimer.utils.PuzzleUtils.PENALTY_DNF
+import com.aricneto.twistytimer.utils.PuzzleUtils.PENALTY_PLUSTWO
+import com.aricneto.twistytimer.utils.PuzzleUtils.TYPE_333
+import com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString
+import com.aricneto.twistytimer.utils.ScrambleGenerator
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_COMMENT_ADDED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_SCRAMBLE_MODIFIED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_SCROLLED_PAGE
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMER_STARTED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMER_STOPPED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MODIFIED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_ADDED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_ADDED_MANUALLY
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TOOLBAR_RESTORED
+import com.aricneto.twistytimer.utils.TTIntent.BroadcastBuilder
+import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
+import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
+import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
+import com.aricneto.twistytimer.utils.TTIntent.broadcast
+import com.aricneto.twistytimer.utils.TTIntent.getSolve
+import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
+import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
+import com.aricneto.twistytimer.utils.ThemeUtils
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import java.util.Locale
+import kotlin.math.sqrt
+import androidx.core.view.isVisible
 
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
-import android.media.ToneGenerator;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.os.Handler;
-import android.os.Process;
-import android.preference.PreferenceManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import android.text.Html;
-import android.util.Log;
-import android.util.TypedValue;
-import android.view.Display;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.Surface;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.view.animation.DecelerateInterpolator;
-import android.widget.Toast;
-
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.FragmentTimerBinding;
-import com.aricneto.twistytimer.TwistyTimer;
-import com.aricneto.twistytimer.database.DatabaseHandler;
-import com.aricneto.twistytimer.fragment.dialog.AddTimeDialog;
-import com.aricneto.twistytimer.fragment.dialog.BottomSheetDetailDialog;
-import com.aricneto.twistytimer.items.Solve;
-import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener;
-import com.aricneto.twistytimer.puzzle.TrainerScrambler;
-import com.aricneto.twistytimer.solver.RubiksCubeOptimalCross;
-import com.aricneto.twistytimer.solver.RubiksCubeOptimalXCross;
-import com.aricneto.twistytimer.stats.Statistics;
-import com.aricneto.twistytimer.stats.StatisticsCache;
-import com.aricneto.twistytimer.utils.CountdownWarning;
-import com.aricneto.twistytimer.utils.DefaultPrefs;
-import com.aricneto.twistytimer.utils.Prefs;
-import com.aricneto.twistytimer.utils.PuzzleUtils;
-import com.aricneto.twistytimer.utils.ScrambleGenerator;
-import com.aricneto.twistytimer.utils.TTIntent;
-import com.aricneto.twistytimer.utils.ThemeUtils;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
-
-import java.util.Locale;
-import java.util.Objects;
-
-import androidx.fragment.app.FragmentManager;
-
-import static com.aricneto.twistytimer.stats.AverageCalculator.tr;
-import static com.aricneto.twistytimer.utils.PuzzleUtils.FORMAT_DEFAULT;
-import static com.aricneto.twistytimer.utils.PuzzleUtils.NO_PENALTY;
-import static com.aricneto.twistytimer.utils.PuzzleUtils.PENALTY_DNF;
-import static com.aricneto.twistytimer.utils.PuzzleUtils.PENALTY_PLUSTWO;
-import static com.aricneto.twistytimer.utils.PuzzleUtils.TYPE_333;
-import static com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_COMMENT_ADDED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_SCRAMBLE_MODIFIED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_SCROLLED_PAGE;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMER_STARTED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMER_STOPPED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MODIFIED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_ADDED;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_ADDED_MANUALLY;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TOOLBAR_RESTORED;
-import static com.aricneto.twistytimer.utils.TTIntent.BroadcastBuilder;
-import static com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES;
-import static com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS;
-import static com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver;
-import static com.aricneto.twistytimer.utils.TTIntent.broadcast;
-import static com.aricneto.twistytimer.utils.TTIntent.registerReceiver;
-import static com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver;
-
-public class                                                                                                                                                                               TimerFragment extends BaseFragment
-        implements OnBackPressedInFragmentListener, StatisticsCache.StatisticsObserver {
-
-
-    // Specifies the timer mode
-    // i.e: Trainer mode generates only trainer scrambles, and changes the puzzle select spinner
-    // Can be used for other features in the future
-    public static final String TIMER_MODE_TIMER = "TIMER_MODE_TIMER";
-    public static final String TIMER_MODE_TRAINER = "TIMER_MODE_TRAINER";
-
-    /**
-     * Flag to enable debug logging for this class.
-     */
-    private static final boolean DEBUG_ME = true;
-
-    /**
-     * A "tag" to identify this class in log messages.
-     */
-    private static final String TAG = TimerFragment.class.getSimpleName();
-
-    private static final String PUZZLE         = "puzzle";
-    private static final String PUZZLE_SUBTYPE = "puzzle_type";
-    private static final String TRAINER_SUBSET = "trainer_subset";
-    private static final String TIMER_MODE = "timer_mode";
-    private static final String SCRAMBLE = "scramble";
-    private static final String HAS_STOPPED_TIMER_ONCE = "has_stopped_timer_once";
-
-
-    /**
-     * The time delay in milliseconds before starting the chronometer if the hold-for-start
-     * preference is set.
-     */
-    private static final long HOLD_FOR_START_DELAY = 500L;
-
-    private String currentPuzzle;
-    private String currentPuzzleCategory;
-    private TrainerScrambler.TrainerSubset currentSubset;
+class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, StatisticsObserver {
+    private var currentPuzzle: String? = null
+    private var currentPuzzleCategory: String? = null
+    private var currentSubset: TrainerSubset? = null
 
     /**
      * The last generated scramble, related to the current solve. When the timer is started,
      * the timer will generate a new scramble, but it will be saved in realScramble.
      */
-    private String currentScramble = "";
+    private var currentScramble: String? = ""
 
     /**
      * The scramble that is currently being shown to the user. MAY NOT BE currentScramble!
      */
-    private String realScramble = null;
+    private var realScramble: String? = null
 
-    private Solve  currentSolve    = null;
+    private var currentSolve: Solve? = null
 
-    CountDownTimer countdown;
-    boolean countingDown = false;
+    var countdown: CountDownTimer? = null
+    var countingDown: Boolean = false
 
-    CountdownWarning firstWarning;
-    CountdownWarning secondWarning;
+    var firstWarning: CountdownWarning? = null
+    var secondWarning: CountdownWarning? = null
 
-    private Context mContext;
+    private var mContext: Context? = null
 
     // True If the show toolbar animation is done
-    boolean animationDone = true;
+    var animationDone: Boolean = true
 
     // True if the user has pressed the chronometer for long enough for it to start
-    boolean isReady = false;
+    var isReady: Boolean = false
 
     // True If the user has holdEnabled and held the DNF at the last second
-    boolean holdingDNF;
+    var holdingDNF: Boolean = false
 
     // Checks if the chronometer is running. Has to be public so the main fragment can access it
-    public boolean isRunning = false;
+    var isRunning: Boolean = false
 
     // Locks the chronometer so it doesn't start before a scramble sequence is generated
-    boolean isLocked = true;
+    var isLocked: Boolean = true
 
     // True If the chronometer has just been canceled
-    private boolean isCanceled;
+    private var isCanceled = false
 
     // True If the scrambler is done calculating and can calculate a new hint.
-    private boolean canShowHint = false;
+    private var canShowHint = false
 
     // Animation duration for all timer items
-    private int mAnimationDuration;
+    private var mAnimationDuration = 0
 
-    private ScrambleGenerator generator;
+    private var generator: ScrambleGenerator? = null
 
-    private GenerateScrambleSequence scrambleGeneratorAsync;
-    private GetOptimalCross optimalCrossAsync;
+    private var scrambleGeneratorAsync: GenerateScrambleSequence? = null
+    private var optimalCrossAsync: GetOptimalCross? = null
 
-    private int currentPenalty = NO_PENALTY;
+    private var currentPenalty: Int = NO_PENALTY
 
     /**
      * Specifies the current TimerMode
      */
-    private String currentTimerMode;
+    private var currentTimerMode: String? = null
 
-    private Animator mCurrentAnimator;
+    private var mCurrentAnimator: Animator? = null
 
-    private FragmentTimerBinding binding;
+    private var binding: FragmentTimerBinding? = null
 
     // Holds the localized strings related to each detail statistic, in order:
     // Ao5, Ao12, Ao50, Ao100, Deviation, Mean, Best, Count
-    private String detailTextNamesArray[] = new String[8];
+    private var detailTextNamesArray: Array<String> = arrayOf("")
 
-    private boolean buttonsEnabled;
-    private boolean scrambleImgEnabled;
-    private boolean sessionStatsEnabled;
-    private boolean worstSolveEnabled;
-    private boolean bestSolveEnabled;
-    private boolean scrambleEnabled;
-    private boolean scrambleBackgroundEnabled;
-    private boolean holdEnabled;
-    private boolean backCancelEnabled;
-    private boolean startCueEnabled;
-    private boolean showHintsEnabled;
-    private boolean showHintsXCrossEnabled;
-    private boolean averageRecordsEnabled;
+    private var buttonsEnabled = false
+    private var scrambleImgEnabled = false
+    private var sessionStatsEnabled = false
+    private var worstSolveEnabled = false
+    private var bestSolveEnabled = false
+    private var scrambleEnabled = false
+    private var scrambleBackgroundEnabled = false
+    private var holdEnabled = false
+    private var backCancelEnabled = false
+    private var startCueEnabled = false
+    private var showHintsEnabled = false
+    private var showHintsXCrossEnabled = false
+    private var averageRecordsEnabled = false
 
     /**
      * True if manual entry is enabled
      */
-    private boolean manualEntryEnabled;
+    private var manualEntryEnabled = false
 
-    private boolean inspectionVibrationAlertEnabled;
-    private boolean inspectionSoundAlertEnabled;
+    private var inspectionVibrationAlertEnabled = false
+    private var inspectionSoundAlertEnabled = false
 
-    float scrambleTextSize;
+    var scrambleTextSize: Float = 0f
 
     // True if the user has started (and stopped) the timer at least once. Used to trigger
     // Average highlights, so the user doesn't get a notification when they start the app
-    private boolean hasStoppedTimerOnce = false;
+    private var hasStoppedTimerOnce = false
 
     /**
-     * The most recently notified solve time statistics. When {@link #addNewSolve()} is called to
+     * The most recently notified solve time statistics. When [.addNewSolve] is called to
      * add a new time, the new time can be compared to these statistics to determine if the new
      * time sets a record.
      */
-    private Statistics mRecentStatistics;
+    private var mRecentStatistics: Statistics? = null
 
     // Receives broadcasts related to changes to the timer user interface.
-    private final TTFragmentBroadcastReceiver mUIInteractionReceiver
-            = new TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-        @Override
-        public void onReceiveWhileAdded(Context context, Intent intent) {
-            switch (Objects.requireNonNull(intent.getAction())) {
-                case ACTION_SCROLLED_PAGE:
-                    if (holdEnabled) {
-                        holdHandler.removeCallbacks(holdRunnable);
-                    }
-                    binding.chronometer.setHighlighted(false);
-                    binding.chronometer.cancelHoldForStart();
-                    isReady = false;
-                    break;
-
-                case ACTION_TIME_ADDED_MANUALLY:
-                    currentSolve = TTIntent.getSolve(intent);
-                    if (currentSolve != null) {
-                        binding.chronometer.setText(Html.fromHtml(PuzzleUtils.convertTimeToString(currentSolve.getTime(), PuzzleUtils.FORMAT_SMALL_MILLI)));
-                        hideButtons(true, true);
-                        broadcastNewSolve();
-                        declareRecordTimes(currentSolve);
-                    }
-                    break;
-
-                case ACTION_TOOLBAR_RESTORED:
-                    showItems();
-                    animationDone = true;
-                    // Wait for animations to run before broadcasting solve to avoid UI stuttering
-                    Handler handler = new Handler();
-                    handler.postDelayed(() -> {
-                        if (!isCanceled) {
-                            // Only broadcast a new solve if it hasn't been canceled
-                            broadcastNewSolve();
-                        } else {
-                            // The detail stats are triggered by a stats update.
-                            // Since the solve has been canceled, there's no new stats
-                            // to load, and it must be triggered manually
-                            showDetailStats();
+    private val mUIInteractionReceiver
+            : TTFragmentBroadcastReceiver =
+        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
+            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
+                val binding = binding ?: return
+                when (intent?.action) {
+                    ACTION_SCROLLED_PAGE -> {
+                        if (holdEnabled) {
+                            holdHandler?.removeCallbacks(holdRunnable ?: return)
                         }
-
-                        // reset isCanceled state
-                        isCanceled = false;
-                    }, mAnimationDuration + 50);
-                    break;
-
-                case ACTION_GENERATE_SCRAMBLE:
-                    generateNewScramble();
-                    break;
-            }
-        }
-    };
-
-    private Runnable       holdRunnable;
-    private Handler        holdHandler;
-    private CountDownTimer plusTwoCountdown;
-
-    private RubiksCubeOptimalCross  optimalCross;
-    private RubiksCubeOptimalXCross optimalXCross;
-    private BottomSheetDetailDialog scrambleDialog;
-    private FragmentManager mFragManager;
-
-    public TimerFragment() {
-        // Required empty public constructor
-    }
-
-    private final View.OnClickListener buttonClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            final DatabaseHandler dbHandler = TwistyTimer.getDBHandler();
-
-            // On most of these changes to the current solve, the Statistics and ChartStatistics
-            // need to be updated to reflect the change. It would probably be too complicated to
-            // add facilities to "AverageCalculator" to handle modification of the last added time
-            // or an "undo" facility and then to integrate that into the loaders. Therefore, a full
-            // reload will probably be required.
-
-            switch (view.getId()) {
-                case R.id.qa_remove:
-                    new MaterialAlertDialogBuilder(mContext)
-                            .setMessage(R.string.delete_dialog_confirmation_title)
-                            .setPositiveButton(R.string.delete_dialog_confirmation_button, (dialog, which) -> {
-                                if (currentSolve != null) { // FIXME: if solve is null, it should just hide the buttons
-                                    dbHandler.deleteSolve(currentSolve);
-                                    if (!isRunning)
-                                        binding.chronometer.reset(); // Reset to "0.00".
-                                    binding.congratsText.setVisibility(View.GONE);
-                                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED);
-                                }
-                                hideButtons(true, true);
-                            })
-                            .setNegativeButton(R.string.delete_dialog_cancel_button, null)
-                            .show();
-                    break;
-                case R.id.qa_dnf:
-                    currentSolve = PuzzleUtils.applyPenalty(currentSolve, PENALTY_DNF);
-                    binding.chronometer.setPenalty(PuzzleUtils.PENALTY_DNF);
-                    dbHandler.updateSolve(currentSolve);
-                    hideButtons(true, false);
-                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED);
-                    break;
-                case R.id.qa_plustwo:
-                    if (currentPenalty != PENALTY_PLUSTWO) {
-                        currentSolve = PuzzleUtils.applyPenalty(currentSolve, PENALTY_PLUSTWO);
-                        binding.chronometer.setPenalty(PuzzleUtils.PENALTY_PLUSTWO);
-                        dbHandler.updateSolve(currentSolve);
-                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED);
+                        binding.chronometer.setHighlighted(false)
+                        binding.chronometer.cancelHoldForStart()
+                        isReady = false
                     }
-                    hideButtons(true, false);
-                    break;
-                case R.id.qa_comment:
-                    View commentView = LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null);
-                    TextInputEditText commentEditText = commentView.findViewById(R.id.edit_text);
-                    commentEditText.setText(currentSolve.getComment());
 
-                    new MaterialAlertDialogBuilder(mContext)
-                            .setTitle(R.string.add_comment)
-                            .setView(commentView)
-                            .setPositiveButton(R.string.action_done, (dialog, which) -> {
-                                currentSolve.setComment(commentEditText.getText().toString());
-                                dbHandler.updateSolve(currentSolve);
+                    ACTION_TIME_ADDED_MANUALLY -> {
+                        currentSolve = getSolve(intent)
+                        val solve = currentSolve
+                        if (solve != null) {
+                            binding.chronometer.text = Html.fromHtml(
+                                convertTimeToString(
+                                    solve.time.toLong(),
+                                    PuzzleUtils.FORMAT_SMALL_MILLI
+                                )
+                            )
+                            hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
+                            broadcastNewSolve()
+                            declareRecordTimes(solve)
+                        }
+                    }
 
-                                broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_COMMENT_ADDED);
-                                Toast.makeText(mContext, getString(R.string.added_comment), Toast.LENGTH_SHORT).show();
-                                hideButtons(false, true);
-                            })
-                            .setNegativeButton(R.string.action_cancel, null)
-                            .show();
-                    break;
-                case R.id.qa_undo:
-                    // Undo the setting of a DNF or +2 penalty (does not undo a delete or comment).
-                    currentSolve = PuzzleUtils.applyPenalty(currentSolve, NO_PENALTY);
-                    binding.chronometer.setPenalty(PuzzleUtils.NO_PENALTY);
-                    dbHandler.updateSolve(currentSolve);
-                    hideButtons(false, true);
-                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED);
-                    break;
-                case R.id.scramble_button_reset:
-                    broadcast(CATEGORY_UI_INTERACTIONS, ACTION_GENERATE_SCRAMBLE);
-                    break;
-                case R.id.scramble_button_edit:
-                    View editScrambleView = LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null);
-                    TextInputEditText editScrambleEditText = editScrambleView.findViewById(R.id.edit_text);
-                    editScrambleEditText.setText(realScramble);
+                    ACTION_TOOLBAR_RESTORED -> {
+                        showItems()
+                        animationDone = true
+                        // Wait for animations to run before broadcasting solve to avoid UI stuttering
+                        val handler = Handler(Looper.getMainLooper())
+                        handler.postDelayed({
+                            if (!isCanceled) {
+                                // Only broadcast a new solve if it hasn't been canceled
+                                broadcastNewSolve()
+                            } else {
+                                // The detail stats are triggered by a stats update.
+                                // Since the solve has been canceled, there's no new stats
+                                // to load, and it must be triggered manually
+                                showDetailStats()
+                            }
+                            // reset isCanceled state
+                            isCanceled = false
+                        }, (mAnimationDuration + 50).toLong())
+                    }
 
-                    new MaterialAlertDialogBuilder(mContext)
-                            .setTitle(R.string.edit_scramble)
-                            .setView(editScrambleView)
-                            .setPositiveButton(R.string.action_done, (dialog, which) -> {
-                                setScramble(editScrambleEditText.getText().toString());
-
-                                // The hint solver will crash if you give it invalid scrambles,
-                                // so we shouldn't calculate hints for custom scrambles.
-                                // TODO: We can use the scramble image generator (which has a scramble validity checker) to check a scramble before calling a hint
-                                canShowHint = false;
-                                hideButtons(true, true);
-                            })
-                            .setNegativeButton(R.string.action_cancel, null)
-                            .show();
-                    break;
-                case R.id.scramble_button_manual_entry:
-                    AddTimeDialog addTimeDialog = AddTimeDialog.newInstance(currentPuzzle, currentPuzzleCategory, realScramble);
-                    FragmentManager manager = getFragmentManager();
-                    if (manager != null)
-                        addTimeDialog.show(manager, "dialog_add_time");
-                    break;
+                    ACTION_GENERATE_SCRAMBLE -> generateNewScramble()
+                }
             }
         }
-    };
+
+    private var holdRunnable: Runnable? = null
+    private var holdHandler: Handler? = null
+    private var plusTwoCountdown: CountDownTimer? = null
+
+    private var optimalCross: RubiksCubeOptimalCross? = null
+    private var optimalXCross: RubiksCubeOptimalXCross? = null
+    private var scrambleDialog: BottomSheetDetailDialog? = null
+    private var mFragManager: FragmentManager? = null
+
+    private val buttonClickListener: View.OnClickListener = View.OnClickListener { view ->
+        val dbHandler = TwistyTimer.getDBHandler()
+
+        // On most of these changes to the current solve, the Statistics and ChartStatistics
+        // need to be updated to reflect the change. It would probably be too complicated to
+        // add facilities to "AverageCalculator" to handle modification of the last added time
+        // or an "undo" facility and then to integrate that into the loaders. Therefore, a full
+        // reload will probably be required.
+        when (view.id) {
+            R.id.qa_remove -> MaterialAlertDialogBuilder(requireContext())
+                .setMessage(R.string.delete_dialog_confirmation_title)
+                .setPositiveButton(
+                    R.string.delete_dialog_confirmation_button
+                ) { _: DialogInterface?, _: Int ->
+                    currentSolve?.let { solve ->
+                        dbHandler.deleteSolve(solve)
+                        if (!isRunning) binding?.chronometer?.reset() // Reset to "0.00".
+
+                        binding?.congratsText?.visibility = View.GONE
+                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    }
+                    hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
+                }
+                .setNegativeButton(R.string.delete_dialog_cancel_button, null)
+                .show()
+
+            R.id.qa_dnf -> {
+                currentSolve?.let { solve ->
+                    currentSolve = PuzzleUtils.applyPenalty(solve, PENALTY_DNF)
+                    binding?.chronometer?.setPenalty(PENALTY_DNF)
+                    dbHandler.updateSolve(currentSolve!!)
+                    hideButtons(hideQuickActionButtons = true, hideUndoButton = false)
+                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                }
+            }
+
+            R.id.qa_plustwo -> {
+                if (currentPenalty != PENALTY_PLUSTWO) {
+                    currentSolve?.let { solve ->
+                        currentSolve = PuzzleUtils.applyPenalty(solve, PENALTY_PLUSTWO)
+                        binding?.chronometer?.setPenalty(PENALTY_PLUSTWO)
+                        dbHandler.updateSolve(currentSolve!!)
+                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    }
+                }
+                hideButtons(hideQuickActionButtons = true, hideUndoButton = false)
+            }
+
+            R.id.qa_comment -> {
+                val commentView =
+                    LayoutInflater.from(requireContext()).inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
+                val commentEditText =
+                    commentView.findViewById<TextInputEditText>(R.id.edit_text)
+                commentEditText.setText(currentSolve?.comment)
+
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.add_comment)
+                    .setView(commentView)
+                    .setPositiveButton(
+                        R.string.action_done
+                    ) { _: DialogInterface?, _: Int ->
+                        currentSolve?.let { solve ->
+                            solve.comment = commentEditText.text.toString()
+                            dbHandler.updateSolve(solve)
+
+                            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_COMMENT_ADDED)
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.added_comment),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        hideButtons(hideQuickActionButtons = false, hideUndoButton = true)
+                    }
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
+            }
+
+            R.id.qa_undo -> {
+                // Undo the setting of a DNF or +2 penalty (does not undo a delete or comment).
+                currentSolve?.let { solve ->
+                    currentSolve = PuzzleUtils.applyPenalty(solve, NO_PENALTY)
+                    binding?.chronometer?.setPenalty(NO_PENALTY)
+                    dbHandler.updateSolve(currentSolve!!)
+                    hideButtons(hideQuickActionButtons = false, hideUndoButton = true)
+                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                }
+            }
+
+            R.id.scramble_button_reset -> broadcast(
+                CATEGORY_UI_INTERACTIONS,
+                ACTION_GENERATE_SCRAMBLE
+            )
+
+            R.id.scramble_button_edit -> {
+                val editScrambleView =
+                    LayoutInflater.from(requireContext()).inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
+                val editScrambleEditText =
+                    editScrambleView.findViewById<TextInputEditText>(R.id.edit_text)
+                editScrambleEditText.setText(realScramble)
+
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.edit_scramble)
+                    .setView(editScrambleView)
+                    .setPositiveButton(
+                        R.string.action_done
+                    ) { _: DialogInterface?, _: Int ->
+                        setScramble(editScrambleEditText.text.toString())
+                        // The hint solver will crash if you give it invalid scrambles,
+                        // so we shouldn't calculate hints for custom scrambles.
+                        // TODO: We can use the scramble image generator (which has a scramble validity checker) to check a scramble before calling a hint
+                        canShowHint = false
+                        hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
+                    }
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
+            }
+
+            R.id.scramble_button_manual_entry -> {
+                val addTimeDialog = AddTimeDialog.newInstance(
+                    currentPuzzle,
+                    currentPuzzleCategory,
+                    realScramble
+                )
+                parentFragmentManager.let { addTimeDialog.show(it, "dialog_add_time") }
+            }
+        }
+    }
 
     /**
      * Hides (or shows) the delete/dnf/plus-two quick action buttons and the undo button.
      */
-    private void hideButtons(boolean hideQuickActionButtons, boolean hideUndoButton) {
-        binding.qaButtons.qaLayout.setVisibility(hideQuickActionButtons ? View.GONE : View.VISIBLE);
-        binding.qaUndo.setVisibility(hideUndoButton ? View.GONE : View.VISIBLE);
+    private fun hideButtons(hideQuickActionButtons: Boolean, hideUndoButton: Boolean) {
+        binding?.qaButtons?.qaLayout?.visibility = if (hideQuickActionButtons) View.GONE else View.VISIBLE
+        binding?.qaUndo?.visibility = if (hideUndoButton) View.GONE else View.VISIBLE
     }
 
-    public static TimerFragment newInstance(String puzzle, String puzzleSubType, String timerMode, TrainerScrambler.TrainerSubset subset) {
-        TimerFragment fragment = new TimerFragment();
-        Bundle args = new Bundle();
-        args.putString(PUZZLE, puzzle);
-        args.putString(PUZZLE_SUBTYPE, puzzleSubType);
-        args.putString(TIMER_MODE, timerMode);
-        args.putSerializable(TRAINER_SUBSET, subset);
-        fragment.setArguments(args);
-        if (DEBUG_ME) Log.d(TAG, "newInstance() -> " + fragment);
-        return fragment;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        if (DEBUG_ME) Log.d(TAG, "updateLocale(savedInstanceState=" + savedInstanceState + ")");
-        super.onCreate(savedInstanceState);
-        mContext = getContext();
-        if (getArguments() != null) {
-            currentPuzzle = getArguments().getString(PUZZLE);
-            currentPuzzleCategory = getArguments().getString(PUZZLE_SUBTYPE);
-            currentSubset = (TrainerScrambler.TrainerSubset) getArguments().getSerializable(TRAINER_SUBSET);
-            currentTimerMode = getArguments().getString(TIMER_MODE);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        if (DEBUG_ME) Log.d(TAG, "updateLocale(savedInstanceState=$savedInstanceState)")
+        super.onCreate(savedInstanceState)
+        mContext = context
+        if (arguments != null) {
+            currentPuzzle = requireArguments().getString(PUZZLE)
+            currentPuzzleCategory = requireArguments().getString(PUZZLE_SUBTYPE)
+            currentSubset = requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
+            currentTimerMode = requireArguments().getString(TIMER_MODE)
         }
 
         if (savedInstanceState != null) {
-            if (savedInstanceState.getString(PUZZLE) == getArguments().get(PUZZLE)) {
-                realScramble = savedInstanceState.getString(SCRAMBLE);
+            if (savedInstanceState.getString(PUZZLE) == requireArguments().getString(PUZZLE)) {
+                realScramble = savedInstanceState.getString(SCRAMBLE)
             }
             //hasStoppedTimerOnce = savedInstanceState.getBoolean(HAS_STOPPED_TIMER_ONCE, false);
         }
 
-        detailTextNamesArray = getResources().getStringArray(R.array.timer_detail_stats);
+        detailTextNamesArray = resources.getStringArray(R.array.timer_detail_stats)
 
-        scrambleGeneratorAsync = new GenerateScrambleSequence();
+        scrambleGeneratorAsync = GenerateScrambleSequence()
 
-        getNewOptimalCross();
+        this.newOptimalCross
 
-        mFragManager = getFragmentManager();
+        mFragManager = parentFragmentManager
 
-        mAnimationDuration = Prefs.getInt(R.string.pk_timer_animation_duration, mContext.getResources().getInteger(R.integer.defaultAnimationDuration));
+        mAnimationDuration = getInt(
+            R.string.pk_timer_animation_duration, requireContext().resources.getInteger(
+                R.integer.defaultAnimationDuration
+            )
+        )
 
-        generator = new ScrambleGenerator(currentPuzzle);
+        generator = ScrambleGenerator(requireNotNull(currentPuzzle))
         // Register a receiver to update if something has changed
-        registerReceiver(mUIInteractionReceiver);
+        registerReceiver(mUIInteractionReceiver)
     }
 
-    @SuppressLint({"ClickableViewAccessibility", "RestrictedApi"})
-    @Override
-    public View onCreateView(LayoutInflater inflater, final ViewGroup container,
-                             Bundle savedInstanceState) {
-        if (DEBUG_ME) Log.d(TAG, "onCreateView(savedInstanceState=" + savedInstanceState + ")");
+    @SuppressLint("ClickableViewAccessibility", "RestrictedApi")
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        if (DEBUG_ME) Log.d(TAG, "onCreateView(savedInstanceState=$savedInstanceState)")
 
         // Inflate the layout for this fragment
-        binding = FragmentTimerBinding.inflate(inflater, container, false);
+        binding = FragmentTimerBinding.inflate(inflater, container, false)
 
-        return binding.getRoot();
+        return binding?.root
     }
 
-    @SuppressLint({"ClickableViewAccessibility", "RestrictedApi"})
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    @SuppressLint("ClickableViewAccessibility", "RestrictedApi")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val binding = binding ?: return
+
         // Necessary for the scramble image to show
-        binding.scrambleImg.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        binding.expandedImage.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        binding.scrambleImg.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
+        binding.expandedImage.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
 
         // Set the zoom click listener
-        binding.scrambleImg.setOnClickListener(view1 -> zoomImageFromThumb(binding.scrambleImg));
+        binding.scrambleImg.setOnClickListener { _: View? ->
+            zoomImageFromThumb(
+                binding.scrambleImg
+            )
+        }
+
 
         // Retrieve and cache the system's default "short" animation time.
-
-
-        binding.qaButtons.qaRemove.setOnClickListener(buttonClickListener);
-        binding.qaButtons.qaDnf.setOnClickListener(buttonClickListener);
-        binding.qaButtons.qaPlustwo.setOnClickListener(buttonClickListener);
-        binding.qaButtons.qaComment.setOnClickListener(buttonClickListener);
-        binding.qaUndo.setOnClickListener(buttonClickListener);
-        binding.scrambleBox.scrambleButtonReset.setOnClickListener(buttonClickListener);
-        binding.scrambleBox.scrambleButtonEdit.setOnClickListener(buttonClickListener);
+        binding.qaButtons?.let {
+            it.qaRemove.setOnClickListener(buttonClickListener)
+            it.qaDnf.setOnClickListener(buttonClickListener)
+            it.qaPlustwo.setOnClickListener(buttonClickListener)
+            it.qaComment.setOnClickListener(buttonClickListener)
+        }
+        binding.qaUndo.setOnClickListener(buttonClickListener)
+        binding.scrambleBox.scrambleButtonReset.setOnClickListener(buttonClickListener)
+        binding.scrambleBox.scrambleButtonEdit.setOnClickListener(buttonClickListener)
 
         // Preferences //
-        final boolean inspectionEnabled = Prefs.getBoolean(R.string.pk_inspection_enabled, false);
-        final int inspectionTime = Prefs.getInt(R.string.pk_inspection_time, 15);
-        final float timerTextSize = Prefs.getInt(R.string.pk_timer_text_size, 100) / 100f;
-        float scrambleImageSize = Prefs.getInt(R.string.pk_scramble_image_size, 100) / 100f;
-        scrambleTextSize = Prefs.getInt(R.string.pk_scramble_text_size, 100) / 100f;
-        final boolean advancedEnabled
-                = Prefs.getBoolean(R.string.pk_advanced_timer_settings_enabled, false);
+        val inspectionEnabled = getBoolean(R.string.pk_inspection_enabled, false)
+        val inspectionTime = getInt(R.string.pk_inspection_time, 15)
+        val timerTextSize = getInt(R.string.pk_timer_text_size, 100) / 100f
+        val scrambleImageSize = getInt(R.string.pk_scramble_image_size, 100) / 100f
+        scrambleTextSize = getInt(R.string.pk_scramble_text_size, 100) / 100f
+        val advancedEnabled = getBoolean(R.string.pk_advanced_timer_settings_enabled, false)
 
         /*
          *  Scramble text size preference. It doesn't need to be in the "advanced" settings since
          *  it detects if it's clipping and automatically compensates for that by creating a button.
          */
-        binding.scrambleBox.scrambleText.setTextSize(TypedValue.COMPLEX_UNIT_PX, binding.scrambleBox.scrambleText.getTextSize() * scrambleTextSize);
+        binding.scrambleBox.scrambleText.setTextSize(
+            TypedValue.COMPLEX_UNIT_PX,
+            binding.scrambleBox.scrambleText.textSize * scrambleTextSize
+        )
 
         if (advancedEnabled) {
             binding.chronometer.setAutoSizeTextTypeUniformWithConfiguration(
-                    (int) (90 * timerTextSize) / 2,
-                    (int) (90 * timerTextSize),
-                    2,
-                    TypedValue.COMPLEX_UNIT_SP);
+                (90 * timerTextSize).toInt() / 2,
+                (90 * timerTextSize).toInt(),
+                2,
+                TypedValue.COMPLEX_UNIT_SP
+            )
 
-            binding.scrambleImg.getLayoutParams().width *= scrambleImageSize;
-            binding.scrambleImg.getLayoutParams().height *= calculateScrambleImageHeightMultiplier(scrambleImageSize);
+            binding.scrambleImg.layoutParams.width =
+                (binding.scrambleImg.layoutParams.width * scrambleImageSize).toInt()
+            binding.scrambleImg.layoutParams.height =
+                (binding.scrambleImg.layoutParams.height * calculateScrambleImageHeightMultiplier(
+                    scrambleImageSize
+                )).toInt()
         }
 
-        Resources res = getResources();
+        val res = resources
 
-        averageRecordsEnabled = Prefs.getBoolean(R.string.pk_show_average_record_enabled,
-                DefaultPrefs.getBoolean(R.bool.default_showAverageRecordEnabled));
+        averageRecordsEnabled = getBoolean(
+            R.string.pk_show_average_record_enabled,
+            getBoolean(R.bool.default_showAverageRecordEnabled)
+        )
 
-        backCancelEnabled = Prefs.getBoolean(R.string.pk_back_button_cancel_solve_enabled, res.getBoolean(R.bool.default_backCancelEnabled));
+        backCancelEnabled = getBoolean(
+            R.string.pk_back_button_cancel_solve_enabled, res.getBoolean(
+                R.bool.default_backCancelEnabled
+            )
+        )
 
-        buttonsEnabled = Prefs.getBoolean(R.string.pk_show_quick_actions, res.getBoolean(R.bool.default_buttonEnabled));
-        holdEnabled = Prefs.getBoolean(R.string.pk_hold_to_start_enabled, res.getBoolean(R.bool.default_holdEnabled));
-        startCueEnabled = Prefs.getBoolean(R.string.pk_start_cue_enabled, res.getBoolean(R.bool.default_startCue));
+        buttonsEnabled =
+            getBoolean(R.string.pk_show_quick_actions, res.getBoolean(R.bool.default_buttonEnabled))
+        holdEnabled = getBoolean(
+            R.string.pk_hold_to_start_enabled,
+            res.getBoolean(R.bool.default_holdEnabled)
+        )
+        startCueEnabled =
+            getBoolean(R.string.pk_start_cue_enabled, res.getBoolean(R.bool.default_startCue))
 
-        sessionStatsEnabled = Prefs.getBoolean(R.string.pk_show_session_stats, true);
-        bestSolveEnabled = Prefs.getBoolean(R.string.pk_show_best_time, true);
-        worstSolveEnabled = Prefs.getBoolean(R.string.pk_show_worst_time, false);
+        sessionStatsEnabled = getBoolean(R.string.pk_show_session_stats, true)
+        bestSolveEnabled = getBoolean(R.string.pk_show_best_time, true)
+        worstSolveEnabled = getBoolean(R.string.pk_show_worst_time, false)
 
-        scrambleEnabled = Prefs.getBoolean(R.string.pk_scramble_enabled, true);
-        scrambleImgEnabled = Prefs.getBoolean(R.string.pk_show_scramble_image, true);
-        showHintsEnabled = Prefs.getBoolean(R.string.pk_show_scramble_hints, true);
-        showHintsXCrossEnabled = Prefs.getBoolean(R.string.pk_show_scramble_x_cross_hints, false);
+        scrambleEnabled = getBoolean(R.string.pk_scramble_enabled, true)
+        scrambleImgEnabled = getBoolean(R.string.pk_show_scramble_image, true)
+        showHintsEnabled = getBoolean(R.string.pk_show_scramble_hints, true)
+        showHintsXCrossEnabled = getBoolean(R.string.pk_show_scramble_x_cross_hints, false)
 
-        manualEntryEnabled = Prefs.getBoolean(R.string.pk_enable_manual_entry, false);
+        manualEntryEnabled = getBoolean(R.string.pk_enable_manual_entry, false)
 
-        scrambleBackgroundEnabled = Prefs.getBoolean(R.string.pk_show_scramble_background, false);
+        scrambleBackgroundEnabled = getBoolean(R.string.pk_show_scramble_background, false)
 
-        boolean inspectionAlertEnabled = Prefs.getBoolean(R.string.pk_inspection_alert_enabled, false);
-        final String vibrationAlert = getString(R.string.pk_inspection_alert_vibration);
-        final String soundAlert = getString(R.string.pk_inspection_alert_sound);
+        val inspectionAlertEnabled = getBoolean(R.string.pk_inspection_alert_enabled, false)
+        val vibrationAlert = getString(R.string.pk_inspection_alert_vibration)
+        val soundAlert = getString(R.string.pk_inspection_alert_sound)
         if (inspectionAlertEnabled) {
-            String inspectionAlertType = Prefs.getString(R.string.pk_inspection_alert_type,
-                    getString(R.string.pk_inspection_alert_vibration));
-            if (inspectionAlertType.equals(vibrationAlert)) {
-                inspectionVibrationAlertEnabled = true;
-                inspectionSoundAlertEnabled = false;
-            } else if (inspectionAlertType.equals(soundAlert)) {
-                inspectionVibrationAlertEnabled = false;
-                inspectionSoundAlertEnabled = true;
+            val inspectionAlertType = Prefs.getString(
+                R.string.pk_inspection_alert_type,
+                getString(R.string.pk_inspection_alert_vibration)
+            )
+            if (inspectionAlertType == vibrationAlert) {
+                inspectionVibrationAlertEnabled = true
+                inspectionSoundAlertEnabled = false
+            } else if (inspectionAlertType == soundAlert) {
+                inspectionVibrationAlertEnabled = false
+                inspectionSoundAlertEnabled = true
             } else {
-                inspectionVibrationAlertEnabled = true;
-                inspectionSoundAlertEnabled = true;
+                inspectionVibrationAlertEnabled = true
+                inspectionSoundAlertEnabled = true
             }
         }
-        
+
         if (!scrambleEnabled) {
             // CongratsText is by default aligned to below the scramble box. If it's missing, we have
             // to add an extra margin to account for the title header
-            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) binding.congratsText.getLayoutParams();
-            params.topMargin = ThemeUtils.dpToPix(mContext, 70); // WARNING: this has to be the same as attr/actionBarPadding
-            binding.congratsText.requestLayout();
+            val params = binding.congratsText.layoutParams as MarginLayoutParams
+            params.topMargin = ThemeUtils.dpToPix(
+                requireContext(),
+                70f
+            ) // WARNING: this has to be the same as attr/actionBarPadding
+            binding.congratsText.requestLayout()
         }
 
         if (!scrambleBackgroundEnabled) {
-            binding.scrambleBox.getRoot().setBackgroundColor(Color.TRANSPARENT);
-            binding.scrambleBox.getRoot().setCardElevation(0);
-            binding.scrambleBox.scrambleText.setTextColor(ThemeUtils.fetchAttrColor(mContext, R.attr.colorTimerText));
-            binding.scrambleBox.scrambleButtonEdit.setColorFilter(ThemeUtils.fetchAttrColor(mContext, R.attr.colorTimerText));
-            binding.scrambleBox.scrambleButtonReset.setColorFilter(ThemeUtils.fetchAttrColor(mContext, R.attr.colorTimerText));
-            binding.scrambleBox.scrambleButtonHint.setColorFilter(ThemeUtils.fetchAttrColor(mContext, R.attr.colorTimerText));
-            binding.scrambleBox.scrambleButtonManualEntry.setColorFilter(ThemeUtils.fetchAttrColor(mContext, R.attr.colorTimerText));
+            binding.scrambleBox.root.setBackgroundColor(Color.TRANSPARENT)
+            binding.scrambleBox.root.cardElevation = 0f
+            binding.scrambleBox.scrambleText.setTextColor(
+                ThemeUtils.fetchAttrColor(
+                    requireContext(),
+                    R.attr.colorTimerText
+                )
+            )
+            binding.scrambleBox.scrambleButtonEdit.setColorFilter(
+                ThemeUtils.fetchAttrColor(
+                    requireContext(),
+                    R.attr.colorTimerText
+                )
+            )
+            binding.scrambleBox.scrambleButtonReset.setColorFilter(
+                ThemeUtils.fetchAttrColor(
+                    requireContext(),
+                    R.attr.colorTimerText
+                )
+            )
+            binding.scrambleBox.scrambleButtonHint.setColorFilter(
+                ThemeUtils.fetchAttrColor(
+                    requireContext(),
+                    R.attr.colorTimerText
+                )
+            )
+            binding.scrambleBox.scrambleButtonManualEntry.setColorFilter(
+                ThemeUtils.fetchAttrColor(
+                    requireContext(),
+                    R.attr.colorTimerText
+                )
+            )
         }
 
-        if (showHintsEnabled && currentPuzzle.equals(PuzzleUtils.TYPE_333) && scrambleEnabled) {
-            binding.scrambleBox.scrambleButtonHint.setVisibility(View.VISIBLE);
-            optimalCross = new RubiksCubeOptimalCross(getString(R.string.optimal_cross));
-            optimalXCross = new RubiksCubeOptimalXCross(getString(R.string.optimal_x_cross));
+        if (showHintsEnabled && currentPuzzle == TYPE_333 && scrambleEnabled) {
+            binding.scrambleBox.scrambleButtonHint.visibility = View.VISIBLE
+            optimalCross = RubiksCubeOptimalCross(getString(R.string.optimal_cross))
+            optimalXCross = RubiksCubeOptimalXCross(getString(R.string.optimal_x_cross))
         }
 
         if (!scrambleEnabled) {
-            binding.scrambleBox.getRoot().setVisibility(View.GONE);
-            binding.scrambleImg.setVisibility(View.GONE);
-            isLocked = false;
+            binding.scrambleBox.root.visibility = View.GONE
+            binding.scrambleImg.visibility = View.GONE
+            isLocked = false
         }
 
-        if (! scrambleImgEnabled)
-            binding.scrambleImg.setVisibility(View.GONE);
-        if (! sessionStatsEnabled) {
-            binding.sessionDetailTextAverage.setVisibility(View.INVISIBLE);
-            binding.sessionDetailTextOther.setVisibility(View.INVISIBLE);
+        if (!scrambleImgEnabled) binding.scrambleImg.visibility = View.GONE
+        if (!sessionStatsEnabled) {
+            binding.sessionDetailTextAverage.visibility = View.INVISIBLE
+            binding.sessionDetailTextOther.visibility = View.INVISIBLE
         }
+
         // Preferences //
 
         // Manual entry
         if (manualEntryEnabled) {
-            binding.scrambleBox.scrambleButtonManualEntry.setVisibility(View.VISIBLE);
-            binding.scrambleBox.scrambleButtonManualEntry.setOnClickListener(buttonClickListener);
+            binding.scrambleBox.scrambleButtonManualEntry.visibility = View.VISIBLE
+            binding.scrambleBox.scrambleButtonManualEntry.setOnClickListener(buttonClickListener)
         }
 
         // Inspection timer
@@ -606,346 +644,332 @@ public class                                                                    
             if (inspectionAlertEnabled) {
                 // If inspection time is 15 (the official WCA default), first warning should be
                 // at 8 seconds in. Else, warn when half the time is up (8 is about 50% of 15)
-                firstWarning = new CountdownWarning
-                        .Builder(inspectionTime == 15 ? 8 : (int) (inspectionTime * 0.5f))
+                firstWarning =
+                    CountdownWarning.Builder((if (inspectionTime == 15) 8 else (inspectionTime * 0.5f).toInt()).toLong())
                         .withVibrate(inspectionVibrationAlertEnabled)
                         .withTone(inspectionSoundAlertEnabled)
                         .toneCode(ToneGenerator.TONE_CDMA_NETWORK_BUSY_ONE_SHOT)
                         .toneDuration(400)
                         .vibrateDuration(300)
-                        .build();
+                        .build()
                 // If inspection time is default, warn at 12 seconds per competition rules, else,
                 // warn at when 80% of the time is up (12 is 80% of 15)
-                secondWarning = new CountdownWarning
-                        .Builder(inspectionTime == 15 ? 12 : (int) (inspectionTime * 0.8f))
+                secondWarning =
+                    CountdownWarning.Builder((if (inspectionTime == 15) 12 else (inspectionTime * 0.8f).toInt()).toLong())
                         .withVibrate(inspectionVibrationAlertEnabled)
                         .withTone(inspectionSoundAlertEnabled)
                         .toneCode(ToneGenerator.TONE_CDMA_NETWORK_BUSY)
                         .toneDuration(800)
                         .vibrateDuration(600)
-                        .build();
+                        .build()
             }
-            countdown = new CountDownTimer(inspectionTime * 1000, 500) {
-                @Override
-                public void onTick(long l) {
-                    if (binding != null && binding.chronometer != null)
-                        binding.chronometer.setText(String.valueOf((l / 1000) + 1));
+            countdown = object : CountDownTimer((inspectionTime * 1000).toLong(), 500) {
+                override fun onTick(l: Long) {
+                    binding.chronometer.text = ((l / 1000) + 1).toString()
                 }
 
-                @Override
-                public void onFinish() {
-                    if (binding != null && binding.chronometer != null) {
-                        binding.chronometer.setText("+2");
+                override fun onFinish() {
+                    binding?.chronometer?.let {
+                        it.text = "+2"
                         // "+2" penalty is applied to "chronometer" when timer is eventually stopped.
-                        currentPenalty = PuzzleUtils.PENALTY_PLUSTWO;
-                        plusTwoCountdown.start();
+                        currentPenalty = PENALTY_PLUSTWO
+                        plusTwoCountdown?.start()
                     }
                 }
-            };
+            }
 
-            plusTwoCountdown = new CountDownTimer(2000, 500) {
-                @Override
-                public void onTick(long l) {
+            plusTwoCountdown = object : CountDownTimer(2000, 500) {
+                override fun onTick(l: Long) {
                     // The displayed value remains "+2" for the duration of this countdown.
                 }
 
-                @Override
-                public void onFinish() {
+                override fun onFinish() {
                     // After counting down the inspection period, a "+2" penalty was counted down
                     // before the solve started, so this is a DNF. If the timer starts before this
                     // countdown ends, then "plusTwoCountdown" is cancelled before this happens.
-                    countingDown = false;
-                    isReady = false;
-                    holdingDNF = true;
-                    currentPenalty = PuzzleUtils.PENALTY_DNF;
-                    if (binding != null) {
-                        binding.chronometer.setPenalty(PuzzleUtils.PENALTY_DNF);
-                        stopChronometer();
-                        addNewSolve();
-                        binding.inspectionText.setVisibility(View.GONE);
+                    countingDown = false
+                    isReady = false
+                    holdingDNF = true
+                    currentPenalty = PENALTY_DNF
+                    binding.let {
+                        it.chronometer.setPenalty(PENALTY_DNF)
+                        stopChronometer()
+                        addNewSolve()
+                        it.inspectionText.visibility = View.GONE
                     }
                 }
-            };
+            }
         }
 
         // If hold-for-start is enabled, use the "isReady" flag to indicate if the hold was long
         // enough (0.5s) to trigger the starting of the timer.
         if (holdEnabled) {
-            holdHandler = new Handler();
-            holdRunnable = () -> {
-                isReady = true;
+            holdHandler = Handler()
+            holdRunnable = Runnable {
+                isReady = true
                 // Indicate to the user that the hold was long enough.
-                binding.chronometer.setHighlighted(true);
-                if (! inspectionEnabled) {
+                binding.chronometer?.setHighlighted(true)
+                if (!inspectionEnabled) {
                     // If inspection is enabled, the toolbar is already hidden.
-                    hideToolbar();
+                    hideToolbar()
                 }
-            };
+            }
         }
 
-        binding.detailAverageRecordMessage.setBackground(ThemeUtils.createSquareDrawableAttr(mContext, 0, R.attr.colorTimerText, 20, 1.6f));
+        binding.detailAverageRecordMessage.background =
+            ThemeUtils.createSquareDrawableAttr(
+                requireContext(),
+                0,
+                R.attr.colorTimerText,
+                20,
+                1.6f
+            )
 
         // Chronometer
-        binding.startTimerLayout.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-
+        binding.startTimerLayout.setOnTouchListener(object : OnTouchListener {
+            override fun onTouch(view: View?, motionEvent: MotionEvent): Boolean {
                 if (!animationDone || isLocked && !isRunning) {
                     // Not ready to start the timer, yet. May be waiting on the animation of the
-                    // restoration of the tool-bars after the timer was stopped, or waiting on the
+                    // restoration of the toolbars after the timer was stopped, or waiting on the
                     // generation of a scramble ("isLocked" flag).
                     // To compensate for long generating times, the timer generates a scramble
                     // while it is counting down. In this case, it's necessary to check if the timer
-                    // is running, so the user can stop the it.
-                    return false;
+                    // is running, so the user can stop it.
+                    return false
                 }
 
-                if (countingDown) { // "countingDown == true" => "inspectionEnabled == true"
-                    switch (motionEvent.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
+                if (countingDown) {
+                    // "countingDown == true" => "inspectionEnabled == true"
+                    when (motionEvent.action) {
+                        MotionEvent.ACTION_DOWN -> {
                             // During inspection, touching down changes the text highlight color
                             // to indicate readiness to start timing. If the hold-for-start delay
                             // is enabled, that color change will be delayed. The timer will not
-                            // start until the touch is lifted up, but the inspection countdown
+                            // start until the touch is lifted, but the inspection countdown
                             // will still continue in the meantime.
                             if (holdEnabled) {
-                                isReady = false;
-                                holdHandler.postDelayed(holdRunnable, HOLD_FOR_START_DELAY);
+                                isReady = false
+                                holdHandler?.postDelayed(holdRunnable ?: return false, HOLD_FOR_START_DELAY)
                             } else if (startCueEnabled) {
-                                binding.chronometer.setHighlighted(true);
+                                binding.chronometer.setHighlighted(true)
                             }
                             // "chronometer.holdForStart" is not called here; it displays "0.00",
                             // which would interfere with the continuing countdown of the
                             // inspection
                             // period and, anyway, be overwritten by the next countdown "tick".
-                            return true;
+                            return true
+                        }
 
-                        case MotionEvent.ACTION_UP:
+                        MotionEvent.ACTION_UP -> {
                             // Counting down inspection period. User has already touched down after
                             // starting the inspection, so start the timer unless "hold-to-start"
                             // is enabled and the hold delay was not long enough.
                             if (holdEnabled && !isReady) {
-                                holdHandler.removeCallbacks(holdRunnable);
+                                holdHandler?.removeCallbacks(holdRunnable ?: return false)
                             } else {
-                                stopInspectionCountdown();
-                                startChronometer(); // Tool-bar is already hidden and remains so.
+                                stopInspectionCountdown()
+                                startChronometer() // Toolbar is already hidden and remains so.
                             }
-                            return false;
+                            return false
+                        }
                     }
-                } else if (! isRunning) { // Not running and not counting down.
-                    switch (motionEvent.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-
+                } else if (!isRunning) { // Not running and not counting down.
+                    when (motionEvent.action) {
+                        MotionEvent.ACTION_DOWN -> {
                             if (holdingDNF) {
-                                holdingDNF = false;
-                                binding.chronometer.setHighlighted(false);
+                                holdingDNF = false
+                                binding.chronometer.setHighlighted(false)
                             }
 
                             if (!inspectionEnabled) {
                                 if (holdEnabled) {
-                                    isReady = false;
-                                    holdHandler.postDelayed(holdRunnable, HOLD_FOR_START_DELAY);
+                                    isReady = false
+                                    holdHandler?.postDelayed(holdRunnable ?: return false, HOLD_FOR_START_DELAY)
                                 } else if (startCueEnabled) {
-                                    binding.chronometer.setHighlighted(true);
+                                    binding.chronometer.setHighlighted(true)
                                 }
                                 // Display "0.00" while holding in readiness for a new solve.
                                 // This is not used above when inspection is enabled, as it would
                                 // interfere with the countdown display.
-                                binding.chronometer.holdForStart();
+                                binding.chronometer.holdForStart()
                             }
-                            return true;
+                            return true
+                        }
 
-                        case MotionEvent.ACTION_UP:
-
+                        MotionEvent.ACTION_UP -> {
                             if (holdingDNF) {
                                 // Checks if the user was holding the screen when the inspection
                                 // timed out and saved a DNF
-                                holdingDNF = false;
+                                holdingDNF = false
                             } else if (inspectionEnabled) {
-                                hideToolbar();
-                                startInspectionCountdown(inspectionTime);
+                                hideToolbar()
+                                startInspectionCountdown(inspectionTime)
                             } else if (holdEnabled && !isReady) {
                                 // Not held for long enough. Replace "0.00" with previous value.
-                                binding.chronometer.cancelHoldForStart();
-                                holdHandler.removeCallbacks(holdRunnable);
+                                binding.chronometer.cancelHoldForStart()
+                                holdHandler?.removeCallbacks(holdRunnable ?: return false)
                             } else {
                                 // Inspection disabled. Hold-for-start disabled, or hold-for-start
                                 // enabled, but the hold time was long enough. In the latter case,
                                 // the tool-bar will already have been hidden. Start timing!
                                 if (!holdEnabled) {
-                                    hideToolbar();
+                                    hideToolbar()
                                 }
-                                startChronometer();
+                                startChronometer()
                             }
-                            return false;
+                            return false
+                        }
                     }
-                } else if (motionEvent.getAction() == MotionEvent.ACTION_DOWN
-                        && binding.chronometer.getElapsedTime() >= 80) { // => "isRunning == true"
+                } else if (motionEvent.action == MotionEvent.ACTION_DOWN
+                    && binding.chronometer.elapsedTime >= 80
+                ) { // => "isRunning == true"
                     // Chronometer is timing a solve (running, not counting down inspection period).
                     // Stop the timer if it has been running for long enough (80 ms) for this not to
-                    // be an accidental touch as the user lifted up the touch to start the timer.
-                    animationDone = false;
-                    stopChronometer();
-                    if (currentPenalty == PuzzleUtils.PENALTY_PLUSTWO) {
+                    // be an accidental touch as the user lifted the touch to start the timer.
+                    animationDone = false
+                    stopChronometer()
+                    if (currentPenalty == PENALTY_PLUSTWO) {
                         // If a user has inspection on and went past his inspection time, he has
                         // two extra seconds do start his time, but with a +2 penalty. This penalty
                         // is recorded above (see plusTwoCountdown), and the timer checks if it's true here.
-                        binding.chronometer.setPenalty(PuzzleUtils.PENALTY_PLUSTWO);
+                        binding.chronometer.setPenalty(PENALTY_PLUSTWO)
                     }
-                    addNewSolve();
+                    addNewSolve()
                 }
-                return false;
+                return false
             }
-        });
+        })
     }
 
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
         // If the statistics are already loaded, the update notification will have been missed,
         // so fire that notification now. If the statistics are non-null, they will be displayed.
         // If they are null (i.e., not yet loaded), nothing will be displayed until this fragment,
         // as a registered observer, is notified when loading is complete. Post the firing of the
         // event, so that it is received after "onCreateView" returns.
-        onStatisticsUpdated(StatisticsCache.getInstance().getStatistics());
-        StatisticsCache.getInstance().registerObserver(this); // Unregistered in "onDestroyView".
+        onStatisticsUpdated(StatisticsCache.instance.statistics)
+        StatisticsCache.instance.registerObserver(this) // Unregistered in "onDestroyView".
     }
 
-    @Override
-    public void onResume() {
-        if (DEBUG_ME) Log.d(TAG, "onResume()");
-        super.onResume();
+    override fun onResume() {
+        if (DEBUG_ME) Log.d(TAG, "onResume()")
+        super.onResume()
         if (scrambleEnabled) {
             if (realScramble == null) {
-                generateNewScramble();
+                generateNewScramble()
             } else {
-                setScramble(realScramble);
+                setScramble(realScramble)
             }
         }
     }
 
     /**
      * Stops the chronometer on back press.
-     *
+     * 
      * @return
-     *     {@code true} if the "Back" button press was consumed to hide the scramble or stop the
-     *     timer; or {@code false} if neither was necessary and the "Back" button press was ignored.
+     * `true` if the "Back" button press was consumed to hide the scramble or stop the
+     * timer; or `false` if neither was necessary and the "Back" button press was ignored.
      */
-    @Override
-    public boolean onBackPressedInFragment() {
-        if (DEBUG_ME) Log.d(TAG, "onBackPressedInFragment()");
+    override fun onBackPressedInFragment(): Boolean {
+        if (DEBUG_ME) Log.d(TAG, "onBackPressedInFragment()")
 
-        if (isResumed()) {
+        if (isResumed) {
             if (isRunning || countingDown) {
-                cancelChronometer();
-                return true;
+                cancelChronometer()
+                return true
             }
         }
-        return false;
+        return false
     }
 
     /**
      * Stops the inspection period countdown, and its warnings (if it is active). This cancels the
      * inspection countdown timer and associated "+2" countdown timer and hides the inspection text.
      */
-    private void stopInspectionCountdown() {
+    private fun stopInspectionCountdown() {
         // These timers may be null if inspection was not enabled when "updateLocale" was called.
-        if (countdown != null) {
-            countdown.cancel();
-        }
+        countdown?.cancel()
+        plusTwoCountdown?.cancel()
+        firstWarning?.cancel()
+        secondWarning?.cancel()
 
-        if (plusTwoCountdown != null) {
-            plusTwoCountdown.cancel();
-        }
-
-        if (firstWarning != null) {
-            firstWarning.cancel();
-        }
-
-        if (secondWarning != null) {
-            secondWarning.cancel();
-        }
-
-        binding.inspectionText.setVisibility(View.GONE);
-        countingDown = false;
+        binding?.inspectionText?.visibility = View.GONE
+        countingDown = false
     }
 
     /**
      * Starts the inspection period countdown.
-     *
+     * 
      * @param inspectionTime
-     *     The inspection time in seconds.
+     * The inspection time in seconds.
      */
-    private void startInspectionCountdown(int inspectionTime) {
+    private fun startInspectionCountdown(inspectionTime: Int) {
         // The "countdown" timer may be null if inspection was not enabled when "updateLocale" was
         // called. In that case this method will not be called from the touch listener.
 
         // So it doesn't flash the old time when the inspection starts
-        binding.chronometer.setText(String.valueOf(inspectionTime));
-        binding.inspectionText.setVisibility(View.VISIBLE);
-        countdown.start();
-        if (firstWarning != null) {
-            firstWarning.start();
+
+        binding?.let {
+            it.chronometer.text = inspectionTime.toString()
+            it.inspectionText.visibility = View.VISIBLE
         }
-        if (secondWarning != null) {
-            secondWarning.start();
-        }
-        countingDown = true;
+        countdown?.start()
+        firstWarning?.start()
+        secondWarning?.start()
+        countingDown = true
     }
 
     /**
      * Calculates scramble image height multiplier to respect aspect ratio
-     *
+     * 
      * @param multiplier the height multiplier (must be the same multiplier as the width)
-     *
+     * 
      * @return the height in px
      */
-    private float calculateScrambleImageHeightMultiplier(float multiplier) {
-        switch (currentPuzzle) {
-            case PuzzleUtils.TYPE_777:
-            case PuzzleUtils.TYPE_666:
-            case PuzzleUtils.TYPE_555:
-            case PuzzleUtils.TYPE_222:
-            case PuzzleUtils.TYPE_444:
-            case PuzzleUtils.TYPE_333:
-                // 3 faces of the cube vertically divided by 4 faces horizontally (it draws the cube like a cross)
-                return (multiplier / 4) * 3;
-            case PuzzleUtils.TYPE_CLOCK:
-                return multiplier / 2;
-            case PuzzleUtils.TYPE_MEGA:
-                return (multiplier / 2);
-            case PuzzleUtils.TYPE_PYRA:
-                // Just pythagoras. Height of an equilateral triangle
-                return (float) (multiplier / Math.sqrt(1.25));
-            case PuzzleUtils.TYPE_SKEWB:
+    private fun calculateScrambleImageHeightMultiplier(multiplier: Float): Float {
+        when (currentPuzzle) {
+            PuzzleUtils.TYPE_777, PuzzleUtils.TYPE_666, PuzzleUtils.TYPE_555, PuzzleUtils.TYPE_222, PuzzleUtils.TYPE_444, TYPE_333 ->                 // 3 faces of the cube vertically divided by 4 faces horizontally (it draws the cube like a cross)
+                return (multiplier / 4) * 3
+
+            PuzzleUtils.TYPE_CLOCK -> return multiplier / 2
+            PuzzleUtils.TYPE_MEGA -> return (multiplier / 2)
+            PuzzleUtils.TYPE_PYRA ->
+                // Just Pythagoras. Height of an equilateral triangle
+                return (multiplier / sqrt(1.25)).toFloat()
+
+            PuzzleUtils.TYPE_SKEWB ->
                 // This one is the same as the NxN cubes
-                return (multiplier / 4) * 3;
-            case PuzzleUtils.TYPE_SQUARE1: // Square-1
-                return multiplier;
+                return (multiplier / 4) * 3
+
+            PuzzleUtils.TYPE_SQUARE1 -> return multiplier
         }
-        return multiplier;
+        return multiplier
     }
 
-    private void addNewSolve() {
-        currentSolve = new Solve(
-                (int) binding.chronometer.getElapsedTime(), // Includes any "+2" penalty. Is zero for "DNF".
-                currentPuzzle, currentPuzzleCategory,
-                System.currentTimeMillis(), currentScramble, currentPenalty, "", false);
+    private fun addNewSolve() {
+        val binding = binding ?: return
+        val solve = Solve(
+            binding.chronometer.elapsedTime.toInt(),  // Includes any "+2" penalty. Is zero for "DNF".
+            currentPuzzle ?: "", currentPuzzleCategory ?: "",
+            System.currentTimeMillis(), currentScramble ?: "", currentPenalty, "", false
+        )
+        currentSolve = solve
 
         if (currentPenalty != PENALTY_DNF) {
-            declareRecordTimes(currentSolve);
+            declareRecordTimes(solve)
         }
 
-        currentSolve.setId(TwistyTimer.getDBHandler().addSolve(currentSolve));
-        currentPenalty = NO_PENALTY;
+        solve.id = TwistyTimer.getDBHandler().addSolve(solve)
+        currentPenalty = NO_PENALTY
     }
 
-    private void broadcastNewSolve() {
+    private fun broadcastNewSolve() {
         // The receiver might be able to use the new solve and avoid accessing the database, so
         // parcel it up in the intent.
-        new BroadcastBuilder(CATEGORY_TIME_DATA_CHANGES, ACTION_TIME_ADDED)
-                .solve(currentSolve)
-                .broadcast();
+        BroadcastBuilder(CATEGORY_TIME_DATA_CHANGES, ACTION_TIME_ADDED)
+            .solve(currentSolve)
+            .broadcast()
     }
 
     /**
@@ -953,10 +977,10 @@ public class                                                                    
      * first valid solve time will not set any records; it is itself the best and worst time and
      * only later times will be compared to it. If the solve time is not greater than zero, or if
      * the solve is a DNF, the solve will be ignored and no new records will be declared.
-     *
+     * 
      * @param solve The solve (time) to be tested.
      */
-    private void declareRecordTimes(Solve solve) {
+    private fun declareRecordTimes(solve: Solve) {
         // NOTE: The old approach did not check for PB/record solves until at least 4 previous
         // solves had been recorded for the *current session*. This seemed a bit arbitrary. Perhaps
         // it had to do with waiting for the best and worst times to be loaded. If a user records
@@ -968,547 +992,508 @@ public class                                                                    
         // Therefore, do not report PB records until at least 4 previous *non-DNF* times have been
         // recorded in the database across all sessions, including the current session.
 
-        final long newTime = solve.getTime();
+        val newTime = solve.time.toLong()
 
-        if (solve.getPenalty() == PENALTY_DNF || newTime <= 0
-                || mRecentStatistics == null
-                || mRecentStatistics.getAllTimeNumSolves()
-                   - mRecentStatistics.getAllTimeNumDNFSolves() < 4) {
+        if (solve.penalty == PENALTY_DNF || newTime <= 0 || mRecentStatistics == null || (mRecentStatistics!!.allTimeNumSolves
+                    - mRecentStatistics!!.allTimeNumDNFSolves < 4)
+        ) {
             // Not a valid time, or there are no previous statistics, or not enough previous times
             // to make reporting meaningful (or non-annoying), so cannot check for a new PB.
-            return;
+            return
         }
 
         if (bestSolveEnabled) {
-            final long previousBestTime = mRecentStatistics.getAllTimeBestTime();
+            val previousBestTime = mRecentStatistics?.allTimeBestTime ?: AverageCalculator.UNKNOWN
 
             // If "previousBestTime" is a DNF or UNKNOWN, it will be less than zero, so the new
             // solve time cannot better (i.e., lower).
-            if (newTime < previousBestTime ) {
-                binding.rippleBackground.startRippleAnimation();
-                binding.congratsText.setText(getString(R.string.personal_best_message,
-                        PuzzleUtils.convertTimeToString(previousBestTime - newTime, PuzzleUtils.FORMAT_DEFAULT)));
-                binding.congratsText.setVisibility(View.VISIBLE);
+            if (previousBestTime > 0 && newTime < previousBestTime) {
+                binding?.rippleBackground?.startRippleAnimation()
+                binding?.congratsText?.text = getString(
+                    R.string.personal_best_message,
+                    convertTimeToString(previousBestTime - newTime, FORMAT_DEFAULT)
+                )
+                binding?.congratsText?.visibility = View.VISIBLE
 
-                new Handler().postDelayed(() -> {
-                    if (binding != null && binding.rippleBackground != null)
-                        binding.rippleBackground.stopRippleAnimation();
-                }, 2900);
+                Handler().postDelayed({
+                    binding?.rippleBackground?.stopRippleAnimation()
+                }, 2900)
             }
         }
 
         if (worstSolveEnabled) {
-            final long previousWorstTime = mRecentStatistics.getAllTimeWorstTime();
-            Drawable poopDrawable = ThemeUtils.tintDrawable(mContext, R.drawable.ic_emoticon_poop, R.attr.colorTimerText);
+            val previousWorstTime = mRecentStatistics?.allTimeWorstTime ?: AverageCalculator.UNKNOWN
+            val poopDrawable = ThemeUtils.tintDrawable(
+                requireContext(),
+                R.drawable.ic_emoticon_poop,
+                R.attr.colorTimerText
+            )
             // If "previousWorstTime" is a DNF or UNKNOWN, it will be less than zero. Therefore,
             // make sure it is at least greater than zero before testing against the new time.
             if (previousWorstTime > 0 && newTime > previousWorstTime) {
-                binding.congratsText.setText(getString(R.string.personal_worst_message,
-                        PuzzleUtils.convertTimeToString(newTime - previousWorstTime, PuzzleUtils.FORMAT_DEFAULT)));
+                binding?.congratsText?.text = getString(
+                    R.string.personal_worst_message,
+                    convertTimeToString(newTime - previousWorstTime, FORMAT_DEFAULT)
+                )
 
-                binding.congratsText.setCompoundDrawablesWithIntrinsicBounds(
-                            poopDrawable, null,
-                            poopDrawable, null);
+                binding?.congratsText?.setCompoundDrawablesWithIntrinsicBounds(
+                    poopDrawable, null,
+                    poopDrawable, null
+                )
 
-                binding.congratsText.setVisibility(View.VISIBLE);
+                binding?.congratsText?.visibility = View.VISIBLE
             }
         }
     }
 
     /**
      * Refreshes the display of the statistics. If this fragment has no view, or if the given
-     * statistics are {@code null}, no update will be attempted.
-     *
+     * statistics are `null`, no update will be attempted.
+     * 
      * @param stats
-     *     The updated statistics. These will not be modified.
+     * The updated statistics. These will not be modified.
      */
     @SuppressLint("SetTextI18n")
-    @Override
-    public void onStatisticsUpdated(Statistics stats) {
-        if (DEBUG_ME) Log.d(TAG, "onStatisticsUpdated(" + stats + ")");
+    override fun onStatisticsUpdated(stats: Statistics?) {
+        if (DEBUG_ME) Log.d(TAG, "onStatisticsUpdated($stats)")
 
-        if (getView() == null || !sessionStatsEnabled) {
+        if (view == null || !sessionStatsEnabled) {
             // Must have arrived after "onDestroyView" was called, so do nothing.
-            return;
+            return
         }
 
         // Save these for later. The best and worst times can be retrieved and compared to the next
         // new solve time to be added via "addNewSolve".
-        mRecentStatistics = stats; // May be null.
+        mRecentStatistics = stats // May be null.
 
         if (stats == null) {
-            return;
+            return
         }
 
-        String sessionDeviation = convertTimeToString(tr(stats.getSessionStdDeviation()), PuzzleUtils
-                .FORMAT_DEFAULT);
-        String sessionCount = String.format(Locale.getDefault(), "%,d", stats.getSessionNumSolves());
-        String sessionBestTime = convertTimeToString(tr(stats.getSessionBestTime()), PuzzleUtils.FORMAT_DEFAULT);
-        String sessionMean = convertTimeToString(tr(stats.getSessionMeanTime()), PuzzleUtils.FORMAT_DEFAULT);
+        val sessionDeviation = convertTimeToString(
+            tr(stats.sessionStdDeviation), FORMAT_DEFAULT
+        )
+        val sessionCount = String.format(Locale.getDefault(), "%,d", stats.sessionNumSolves)
+        val sessionBestTime =
+            convertTimeToString(tr(stats.sessionBestTime), FORMAT_DEFAULT)
+        val sessionMean = convertTimeToString(tr(stats.sessionMeanTime), FORMAT_DEFAULT)
 
-        long allTimeBestAvg[] = new long[4];
-        long sessionCurrentAvg[] = new long[4];
+        val allTimeBestAvg = LongArray(4)
+        val sessionCurrentAvg = LongArray(4)
 
-        allTimeBestAvg[0] = tr(stats.getAverageOf(5, false).getBestAverage());
-        allTimeBestAvg[1] = tr(stats.getAverageOf(12, false).getBestAverage());
-        allTimeBestAvg[2] = tr(stats.getAverageOf(50, false).getBestAverage());
-        allTimeBestAvg[3] = tr(stats.getAverageOf(100, false).getBestAverage());
+        allTimeBestAvg[0] = tr(stats.getAverageOf(5, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[1] = tr(stats.getAverageOf(12, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[2] = tr(stats.getAverageOf(50, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[3] = tr(stats.getAverageOf(100, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
 
-        sessionCurrentAvg[0] = tr(stats.getAverageOf(5, true).getCurrentAverage());
-        sessionCurrentAvg[1] = tr(stats.getAverageOf(12, true).getCurrentAverage());
-        sessionCurrentAvg[2] = tr(stats.getAverageOf(50, true).getCurrentAverage());
-        sessionCurrentAvg[3] = tr(stats.getAverageOf(100, true).getCurrentAverage());
+        sessionCurrentAvg[0] = tr(stats.getAverageOf(5, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[1] = tr(stats.getAverageOf(12, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[2] = tr(stats.getAverageOf(50, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[3] = tr(stats.getAverageOf(100, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
 
         // detailTextNamesArray should be in the same order as shown in the timer
         // (keep R.arrays.timer_detail_stats in sync with the order!)
-        StringBuilder stringDetailOther = new StringBuilder();
-        stringDetailOther.append(detailTextNamesArray[4]).append(": ").append(sessionDeviation).append("\n");
-        stringDetailOther.append(detailTextNamesArray[5]).append(": ").append(sessionMean).append("\n");
-        stringDetailOther.append(detailTextNamesArray[6]).append(": ").append(sessionBestTime).append("\n");
-        stringDetailOther.append(detailTextNamesArray[7]).append(": ").append(sessionCount);
+        val stringDetailOther = StringBuilder()
+        detailTextNamesArray.let { names ->
+            stringDetailOther.append(names[4]).append(": ").append(sessionDeviation)
+                .append("\n")
+            stringDetailOther.append(names[5]).append(": ").append(sessionMean)
+                .append("\n")
+            stringDetailOther.append(names[6]).append(": ").append(sessionBestTime)
+                .append("\n")
+            stringDetailOther.append(names[7]).append(": ").append(sessionCount)
+        }
 
-        binding.sessionDetailTextOther.setText(stringDetailOther.toString());
+        binding?.sessionDetailTextOther?.text = stringDetailOther.toString()
 
         // To prevent the record message being animated more than once in case the user sets
         // two or more average records at the same time.
-        boolean hasShownRecordMessage = false;
+        var hasShownRecordMessage = false
 
         // reset card visibility
-        binding.detailAverageRecordMessage.setVisibility(View.GONE);
+        binding?.detailAverageRecordMessage?.visibility = View.GONE
 
-        StringBuilder stringDetailAvg = new StringBuilder();
+        val stringDetailAvg = StringBuilder()
+
         // Iterate through averages and set respective TextViews
-
-        String[] avgNums = {"5", "12", "50", "100"};
-        for (int i = 0; i < 4; i++) {
-            if (sessionStatsEnabled && averageRecordsEnabled && hasStoppedTimerOnce &&
-                    sessionCurrentAvg[i] > 0 && sessionCurrentAvg[i] <= allTimeBestAvg[i]) {
+        val avgNums = arrayOf<String?>("5", "12", "50", "100")
+        for (i in 0..3) {
+            if (sessionStatsEnabled && averageRecordsEnabled && hasStoppedTimerOnce && sessionCurrentAvg[i] > 0 && sessionCurrentAvg[i] <= allTimeBestAvg[i]) {
                 // Create string.
-                stringDetailAvg.append("<u><b>").append(detailTextNamesArray[i]).append(avgNums[i]).append(": ").append(convertTimeToString(sessionCurrentAvg[i], FORMAT_DEFAULT)).append("</b></u>");
+                detailTextNamesArray.let { names ->
+                    stringDetailAvg.append("<u><b>").append(names[i])
+                        .append(avgNums[i]).append(": ")
+                        .append(convertTimeToString(sessionCurrentAvg[i], FORMAT_DEFAULT))
+                        .append("</b></u>")
+                }
 
                 // Show record message, if it was not shown before
                 if (!hasShownRecordMessage && !isRunning && !countingDown) {
-                    binding.detailAverageRecordMessage.setVisibility(View.VISIBLE);
-                    binding.detailAverageRecordMessage
+                    binding?.let { b ->
+                        b.detailAverageRecordMessage.visibility = View.VISIBLE
+                        b.detailAverageRecordMessage
                             .animate()
-                            .alpha(1)
-                            .setDuration(mAnimationDuration);
-                    hasShownRecordMessage = true;
+                            .alpha(1f)
+                            .setDuration(mAnimationDuration.toLong())
+                    }
+                    hasShownRecordMessage = true
                 }
             } else if (sessionStatsEnabled) {
-                stringDetailAvg.append(detailTextNamesArray[i]).append(avgNums[i]).append(": ").append(convertTimeToString(sessionCurrentAvg[i], FORMAT_DEFAULT));
+                detailTextNamesArray?.let { names ->
+                    stringDetailAvg.append(names[i]).append(avgNums[i]).append(": ")
+                        .append(convertTimeToString(sessionCurrentAvg[i], FORMAT_DEFAULT))
+                }
             }
             // append newline to every line but the last
             if (i < 3) {
-                stringDetailAvg.append("<br>");
+                stringDetailAvg.append("<br>")
             }
         }
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-            binding.sessionDetailTextAverage.setText(Html.fromHtml(stringDetailAvg.toString(), Html.FROM_HTML_MODE_LEGACY));
-        } else {
-            binding.sessionDetailTextAverage.setText(Html.fromHtml(stringDetailAvg.toString()));
-        }
+        binding?.sessionDetailTextAverage?.text =
+            Html.fromHtml(
+                stringDetailAvg.toString(),
+                Html.FROM_HTML_MODE_LEGACY
+            )
 
-        if (!isRunning && !countingDown)
-            showDetailStats();
-
+        if (!isRunning && !countingDown) showDetailStats()
     }
 
-    private void generateScrambleImage() {
-        new GenerateScrambleImage().execute();
+    private fun generateScrambleImage() {
+       this.GenerateScrambleImage().execute()
     }
 
-    private void showToolbar() {
-        unlockOrientation(getActivity());
+    private fun showToolbar() {
+        unlockOrientation(requireActivity())
         // Resize startTimerLayout to have the little margin
         // on the left that allows the user to open the side menu.
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) binding.startTimerLayout.getLayoutParams();
-        params.leftMargin = ThemeUtils.dpToPix(mContext, 16);
-        binding.startTimerLayout.requestLayout();
-        broadcast(CATEGORY_UI_INTERACTIONS, ACTION_TIMER_STOPPED);
+        val params = binding?.startTimerLayout?.layoutParams as? MarginLayoutParams
+        params?.leftMargin = ThemeUtils.dpToPix(requireContext(), 16f)
+        binding?.startTimerLayout?.requestLayout()
+        broadcast(CATEGORY_UI_INTERACTIONS, ACTION_TIMER_STOPPED)
     }
 
-    private void showItems() {
-
+    private fun showItems() {
         // reset chronometer position
-        binding.chronometer.animate()
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(mAnimationDuration);
-        binding.inspectionText.animate()
-                .translationY(0)
-                .setDuration(mAnimationDuration);
+
+        binding?.chronometer?.animate()
+            ?.scaleX(1f)
+            ?.scaleY(1f)?.duration = mAnimationDuration.toLong()
+        binding?.inspectionText?.animate()
+            ?.translationY(0f)?.duration = mAnimationDuration.toLong()
 
         if (scrambleEnabled) {
-            binding.scrambleBox.getRoot().setVisibility(View.VISIBLE);
-            binding.scrambleBox.getRoot().animate()
-                    .alpha(1)
-                    .translationY(0)
-                    .setDuration(mAnimationDuration);
-            binding.scrambleBox.getRoot().setEnabled(true);
+            binding?.scrambleBox?.root?.visibility = View.VISIBLE
+            binding?.scrambleBox?.root?.animate()
+                ?.alpha(1f)
+                ?.translationY(0f)?.duration = mAnimationDuration.toLong()
+            binding?.scrambleBox?.root?.isEnabled = true
             if (scrambleImgEnabled) {
-                binding.scrambleImg.setEnabled(true);
-                showImage();
+                binding?.scrambleImg?.isEnabled = true
+                showImage()
             }
         }
-        if (buttonsEnabled && ! isCanceled) {
-            binding.qaButtons.qaLayout.setEnabled(true);
-            binding.qaButtons.qaLayout.setVisibility(View.VISIBLE);
-            binding.qaButtons.qaLayout.animate()
-                    .alpha(.9f)
-                    .setDuration(mAnimationDuration);
+        if (buttonsEnabled && !isCanceled) {
+            binding?.qaButtons?.qaLayout?.isEnabled = true
+            binding?.qaButtons?.qaLayout?.visibility = View.VISIBLE
+            binding?.qaButtons?.qaLayout?.animate()
+                ?.alpha(.9f)?.duration = mAnimationDuration.toLong()
         }
     }
 
-    private void showDetailStats() {
-        binding.sessionDetailTextAverage.setVisibility(View.VISIBLE);
-        binding.sessionDetailTextAverage.animate()
-                .alpha(1)
-                .translationY(0)
-                .setDuration(mAnimationDuration);
+    private fun showDetailStats() {
+        binding?.sessionDetailTextAverage?.visibility = View.VISIBLE
+        binding?.sessionDetailTextAverage?.animate()
+            ?.alpha(1f)
+            ?.translationY(0f)?.duration = mAnimationDuration.toLong()
 
-        binding.sessionDetailTextOther.setVisibility(View.VISIBLE);
-        binding.sessionDetailTextOther.animate()
-                .alpha(1)
-                .translationY(0)
-                .setDuration(mAnimationDuration);
+        binding?.sessionDetailTextOther?.visibility = View.VISIBLE
+        binding?.sessionDetailTextOther?.animate()
+            ?.alpha(1f)
+            ?.translationY(0f)?.duration = mAnimationDuration.toLong()
     }
 
-    private void showImage() {
-        binding.scrambleImg.setVisibility(View.VISIBLE);
-        binding.scrambleImg.setEnabled(true);
-        binding.scrambleImg.animate()
-                .alpha(1)
-                .translationY(0)
-                .setDuration(mAnimationDuration);
+    private fun showImage() {
+        binding?.scrambleImg?.visibility = View.VISIBLE
+        binding?.scrambleImg?.isEnabled = true
+        binding?.scrambleImg?.animate()
+            ?.alpha(1f)
+            ?.translationY(0f)?.duration = mAnimationDuration.toLong()
     }
 
-    private void hideImage() {
-        binding.scrambleImg.animate()
-                .alpha(0)
-                .translationY(binding.scrambleImg.getHeight())
-                .setDuration(mAnimationDuration)
-                .withEndAction(() -> {
-                    if (binding != null && binding.scrambleImg != null) {
-                        binding.scrambleImg.setVisibility(View.GONE);
-                        binding.scrambleImg.setEnabled(false);
-                    }
-                });
+    private fun hideImage() {
+        binding?.scrambleImg?.animate()
+            ?.alpha(0f)
+            ?.translationY(binding?.scrambleImg?.height?.toFloat() ?: 0f)
+            ?.setDuration(mAnimationDuration.toLong())
+            ?.withEndAction {
+                binding?.scrambleImg?.visibility = View.GONE
+                binding?.scrambleImg?.isEnabled = false
+            }
     }
 
-    private void hideToolbar() {
-        lockOrientation(getActivity());
-        broadcast(CATEGORY_UI_INTERACTIONS, ACTION_TIMER_STARTED);
+    private fun hideToolbar() {
+        lockOrientation(requireActivity())
+        broadcast(CATEGORY_UI_INTERACTIONS, ACTION_TIMER_STARTED)
 
-        binding.congratsText.setVisibility(View.GONE);
-        binding.congratsText.setCompoundDrawables(null, null, null, null);
+        binding?.congratsText?.visibility = View.GONE
+        binding?.congratsText?.setCompoundDrawables(null, null, null, null)
 
         // bring chronometer up a bit
-        binding.chronometer.animate()
-                .scaleX(1.15f)
-                .scaleY(1.15f)
-                .setDuration(mAnimationDuration);
-        binding.inspectionText.animate()
-                .translationY(-getActionBarSize())
-                .setDuration(mAnimationDuration);
+        binding?.chronometer?.animate()
+            ?.scaleX(1.15f)
+            ?.scaleY(1.15f)?.duration = mAnimationDuration.toLong()
+        binding?.inspectionText?.animate()
+            ?.translationY(-actionBarSize.toFloat())?.duration = mAnimationDuration.toLong()
 
         // Resize startTimerLayout to fill the entire screen. This removes the little margin
         // on the left that allows the user to open the side menu.
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) binding.startTimerLayout.getLayoutParams();
-        params.leftMargin = 0;
-        binding.startTimerLayout.requestLayout();
+        val params = binding?.startTimerLayout?.layoutParams as? MarginLayoutParams
+        params?.leftMargin = 0
+        binding?.startTimerLayout?.requestLayout()
 
         if (scrambleEnabled) {
-            binding.scrambleBox.getRoot().setEnabled(false);
-            binding.scrambleBox.getRoot().animate()
-                    .alpha(0)
-                    .translationY(-binding.scrambleBox.getRoot().getHeight())
-                    .setDuration(mAnimationDuration)
-                    .withEndAction(() -> {
-                        if (binding != null && binding.scrambleBox != null)
-                            binding.scrambleBox.getRoot().setVisibility(View.INVISIBLE);
-                    });
+            binding?.scrambleBox?.root?.isEnabled = false
+            binding?.scrambleBox?.root?.animate()
+                ?.alpha(0f)
+                ?.translationY(-(binding?.scrambleBox?.root?.height?.toFloat() ?: 0f))
+                ?.setDuration(mAnimationDuration.toLong())
+                ?.withEndAction {
+                    binding?.scrambleBox?.root?.visibility = View.INVISIBLE
+                }
             if (scrambleImgEnabled) {
-                binding.scrambleImg.setEnabled(false);
-                hideImage();
+                binding?.scrambleImg?.isEnabled = false
+                hideImage()
             }
         }
         if (sessionStatsEnabled) {
-            binding.sessionDetailTextAverage.animate()
-                    .alpha(0)
-                    .translationY(binding.sessionDetailTextAverage.getHeight())
-                    .setDuration(mAnimationDuration)
-                    .withEndAction(() -> {
-                        if (binding != null && binding.sessionDetailTextAverage != null)
-                            binding.sessionDetailTextAverage.setVisibility(View.INVISIBLE);
-                    });
-            binding.sessionDetailTextOther.animate()
-                    .alpha(0)
-                    .translationY(binding.sessionDetailTextOther.getHeight())
-                    .setDuration(mAnimationDuration)
-                    .withEndAction(() -> {
-                        if (binding != null && binding.sessionDetailTextOther != null)
-                            binding.sessionDetailTextOther.setVisibility(View.INVISIBLE);
-                    });
+            binding?.sessionDetailTextAverage?.animate()
+                ?.alpha(0f)
+                ?.translationY(binding?.sessionDetailTextAverage?.height?.toFloat() ?: 0f)
+                ?.setDuration(mAnimationDuration.toLong())
+                ?.withEndAction {
+                    binding?.sessionDetailTextAverage?.visibility = View.INVISIBLE
+                }
+            binding?.sessionDetailTextOther?.animate()
+                ?.alpha(0f)
+                ?.translationY(binding?.sessionDetailTextOther?.height?.toFloat() ?: 0f)
+                ?.setDuration(mAnimationDuration.toLong())
+                ?.withEndAction {
+                    binding?.sessionDetailTextOther?.visibility = View.INVISIBLE
+                }
         }
         if (buttonsEnabled) {
-            binding.qaUndo.setVisibility(View.GONE);
-            binding.qaButtons.qaLayout.setEnabled(false);
-            binding.qaButtons.qaLayout.animate()
-                    .alpha(0)
-                    .setDuration(mAnimationDuration)
-                    .withEndAction(() -> {
-                        if (binding != null && binding.qaButtons.qaLayout != null)
-                            binding.qaButtons.qaLayout.setVisibility(View.GONE);
-                    });
+            binding?.qaUndo?.visibility = View.GONE
+            binding?.qaButtons?.qaLayout?.isEnabled = false
+            binding?.qaButtons?.qaLayout?.animate()
+                ?.alpha(0f)
+                ?.setDuration(mAnimationDuration.toLong())
+                ?.withEndAction {
+                    binding?.qaButtons?.qaLayout?.visibility = View.GONE
+                }
         }
         if (averageRecordsEnabled) {
-            binding.detailAverageRecordMessage
-                    .animate()
-                    .alpha(0)
-                    .setDuration(mAnimationDuration)
-                    .withEndAction(() -> {
-                        if (binding != null && binding.detailAverageRecordMessage != null)
-                            binding.detailAverageRecordMessage.setVisibility(View.GONE);
-                    });
+            binding?.detailAverageRecordMessage?.animate()
+                ?.alpha(0f)
+                ?.setDuration(mAnimationDuration.toLong())
+                ?.withEndAction {
+                    binding?.detailAverageRecordMessage?.visibility = View.GONE
+                }
         }
     }
 
     /**
      * Starts the chronometer from zero and removes any color highlight.
      */
-    private void startChronometer() {
-        binding.chronometer.reset(); // Start from "0.00"; do not resume from the previous time.
-        binding.chronometer.start();
-        binding.chronometer.setHighlighted(false); // Clear any start cue or hold-for-start highlight.
+    private fun startChronometer() {
+        binding?.let {
+            it.chronometer.reset() // Start from "0.00"; do not resume from the previous time.
+            it.chronometer.start()
+            it.chronometer.setHighlighted(false) // Clear any start cue or hold-for-start highlight.
+        }
 
         // isRunning should be set before generateNewScramble so the loading spinner doesn't appear
         // during a solve, since generateNewScramble checks if isRunning is false before setting
         // the spinner to visible.
-        isRunning = true;
+        isRunning = true
 
         if (scrambleEnabled) {
-            currentScramble = realScramble;
-            generateNewScramble();
+            currentScramble = realScramble
+            generateNewScramble()
         }
     }
 
     /**
      * Stops the chronometer
      */
-    private void stopChronometer() {
-        binding.chronometer.stop();
-        binding.chronometer.setHighlighted(false);
-        isRunning = false;
-        hasStoppedTimerOnce = true;
-        showToolbar();
+    private fun stopChronometer() {
+        binding?.let {
+            it.chronometer.stop()
+            it.chronometer.setHighlighted(false)
+        }
+        isRunning = false
+        hasStoppedTimerOnce = true
+        showToolbar()
     }
 
     /**
      * Cancels the chronometer and any inspection countdown. Nothing is saved and the timer is
      * reset to zero.
      */
-    private void cancelChronometer() {
+    private fun cancelChronometer() {
         if (backCancelEnabled) {
-            stopInspectionCountdown();
-            stopChronometer();
+            stopInspectionCountdown()
+            stopChronometer()
 
-            binding.chronometer.reset(); // Show "0.00".
-            isCanceled = true;
-            currentPenalty = NO_PENALTY;
+            binding?.chronometer?.reset() // Show "0.00".
+            isCanceled = true
+            currentPenalty = NO_PENALTY
         }
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putString(SCRAMBLE, realScramble);
-        outState.putString(PUZZLE, currentPuzzle);
-        outState.putBoolean(HAS_STOPPED_TIMER_ONCE, hasStoppedTimerOnce);
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(SCRAMBLE, realScramble)
+        outState.putString(PUZZLE, currentPuzzle)
+        outState.putBoolean(HAS_STOPPED_TIMER_ONCE, hasStoppedTimerOnce)
     }
 
-    @Override
-    public void onDetach() {
-        if (DEBUG_ME) Log.d(TAG, "onDetach()");
-        super.onDetach();
+    override fun onDetach() {
+        if (DEBUG_ME) Log.d(TAG, "onDetach()")
+        super.onDetach()
         // To fix memory leaks
-        unregisterReceiver(mUIInteractionReceiver);
-        scrambleGeneratorAsync.cancel(true);
+        unregisterReceiver(mUIInteractionReceiver)
+        scrambleGeneratorAsync!!.cancel(true)
     }
 
-    @Override
-    public void onDestroy() {
-        if (DEBUG_ME) Log.d(TAG, "onDestroy()");
-        super.onDestroy();
+    override fun onDestroy() {
+        if (DEBUG_ME) Log.d(TAG, "onDestroy()")
+        super.onDestroy()
     }
 
-    @Override
-    public void onDestroyView() {
-        if (DEBUG_ME) Log.d(TAG, "onDestroyView()");
-        super.onDestroyView();
-        binding = null;
-        StatisticsCache.getInstance().unregisterObserver(this);
-        mRecentStatistics = null;
+    override fun onDestroyView() {
+        if (DEBUG_ME) Log.d(TAG, "onDestroyView()")
+        super.onDestroyView()
+        binding = null
+        StatisticsCache.instance.unregisterObserver(this)
+        mRecentStatistics = null
     }
 
-    private static void lockOrientation(Activity activity) {
-        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-        } else {
-            Display display         = ((WindowManager) activity.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-            int     rotation        = display.getRotation();
-            int     tempOrientation = activity.getResources().getConfiguration().orientation;
-            int     orientation     = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-
-            switch (tempOrientation) {
-                case Configuration.ORIENTATION_LANDSCAPE:
-                    if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_90)
-                        orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-                    else
-                        orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-                    break;
-                case Configuration.ORIENTATION_PORTRAIT:
-                    if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_270)
-                        orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-                    else
-                        orientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+    val newOptimalCross: Unit
+        get() {
+            if (showHintsEnabled) {
+                optimalCrossAsync?.cancel(true)
+                val scramble = realScramble ?: return
+                val cross = optimalCross ?: return
+                val xcross = optimalXCross ?: return
+                optimalCrossAsync = GetOptimalCross(
+                    scramble,
+                    cross, xcross,
+                    showHintsXCrossEnabled,
+                    isRunning,
+                    scrambleDialog
+                )
+                optimalCrossAsync?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
             }
-            activity.setRequestedOrientation(orientation);
         }
-    }
-
-    private static void unlockOrientation(Activity activity) {
-        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-    }
-
-    private void getNewOptimalCross() {
-        if (showHintsEnabled) {
-            if (optimalCrossAsync != null)
-                optimalCrossAsync.cancel(true);
-            optimalCrossAsync = new GetOptimalCross(realScramble,
-                                                    optimalCross, optimalXCross,
-                                                    showHintsXCrossEnabled,
-                                                    isRunning,
-                                                    scrambleDialog);
-            optimalCrossAsync.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        }
-    }
 
     /**
      * Generates a new scramble and handles everything.
      */
-    private void generateNewScramble() {
-        if (scrambleEnabled && currentTimerMode.equals(TIMER_MODE_TIMER)) {
-            scrambleGeneratorAsync.cancel(true);
-            scrambleGeneratorAsync = new GenerateScrambleSequence();
-            scrambleGeneratorAsync.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        } else if (currentTimerMode.equals(TIMER_MODE_TRAINER)) {
-            setScramble(TrainerScrambler.generateTrainerCase(getContext(), currentSubset, currentPuzzleCategory));
-            canShowHint = false;
-            hideButtons(true, true);
+    private fun generateNewScramble() {
+        if (scrambleEnabled && currentTimerMode == TIMER_MODE_TIMER) {
+            scrambleGeneratorAsync?.cancel(true)
+            scrambleGeneratorAsync = GenerateScrambleSequence()
+            scrambleGeneratorAsync?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+        } else if (currentTimerMode == TIMER_MODE_TRAINER) {
+            setScramble(
+                TrainerScrambler.generateTrainerCase(
+                    requireContext(),
+                    currentSubset ?: return,
+                    currentPuzzleCategory
+                )
+            )
+            canShowHint = false
+            hideButtons(true, true)
         }
     }
 
 
-    private static class GetOptimalCross extends AsyncTask<Void, Void, String> {
-
-        private String scramble;
-        private RubiksCubeOptimalCross optimalCross;
-        private RubiksCubeOptimalXCross optimalXCross;
-        private boolean showHintsXCrossEnabled;
-        private boolean isRunning;
-        private BottomSheetDetailDialog scrambleDialog;
-
-        GetOptimalCross(String scramble,
-                        RubiksCubeOptimalCross optimalCross,
-                        RubiksCubeOptimalXCross optimalXCross,
-                        boolean showHintsXCrossEnabled,
-                        boolean isRunning,
-                        BottomSheetDetailDialog scrambleDialog) {
-            this.scramble = scramble;
-            this.optimalCross = optimalCross;
-            this.optimalXCross = optimalXCross;
-            this.showHintsXCrossEnabled = showHintsXCrossEnabled;
-            this.isRunning = isRunning;
-            this.scrambleDialog = scrambleDialog;
+    private class GetOptimalCross(
+        private val scramble: String,
+        private val optimalCross: RubiksCubeOptimalCross,
+        private val optimalXCross: RubiksCubeOptimalXCross,
+        private val showHintsXCrossEnabled: Boolean,
+        private val isRunning: Boolean,
+        private val scrambleDialog: BottomSheetDetailDialog?
+    ) : AsyncTask<Void?, Void?, String?>() {
+        override fun onPreExecute() {
+            Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE)
+            Log.d("OptimalCross onPre:", System.currentTimeMillis().toString() + "")
+            super.onPreExecute()
         }
 
-        @Override
-        protected void onPreExecute() {
-            Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE);
-            Log.d("OptimalCross onPre:",System.currentTimeMillis()+"");
-            super.onPreExecute();
-        }
-
-        @Override
-        protected String doInBackground(Void... voids) {
-            String text = "";
-            text += optimalCross.getTip(scramble);
+        override fun doInBackground(vararg voids: Void?): String {
+            var text = ""
+            text += optimalCross.getTip(scramble)
             if (showHintsXCrossEnabled) {
-                text += "\n\n";
-                text += optimalXCross.getTip(scramble);
+                text += "\n\n"
+                text += optimalXCross.getTip(scramble)
             }
-            return text;
+            return text
         }
 
-        @Override
-        protected void onPostExecute(String text) {
-            super.onPostExecute(text);
+        override fun onPostExecute(text: String?) {
+            super.onPostExecute(text)
             if (!isRunning) {
                 // Set the hint text
-                if(scrambleDialog != null) {
-                    scrambleDialog.setHintText(text);
-                    scrambleDialog.setHintVisibility(View.VISIBLE);
+                if (scrambleDialog != null) {
+                    scrambleDialog.setHintText(text)
+                    scrambleDialog.setHintVisibility(View.VISIBLE)
                 }
             }
         }
     }
 
-    private class GenerateScrambleSequence extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected void onPreExecute() {
-            Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE);
-            if (showHintsEnabled && currentPuzzle.equals(PuzzleUtils.TYPE_333) && scrambleEnabled && scrambleDialog != null) {
-                scrambleDialog.setHintVisibility(View.GONE);
-                scrambleDialog.dismiss();
+    private inner class GenerateScrambleSequence : AsyncTask<String?, Void?, String?>() {
+        override fun onPreExecute() {
+            Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE)
+            if (showHintsEnabled && currentPuzzle == TYPE_333 && scrambleEnabled && scrambleDialog != null) {
+                scrambleDialog?.setHintVisibility(View.GONE)
+                scrambleDialog?.dismiss()
             }
-            canShowHint = false;
-            binding.scrambleBox.scrambleText.setText(R.string.generating_scramble);
-            binding.scrambleBox.scrambleText.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
-            binding.scrambleBox.scrambleText.setClickable(false);
+            canShowHint = false
+            binding?.let {
+                it.scrambleBox.scrambleText.setText(R.string.generating_scramble)
+                it.scrambleBox.scrambleText.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                it.scrambleBox.scrambleText.isClickable = false
 
-            binding.scrambleBox.scrambleButtonHint.setVisibility(View.GONE);
-            binding.scrambleBox.scrambleButtonEdit.setVisibility(View.GONE);
-            binding.scrambleBox.scrambleButtonReset.setVisibility(View.GONE);
-            binding.scrambleBox.scrambleButtonManualEntry.setVisibility(View.GONE);
-            binding.scrambleBox.scrambleProgress.setVisibility(View.VISIBLE);
+                it.scrambleBox.scrambleButtonHint.visibility = View.GONE
+                it.scrambleBox.scrambleButtonEdit.visibility = View.GONE
+                it.scrambleBox.scrambleButtonReset.visibility = View.GONE
+                it.scrambleBox.scrambleButtonManualEntry.visibility = View.GONE
+                it.scrambleBox.scrambleProgress.visibility = View.VISIBLE
+            }
 
-            hideImage();
-            if (! isRunning)
-                binding.progressSpinner.setVisibility(View.VISIBLE);
-            isLocked = true;
+            hideImage()
+            if (!isRunning) binding?.progressSpinner?.visibility = View.VISIBLE
+            isLocked = true
         }
 
-        @Override
-        protected String doInBackground(String... params) {
+        override fun doInBackground(vararg params: String?): String? {
             try {
-                return generator.getPuzzle().generateScramble();
-            } catch (Exception e) {
-                Log.e(TAG, "Invalid puzzle for generator");
+                return generator?.puzzle?.generateScramble()
+            } catch (e: Exception) {
+                Log.e(TAG, "Invalid puzzle for generator")
             }
-            return "An error has ocurred";
+            return "An error has ocurred"
         }
 
-        @Override
-        protected void onProgressUpdate(Void... values) {
-
+        override fun onProgressUpdate(vararg values: Void?) {
         }
 
-        @Override
-        protected void onPostExecute(String scramble) {
-            setScramble(scramble);
+        override fun onPostExecute(scramble: String?) {
+            setScramble(scramble)
         }
     }
 
@@ -1516,233 +1501,326 @@ public class                                                                    
      * Updates everything related to displaying the current scramble
      * Ex. scramble image, box, text, dialogs
      */
-    private void setScramble(final String scramble) {
-        realScramble = scramble;
-        binding.scrambleBox.scrambleText.setText(scramble);
-        binding.scrambleBox.scrambleText.post(() -> binding.chronometer.post(() -> {
-                    if (binding != null && binding.scrambleBox.scrambleText != null) {
-                        // Calculate surrounding layouts to make sure the scramble text doesn't intersect any element
-                        // If it does, show only a "tap here to see more" hint instead of the scramble
-                            Rect scrambleRect = new Rect(binding.scrambleBox.getRoot().getLeft(), binding.scrambleBox.getRoot().getTop(), binding.scrambleBox.getRoot().getRight(), binding.scrambleBox.getRoot().getBottom());
-                            // The top line calculation is a bit tricky
-                            // We first get the top of the bounding box (which isn't necessarily
-                            // the top of the actual, visible text. To that, we add the baseline,
-                        // which is the measure from the top of the box to the actual baseline
-                        // of the text. Then, we add the text size, which gets us to the visible
-                        // top.
-                            Rect chronometerRect = new Rect(binding.chronometer.getLeft(),
-                                                            (int) (binding.chronometer.getTop()
-                                                                    + binding.chronometer.getBaseline()
-                                                                    - binding.chronometer.getTextSize()
-                                                                    + ThemeUtils.dpToPix(mContext, 28)),
-                                                            binding.chronometer.getRight(),
-                                                            binding.chronometer.getBottom());
-                            Rect congratsRect = new Rect(binding.congratsText.getLeft(), binding.congratsText.getTop(), binding.congratsText.getRight(), binding.congratsText.getBottom());
+    private fun setScramble(scramble: String?) {
+        val binding = binding ?: return
+        realScramble = scramble
+        binding.scrambleBox.scrambleText.text = scramble
+        binding.scrambleBox.scrambleText.post {
+            binding.chronometer.post {
+                if (this.binding != null && this.binding?.scrambleBox?.scrambleText != null) {
+                    // Calculate surrounding layouts to make sure the scramble text doesn't intersect any element
+                    // If it does, show only a "tap here to see more" hint instead of the scramble
+                    val scrambleRect = Rect(
+                        binding.scrambleBox.root.left,
+                        binding.scrambleBox.root.top,
+                        binding.scrambleBox.root.right,
+                        binding.scrambleBox.root.bottom
+                    )
+                    // The top line calculation is a bit tricky
+                    // We first get the top of the bounding box (which isn't necessarily
+                    // the top of the actual, visible text. To that, we add the baseline,
+                    // which is the measure from the top of the box to the actual baseline
+                    // of the text. Then, we add the text size, which gets us to the visible
+                    // top.
+                    val chronometerRect = Rect(
+                        binding.chronometer.left,
+                        (binding.chronometer.top
+                                + binding.chronometer.baseline
+                                - binding.chronometer.textSize
+                                + ThemeUtils.dpToPix(requireContext(), 28f)).toInt(),
+                        binding.chronometer.right,
+                        binding.chronometer.bottom
+                    )
+                    val congratsRect = Rect(
+                        binding.congratsText.left,
+                        binding.congratsText.top,
+                        binding.congratsText.right,
+                        binding.congratsText.bottom
+                    )
 
-                            if ((Rect.intersects(scrambleRect, chronometerRect)) ||
-                                (binding.congratsText.getVisibility() == View.VISIBLE && Rect.intersects(chronometerRect, congratsRect))) {
-                                binding.scrambleBox.scrambleText.setText("[ " + getString(R.string.scramble_text_tap_hint) + " ]");
-                                binding.scrambleBox.getRoot().setClickable(true);
-                                binding.scrambleBox.getRoot().setOnClickListener(scrambleDetailClickListener);
-                            } else {
-                                binding.scrambleBox.getRoot().setOnClickListener(null);
-                                binding.scrambleBox.getRoot().setClickable(false);
-                                binding.scrambleBox.getRoot().setFocusable(false);
-                            }
-                            binding.scrambleBox.scrambleButtonHint.setOnClickListener(scrambleDetailClickListener);
+                    if ((Rect.intersects(scrambleRect, chronometerRect)) ||
+                        (binding.congratsText.isVisible && Rect.intersects(
+                            chronometerRect,
+                            congratsRect
+                        ))
+                    ) {
+                        binding.scrambleBox.scrambleText.text = "[ " + getString(R.string.scramble_text_tap_hint) + " ]"
+                        binding.scrambleBox.root.isClickable = true
+                        binding.scrambleBox.root.setOnClickListener(scrambleDetailClickListener)
+                    } else {
+                        binding.scrambleBox.root.setOnClickListener(null)
+                        binding.scrambleBox.root.isClickable = false
+                        binding.scrambleBox.root.isFocusable = false
+                    }
+                    binding.scrambleBox.scrambleButtonHint.setOnClickListener(
+                        scrambleDetailClickListener
+                    )
+                }
             }
-        }));
+        }
 
-        if (showHintsEnabled && currentPuzzle.equals(PuzzleUtils.TYPE_333))
-            binding.scrambleBox.scrambleButtonHint.setVisibility(View.VISIBLE);
-        if (manualEntryEnabled)
-            binding.scrambleBox.scrambleButtonManualEntry.setVisibility(View.VISIBLE);
-        binding.scrambleBox.scrambleProgress.setVisibility(View.GONE);
-        binding.scrambleBox.scrambleButtonEdit.setVisibility(View.VISIBLE);
-        binding.scrambleBox.scrambleButtonReset.setVisibility(View.VISIBLE);
+        if (showHintsEnabled && currentPuzzle == TYPE_333) binding.scrambleBox.scrambleButtonHint.visibility =
+            View.VISIBLE
+        if (manualEntryEnabled) binding.scrambleBox.scrambleButtonManualEntry.visibility = View.VISIBLE
+        binding.scrambleBox.scrambleProgress.visibility = View.GONE
+        binding.scrambleBox.scrambleButtonEdit.visibility = View.VISIBLE
+        binding.scrambleBox.scrambleButtonReset.visibility = View.VISIBLE
 
-        if (scrambleImgEnabled)
-            generateScrambleImage();
-        else
-            binding.progressSpinner.setVisibility(View.INVISIBLE);
-        isLocked = false;
+        if (scrambleImgEnabled) generateScrambleImage()
+        else binding.progressSpinner.visibility = View.INVISIBLE
+        isLocked = false
 
-        if (showHintsEnabled)
-            canShowHint = true;
+        if (showHintsEnabled) canShowHint = true
 
         // Broadcast the new scramble
-        new BroadcastBuilder(CATEGORY_UI_INTERACTIONS, ACTION_SCRAMBLE_MODIFIED)
-                .scramble(realScramble)
-                .broadcast();
+        BroadcastBuilder(CATEGORY_UI_INTERACTIONS, ACTION_SCRAMBLE_MODIFIED)
+            .scramble(realScramble)
+            .broadcast()
     }
 
-    private View.OnClickListener scrambleDetailClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            scrambleDialog = new BottomSheetDetailDialog();
-            scrambleDialog.setDetailText(realScramble);
-            scrambleDialog.setDetailTextSize(scrambleTextSize);
-            if (canShowHint && showHintsEnabled && currentPuzzle.equals(TYPE_333)) {
-                getNewOptimalCross();
-                scrambleDialog.hasHints(true);
-            }
-            if (mFragManager != null)
-                scrambleDialog.show(mFragManager, "fragment_dialog_scramble_detail");
+    private val scrambleDetailClickListener: View.OnClickListener = View.OnClickListener {
+        scrambleDialog = BottomSheetDetailDialog()
+        scrambleDialog!!.setDetailText(realScramble)
+        scrambleDialog!!.setDetailTextSize(scrambleTextSize)
+        if (canShowHint && showHintsEnabled && currentPuzzle == TYPE_333) {
+            newOptimalCross
+            scrambleDialog!!.hasHints(true)
         }
-    };
+        if (mFragManager != null) scrambleDialog!!.show(
+            mFragManager!!,
+            "fragment_dialog_scramble_detail"
+        )
+    }
 
-    private class GenerateScrambleImage extends AsyncTask<Void, Void, Drawable> {
-
-        @Override
-        protected Drawable doInBackground(Void... voids) {
-            return generator.generateImageFromScramble(
-                    PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext()),
-                    realScramble);
+    private inner class GenerateScrambleImage : AsyncTask<Void?, Void?, Drawable?>() {
+        override fun doInBackground(vararg voids: Void?): Drawable? {
+            return generator?.generateImageFromScramble(
+                PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext()),
+                realScramble
+            )
         }
 
-        @Override
-        protected void onPostExecute(Drawable drawable) {
-            super.onPostExecute(drawable);
-            if (! isRunning) {
-                if (binding != null && binding.scrambleImg != null)
-                    showImage();
+        override fun onPostExecute(drawable: Drawable?) {
+            super.onPostExecute(drawable)
+            if (!isRunning) {
+                if (binding?.scrambleImg != null) showImage()
             }
-            if (binding != null && binding.progressSpinner != null)
-                binding.progressSpinner.setVisibility(View.INVISIBLE);
-            if (binding != null && binding.scrambleImg != null)
-                binding.scrambleImg.setImageDrawable(drawable);
-            if (binding != null && binding.expandedImage != null)
-                binding.expandedImage.setImageDrawable(drawable);
+            binding?.let {
+                it.progressSpinner.visibility = View.INVISIBLE
+                it.scrambleImg.setImageDrawable(drawable)
+                it.expandedImage.setImageDrawable(drawable)
+            }
         }
     }
 
-    private void zoomImageFromThumb(final View thumbView) {
+    private fun zoomImageFromThumb(thumbView: View) {
         // If there's an animation in progress, cancel it
         // immediately and proceed with this one.
-        if (mCurrentAnimator != null) {
-            mCurrentAnimator.cancel();
-        }
+        mCurrentAnimator?.cancel()
+
+        val binding = binding ?: return
 
         // Calculate the starting and ending bounds for the zoomed-in image.
         // This step involves lots of math. Yay, math.
-        final Rect startBounds = new Rect();
-        final Rect finalBounds = new Rect();
-        final Point globalOffset = new Point();
+        val startBounds = Rect()
+        val finalBounds = Rect()
+        val globalOffset = Point()
 
         // The start bounds are the global visible rectangle of the thumbnail,
         // and the final bounds are the global visible rectangle of the container
         // view. Also set the container view's offset as the origin for the
         // bounds, since that's the origin for the positioning animation
         // properties (X, Y).
-        thumbView.getGlobalVisibleRect(startBounds);
-        binding.root.getGlobalVisibleRect(finalBounds, globalOffset);
-        startBounds.offset(- globalOffset.x, - globalOffset.y);
-        globalOffset.y -= binding.scrambleBox.getRoot().getHeight();
-        finalBounds.offset(- globalOffset.x, - globalOffset.y);
+        thumbView.getGlobalVisibleRect(startBounds)
+        binding.root.getGlobalVisibleRect(finalBounds, globalOffset)
+        startBounds.offset(-globalOffset.x, -globalOffset.y)
+        globalOffset.y -= binding.scrambleBox.root.height
+        finalBounds.offset(-globalOffset.x, -globalOffset.y)
 
         // Adjust the start bounds to be the same aspect ratio as the final
         // bounds using the "center crop" technique. This prevents undesirable
         // stretching during the animation. Also calculate the start scaling
         // factor (the end scaling factor is always 1.0).
-        float startScale;
-        if ((float) finalBounds.width() / finalBounds.height()
-                > (float) startBounds.width() / startBounds.height()) {
+        val startScale: Float
+        if (finalBounds.width().toFloat() / finalBounds.height()
+            > startBounds.width().toFloat() / startBounds.height()
+        ) {
             // Extend start bounds horizontally
-            startScale = (float) startBounds.height() / finalBounds.height();
-            float startWidth = startScale * finalBounds.width();
-            float deltaWidth = (startWidth - startBounds.width()) / 2;
-            startBounds.left -= deltaWidth;
-            startBounds.right += deltaWidth;
+            startScale = startBounds.height().toFloat() / finalBounds.height()
+            val startWidth = startScale * finalBounds.width()
+            val deltaWidth = (startWidth - startBounds.width()) / 2
+            startBounds.left = (startBounds.left - deltaWidth).toInt()
+            startBounds.right = (startBounds.right + deltaWidth).toInt()
         } else {
             // Extend start bounds vertically
-            startScale = (float) startBounds.width() / finalBounds.width();
-            float startHeight = startScale * finalBounds.width();
-            float deltaHeight = (startHeight - startBounds.height()) / 2;
-            startBounds.top -= deltaHeight;
-            startBounds.bottom += deltaHeight;
+            startScale = startBounds.width().toFloat() / finalBounds.width()
+            val startHeight = startScale * finalBounds.width()
+            val deltaHeight = (startHeight - startBounds.height()) / 2
+            startBounds.top = (startBounds.top - deltaHeight).toInt()
+            startBounds.bottom = (startBounds.bottom + deltaHeight).toInt()
         }
 
         // Hide the thumbnail and show the zoomed-in view. When the animation
         // begins, it will position the zoomed-in view in the place of the
         // thumbnail.
-        thumbView.setAlpha(0f);
-        binding.expandedImage.setVisibility(View.VISIBLE);
+        thumbView.alpha = 0f
+        binding.expandedImage.visibility = View.VISIBLE
 
         // Set the pivot point for SCALE_X and SCALE_Y transformations
         // to the top-left corner of the zoomed-in view (the default
         // is the center of the view).
-        binding.expandedImage.setPivotX(0f);
-        binding.expandedImage.setPivotY(0f);
+        binding.expandedImage.pivotX = 0f
+        binding.expandedImage.pivotY = 0f
 
         // Construct and run the parallel animation of the four translation and
         // scale properties (X, Y, SCALE_X, and SCALE_Y).
-        AnimatorSet set = new AnimatorSet();
+        val set = AnimatorSet()
         set
-                .play(ObjectAnimator.ofFloat(binding.expandedImage, View.X,
-                        startBounds.left, finalBounds.left))
-                .with(ObjectAnimator.ofFloat(binding.expandedImage, View.Y,
-                        startBounds.top, finalBounds.top))
-                .with(ObjectAnimator.ofFloat(binding.expandedImage, View.SCALE_X,
-                        startScale, 1f)).with(ObjectAnimator.ofFloat(binding.expandedImage,
-                View.SCALE_Y, startScale, 1f));
-        set.setDuration(mAnimationDuration);
-        set.setInterpolator(new DecelerateInterpolator());
-        set.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                mCurrentAnimator = null;
+            .play(
+                ObjectAnimator.ofFloat(
+                    binding.expandedImage, View.X,
+                    startBounds.left.toFloat(), finalBounds.left.toFloat()
+                )
+            )
+            .with(
+                ObjectAnimator.ofFloat(
+                    binding.expandedImage, View.Y,
+                    startBounds.top.toFloat(), finalBounds.top.toFloat()
+                )
+            )
+            .with(
+                ObjectAnimator.ofFloat(
+                    binding.expandedImage, View.SCALE_X,
+                    startScale, 1f
+                )
+            ).with(
+                ObjectAnimator.ofFloat(
+                    binding.expandedImage,
+                    View.SCALE_Y, startScale, 1f
+                )
+            )
+        set.duration = mAnimationDuration.toLong()
+        set.interpolator = DecelerateInterpolator()
+        set.addListener(object : AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: Animator) {
+                mCurrentAnimator = null
             }
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                mCurrentAnimator = null;
+            override fun onAnimationCancel(animation: Animator) {
+                mCurrentAnimator = null
             }
-        });
-        set.start();
-        mCurrentAnimator = set;
+        })
+        set.start()
+        mCurrentAnimator = set
 
         // Upon clicking the zoomed-in image, it should zoom back down
         // to the original bounds and show the thumbnail instead of
         // the expanded image.
-        final float startScaleFinal = startScale;
-        binding.expandedImage.setOnClickListener(view -> {
-            if (mCurrentAnimator != null) {
-                mCurrentAnimator.cancel();
-            }
-
+        val startScaleFinal = startScale
+        binding.expandedImage.setOnClickListener { view: View? ->
+            mCurrentAnimator?.cancel()
             // Animate the four positioning/sizing properties in parallel,
             // back to their original values.
-            AnimatorSet set1 = new AnimatorSet();
-            set1.play(ObjectAnimator
-                    .ofFloat(binding.expandedImage, View.X, startBounds.left))
-                    .with(ObjectAnimator
-                            .ofFloat(binding.expandedImage,
-                                    View.Y, startBounds.top))
-                    .with(ObjectAnimator
-                            .ofFloat(binding.expandedImage,
-                                    View.SCALE_X, startScaleFinal))
-                    .with(ObjectAnimator
-                            .ofFloat(binding.expandedImage,
-                                    View.SCALE_Y, startScaleFinal));
-            set1.setDuration(mAnimationDuration);
-            set1.setInterpolator(new DecelerateInterpolator());
-            set1.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    thumbView.setAlpha(1f);
-                    binding.expandedImage.setVisibility(View.GONE);
-                    mCurrentAnimator = null;
+            val set1 = AnimatorSet()
+            set1.play(
+                ObjectAnimator
+                    .ofFloat(binding.expandedImage, View.X, startBounds.left.toFloat())
+            )
+                .with(
+                    ObjectAnimator
+                        .ofFloat(
+                            binding.expandedImage,
+                            View.Y, startBounds.top.toFloat()
+                        )
+                )
+                .with(
+                    ObjectAnimator
+                        .ofFloat(
+                            binding.expandedImage,
+                            View.SCALE_X, startScaleFinal
+                        )
+                )
+                .with(
+                    ObjectAnimator
+                        .ofFloat(
+                            binding.expandedImage,
+                            View.SCALE_Y, startScaleFinal
+                        )
+                )
+            set1.duration = mAnimationDuration.toLong()
+            set1.interpolator = DecelerateInterpolator()
+            set1.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    thumbView.alpha = 1f
+                    binding.expandedImage.visibility = View.GONE
+                    mCurrentAnimator = null
                 }
 
-                @Override
-                public void onAnimationCancel(Animator animation) {
-                    thumbView.setAlpha(1f);
-                    binding.expandedImage.setVisibility(View.GONE);
-                    mCurrentAnimator = null;
+                override fun onAnimationCancel(animation: Animator) {
+                    thumbView.alpha = 1f
+                    binding.expandedImage.visibility = View.GONE
+                    mCurrentAnimator = null
                 }
-            });
-            set1.start();
-            mCurrentAnimator = set1;
-        });
+            })
+            set1.start()
+            mCurrentAnimator = set1
+        }
+    }
+
+    companion object {
+        // Specifies the timer mode
+        // i.e: Trainer mode generates only trainer scrambles, and changes the puzzle select spinner
+        // Can be used for other features in the future
+        const val TIMER_MODE_TIMER: String = "TIMER_MODE_TIMER"
+        const val TIMER_MODE_TRAINER: String = "TIMER_MODE_TRAINER"
+
+        /**
+         * Flag to enable debug logging for this class.
+         */
+        private const val DEBUG_ME = true
+
+        /**
+         * A "tag" to identify this class in log messages.
+         */
+        private val TAG: String = TimerFragment::class.java.simpleName
+
+        private const val PUZZLE = "puzzle"
+        private const val PUZZLE_SUBTYPE = "puzzle_type"
+        private const val TRAINER_SUBSET = "trainer_subset"
+        private const val TIMER_MODE = "timer_mode"
+        private const val SCRAMBLE = "scramble"
+        private const val HAS_STOPPED_TIMER_ONCE = "has_stopped_timer_once"
+
+
+        /**
+         * The time delay in milliseconds before starting the chronometer if the hold-for-start
+         * preference is set.
+         */
+        private const val HOLD_FOR_START_DELAY = 500L
+
+        fun newInstance(
+            puzzle: String?,
+            puzzleSubType: String?,
+            timerMode: String?,
+            subset: TrainerSubset?
+        ): TimerFragment {
+            val fragment = TimerFragment()
+            val args = Bundle()
+            args.putString(PUZZLE, puzzle)
+            args.putString(PUZZLE_SUBTYPE, puzzleSubType)
+            args.putString(TIMER_MODE, timerMode)
+            args.putSerializable(TRAINER_SUBSET, subset)
+            fragment.setArguments(args)
+            if (DEBUG_ME) Log.d(TAG, "newInstance() -> $fragment")
+            return fragment
+        }
+
+        private fun lockOrientation(activity: Activity) {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        }
+
+        private fun unlockOrientation(activity: Activity) {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
     }
 }

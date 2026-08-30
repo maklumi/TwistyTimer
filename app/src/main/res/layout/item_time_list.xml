@@ -15,11 +15,12 @@
     app:cardBackgroundColor="?colorItemListBackground">
 
     <RelativeLayout
-        android:id="@+id/root"
+        android:id="@+id/item_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?android:attr/selectableItemBackground"
-        android:clickable="true">
+        android:clickable="true"
+        android:focusable="true">
 
         <TextView
             android:id="@+id/timeText"
@@ -42,7 +43,7 @@
             android:layout_alignParentRight="true"
             android:padding="4dp"
             android:textColor="@color/red_material"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             tools:text="+2" />
 
@@ -55,13 +56,14 @@
             android:layout_marginTop="4dp"
             android:layout_marginRight="8dp"
             android:gravity="center_vertical"
-            android:text="sex, 15 jun"
+            android:text="2000, 15 jun"
             android:textColor="?colorItemListText"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="normal" />
 
         <ImageView
             android:id="@+id/commentIcon"
+            app:tint="?colorItemListText"
             tools:visibility="visible"
             android:alpha="0.80"
             android:visibility="gone"
@@ -71,7 +73,6 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="4dp"
-            android:tint="?colorItemListText"
             android:paddingBottom="4dp"/>
 
 

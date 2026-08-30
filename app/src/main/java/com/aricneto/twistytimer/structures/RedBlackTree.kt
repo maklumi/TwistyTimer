@@ -1,10 +1,7 @@
-package com.aricneto.twistytimer.structures;
+package com.aricneto.twistytimer.structures
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
+import java.util.ArrayDeque
+import java.util.Deque
 
 /**
  * A red–black tree is a type of self-balancing binary search tree, a data
@@ -19,77 +16,78 @@ import java.util.List;
  * <br>
  * @author Justin Wetherell <phishman3579@gmail.com>
  */
-@SuppressWarnings("unchecked")
-public class RedBlackTree<T extends Comparable<T>> extends BinarySearchTree<T> {
+@Suppress("UNCHECKED_CAST")
+open class RedBlackTree<T : Comparable<T>> : BinarySearchTree<T> {
 
-    protected static final boolean BLACK = false;
-    protected static final boolean RED = true;
+    companion object {
+        protected const val BLACK = false
+        protected const val RED = true
+    }
 
     /**
      * Default constructor.
      */
-    public RedBlackTree() {
-        this.creator = new BinarySearchTree.INodeCreator<T>() {
+    constructor() : super() {
+        this.creator = object : INodeCreator<T> {
             /**
              * {@inheritDoc}
              */
-            @Override
-            public BinarySearchTree.Node<T> createNewNode(BinarySearchTree.Node<T> parent, T id) {
-                return (new RedBlackNode<T>(parent, id, BLACK));
+            override fun createNewNode(parent: Node<T>?, id: T?): Node<T> {
+                return RedBlackNode(parent, id, BLACK)
             }
-        };
+        }
     }
 
     /**
      * Constructor with external Node creator.
      */
-    public RedBlackTree(INodeCreator<T> creator) {
-        super(creator);
-    }
+    constructor(creator: INodeCreator<T>) : super(creator)
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    protected Node<T> addValue(T id) {
+    override fun addValue(value: T): Node<T>? {
         if (root == null) {
             // Case 1 - The current node is at the root of the tree.
 
             // Defaulted to black in our creator
-            root = this.creator.createNewNode(null, id);
-            root.lesser = this.creator.createNewNode(root, null);
-            root.greater = this.creator.createNewNode(root, null);
+            val newRoot = this.creator.createNewNode(null, value) as RedBlackNode<T>
+            newRoot.lesser = this.creator.createNewNode(newRoot, null)
+            newRoot.greater = this.creator.createNewNode(newRoot, null)
+            root = newRoot
 
-            size++;
-            return root;
+            size++
+            return root
         }
 
-        RedBlackNode<T> nodeAdded = null;
+        var nodeAdded: RedBlackNode<T>? = null
         // Insert node like a BST would
-        Node<T> node = root;
+        var node = root
         while (node != null) {
             if (node.id == null) {
-                node.id = id;
-                ((RedBlackNode<T>) node).color = RED;
+                node.id = value
+                (node as RedBlackNode<T>).color = RED
 
                 // Defaulted to black in our creator
-                node.lesser = this.creator.createNewNode(node, null);
-                node.greater = this.creator.createNewNode(node, null);
+                node.lesser = this.creator.createNewNode(node, null)
+                node.greater = this.creator.createNewNode(node, null)
 
-                nodeAdded = (RedBlackNode<T>) node;
-                break;
-            } else if (id.compareTo(node.id) <= 0) {
-                node = node.lesser;
+                nodeAdded = node
+                break
             } else {
-                node = node.greater;
+                val nodeId = node.id!!
+                if (value.compareTo(nodeId) <= 0) {
+                    node = node.lesser
+                } else {
+                    node = node.greater
+                }
             }
         }
 
-        if (nodeAdded != null)
-            balanceAfterInsert(nodeAdded);
+        nodeAdded?.let { balanceAfterInsert(it) }
 
-        size++;
-        return nodeAdded;
+        size++
+        return nodeAdded
     }
 
     /**
@@ -97,75 +95,78 @@ public class RedBlackTree<T extends Comparable<T>> extends BinarySearchTree<T> {
      *
      * @param begin
      *            to begin balancing at.
-     * @return True if balanced.
      */
-    private void balanceAfterInsert(RedBlackNode<T> begin) {
-        RedBlackNode<T> node = begin;
-        RedBlackNode<T> parent = (RedBlackNode<T>) node.parent;
+    private fun balanceAfterInsert(begin: RedBlackNode<T>) {
+        var node = begin
+        var parent = node.parent as? RedBlackNode<T>
 
         if (parent == null) {
             // Case 1 - The current node is at the root of the tree.
-            node.color = BLACK;
-            return;
+            node.color = BLACK
+            return
         }
 
         if (parent.color == BLACK) {
             // Case 2 - The current node's parent is black, so property 4 (both
             // children of every red node are black) is not invalidated.
-            return;
+            return
         }
 
-        RedBlackNode<T> grandParent = node.getGrandParent();
-        RedBlackNode<T> uncle = node.getUncle(grandParent);
-        if (parent.color == RED && uncle.color == RED) {
+        var grandParent = node.getGrandParent()
+        var uncle = node.getUncle(grandParent)
+        if (parent.color == RED && uncle?.color == RED) {
             // Case 3 - If both the parent and the uncle are red, then both of
             // them can be repainted black and the grandparent becomes
             // red (to maintain property 5 (all paths from any given node to its
             // leaf nodes contain the same number of black nodes)).
-            parent.color = BLACK;
-            uncle.color = BLACK;
-            if (grandParent != null) {
-                grandParent.color = RED;
-                balanceAfterInsert(grandParent);
+            parent.color = BLACK
+            uncle.color = BLACK
+            grandParent?.let {
+                it.color = RED
+                balanceAfterInsert(it)
             }
-            return;
+            return
         }
 
-        if (parent.color == RED && uncle.color == BLACK) {
+        if (parent.color == RED && (uncle == null || uncle.color == BLACK)) {
             // Case 4 - The parent is red but the uncle is black; also, the
             // current node is the right child of parent, and parent in turn
             // is the left child of its parent grandparent.
-            if (node == parent.greater && parent == grandParent.lesser) {
-                // right-left
-                rotateLeft(parent);
+            if (grandParent != null) {
+                if (node === parent.greater && parent === grandParent.lesser) {
+                    // right-left
+                    rotateLeft(parent)
 
-                node = (RedBlackNode<T>) node.lesser;
-                parent = (RedBlackNode<T>) node.parent;
-                grandParent = node.getGrandParent();
-                uncle = node.getUncle(grandParent);
-            } else if (node == parent.lesser && parent == grandParent.greater) {
-                // left-right
-                rotateRight(parent);
+                    node = node.lesser as RedBlackNode<T>
+                    parent = node.parent as RedBlackNode<T>
+                    grandParent = node.getGrandParent()
+                    uncle = node.getUncle(grandParent)
+                } else if (node === parent.lesser && parent === grandParent.greater) {
+                    // left-right
+                    rotateRight(parent)
 
-                node = (RedBlackNode<T>) node.greater;
-                parent = (RedBlackNode<T>) node.parent;
-                grandParent = node.getGrandParent();
-                uncle = node.getUncle(grandParent);
+                    node = node.greater as RedBlackNode<T>
+                    parent = node.parent as RedBlackNode<T>
+                    grandParent = node.getGrandParent()
+                    uncle = node.getUncle(grandParent)
+                }
             }
         }
 
-        if (parent.color == RED && uncle.color == BLACK) {
+        if (parent.color == RED && (uncle == null || uncle.color == BLACK)) {
             // Case 5 - The parent is red but the uncle is black, the
             // current node is the left child of parent, and parent is the
             // left child of its parent G.
-            parent.color = BLACK;
-            grandParent.color = RED;
-            if (node == parent.lesser && parent == grandParent.lesser) {
-                // left-left
-                rotateRight(grandParent);
-            } else if (node == parent.greater && parent == grandParent.greater) {
-                // right-right
-                rotateLeft(grandParent);
+            grandParent?.let { gp ->
+                parent.color = BLACK
+                gp.color = RED
+                if (node === parent.lesser && parent === gp.lesser) {
+                    // left-left
+                    rotateRight(gp)
+                } else if (node === parent.greater && parent === gp.greater) {
+                    // right-right
+                    rotateLeft(gp)
+                }
             }
         }
     }
@@ -173,72 +174,71 @@ public class RedBlackTree<T extends Comparable<T>> extends BinarySearchTree<T> {
     /**
      * {@inheritDoc}
      */
-    @Override
-    protected Node<T> removeNode(Node<T> node) {
-        if (node == null) return node;
+    override fun removeNode(nodeToRemoved: Node<T>?): Node<T>? {
+        if (nodeToRemoved == null) return null
 
-        RedBlackNode<T> nodeToRemoved = (RedBlackNode<T>)node;
+        var rbNodeToRemoved = nodeToRemoved as RedBlackNode<T>
 
-        if (nodeToRemoved.isLeaf()) {
+        if (rbNodeToRemoved.isLeaf()) {
             // No children
-            nodeToRemoved.id = null;
-            if (nodeToRemoved == root) {
-                root = null;
+            rbNodeToRemoved.id = null
+            if (rbNodeToRemoved === root) {
+                root = null
             } else {
-                nodeToRemoved.id = null;
-                nodeToRemoved.color = BLACK;
-                nodeToRemoved.lesser = null;
-                nodeToRemoved.greater = null;
+                rbNodeToRemoved.id = null
+                rbNodeToRemoved.color = BLACK
+                rbNodeToRemoved.lesser = null
+                rbNodeToRemoved.greater = null
             }
 
-            size--;
-            return nodeToRemoved;
+            size--
+            return rbNodeToRemoved
         }
 
         // At least one child
 
         // Keep the id and assign it to the replacement node
-        T id = nodeToRemoved.id;
-        RedBlackNode<T> lesser = (RedBlackNode<T>) nodeToRemoved.lesser;
-        RedBlackNode<T> greater = (RedBlackNode<T>) nodeToRemoved.greater;
+        val id = rbNodeToRemoved.id
+        var lesser = rbNodeToRemoved.lesser as RedBlackNode<T>
+        var greater = rbNodeToRemoved.greater as RedBlackNode<T>
         if (lesser.id != null && greater.id != null) {
             // Two children
-            RedBlackNode<T> greatestInLesser = (RedBlackNode<T>) this.getGreatest(lesser);
+            var greatestInLesser = this.getGreatest(lesser) as? RedBlackNode<T>
             if (greatestInLesser == null || greatestInLesser.id == null)
-                greatestInLesser = lesser;
+                greatestInLesser = lesser
 
             // Replace node with greatest in his lesser tree, which leaves us with only one child
-            replaceValueOnly(nodeToRemoved, greatestInLesser);
-            nodeToRemoved = greatestInLesser;
-            lesser = (RedBlackNode<T>) nodeToRemoved.lesser;
-            greater = (RedBlackNode<T>) nodeToRemoved.greater;
+            replaceValueOnly(rbNodeToRemoved, greatestInLesser)
+            rbNodeToRemoved = greatestInLesser
+            lesser = rbNodeToRemoved.lesser as RedBlackNode<T>
+            greater = rbNodeToRemoved.greater as RedBlackNode<T>
         }
 
         // Handle one child
-        RedBlackNode<T> child = (RedBlackNode<T>) ((lesser.id != null) ? lesser : greater);
-        if (nodeToRemoved.color == BLACK) {
+        val child = if (lesser.id != null) lesser else greater
+        if (rbNodeToRemoved.color == BLACK) {
             if (child.color == BLACK)
-                nodeToRemoved.color = RED;
-            boolean result = balanceAfterDelete(nodeToRemoved);
+                rbNodeToRemoved.color = RED
+            val result = balanceAfterDelete(rbNodeToRemoved)
             if (!result)
-                return nodeToRemoved;
+                return rbNodeToRemoved
         }
 
         // Replacing node with child
-        replaceWithChild(nodeToRemoved, child);
+        replaceWithChild(rbNodeToRemoved, child)
         // Add the id to the child because it represents the node that was removed.
-        child.id = id;
-        if (root == nodeToRemoved) {
-            root.parent = null;
-            ((RedBlackNode<T>)root).color = BLACK;
+        child.id = id
+        if (root === rbNodeToRemoved) {
+            root?.parent = null
+            (root as? RedBlackNode<T>)?.color = BLACK
             // If we replaced the root with a leaf, just null out root
-            if (nodeToRemoved.isLeaf())
-                root = null;
+            if (rbNodeToRemoved.isLeaf())
+                root = null
         }
-        nodeToRemoved = child;
+        rbNodeToRemoved = child
 
-        size--;
-        return nodeToRemoved;
+        size--
+        return rbNodeToRemoved
     }
 
     /**
@@ -249,9 +249,9 @@ public class RedBlackTree<T extends Comparable<T>> extends BinarySearchTree<T> {
      * @param nodeToReplaceWith
      *            will get value NULLed.
      */
-    private void replaceValueOnly(RedBlackNode<T> nodeToReplace, RedBlackNode<T> nodeToReplaceWith) {
-        nodeToReplace.id = nodeToReplaceWith.id;
-        nodeToReplaceWith.id = null;
+    private fun replaceValueOnly(nodeToReplace: RedBlackNode<T>, nodeToReplaceWith: RedBlackNode<T>) {
+        nodeToReplace.id = nodeToReplaceWith.id
+        nodeToReplaceWith.id = null
     }
 
     /**
@@ -263,17 +263,15 @@ public class RedBlackTree<T extends Comparable<T>> extends BinarySearchTree<T> {
      * @param nodeToReplaceWith
      *            will not be changed.
      */
-    private void replaceWithChild(RedBlackNode<T> nodeToReplace, RedBlackNode<T> nodeToReplaceWith) {
-        nodeToReplace.id = nodeToReplaceWith.id;
-        nodeToReplace.color = nodeToReplaceWith.color;
+    private fun replaceWithChild(nodeToReplace: RedBlackNode<T>, nodeToReplaceWith: RedBlackNode<T>) {
+        nodeToReplace.id = nodeToReplaceWith.id
+        nodeToReplace.color = nodeToReplaceWith.color
 
-        nodeToReplace.lesser = nodeToReplaceWith.lesser;
-        if (nodeToReplace.lesser!=null)
-            nodeToReplace.lesser.parent = nodeToReplace;
+        nodeToReplace.lesser = nodeToReplaceWith.lesser
+        nodeToReplace.lesser?.parent = nodeToReplace
 
-        nodeToReplace.greater = nodeToReplaceWith.greater;
-        if (nodeToReplace.greater!=null)
-            nodeToReplace.greater.parent = nodeToReplace;
+        nodeToReplace.greater = nodeToReplaceWith.greater
+        nodeToReplace.greater?.parent = nodeToReplace
     }
 
     /**
@@ -283,387 +281,356 @@ public class RedBlackTree<T extends Comparable<T>> extends BinarySearchTree<T> {
      *            to begin balancing at.
      * @return True if balanced or false if error.
      */
-    private boolean balanceAfterDelete(RedBlackNode<T> node) {
+    private fun balanceAfterDelete(node: RedBlackNode<T>): Boolean {
         if (node.parent == null) {
             // Case 1 - node is the new root.
-            return true;
+            return true
         }
 
-        RedBlackNode<T> parent = (RedBlackNode<T>) node.parent;
-        RedBlackNode<T> sibling = node.getSibling();
-        if (sibling.color == RED) {
+        var parent = node.parent as RedBlackNode<T>
+        var sibling = node.getSibling()
+        if (sibling?.color == RED) {
             // Case 2 - sibling is red.
-            parent.color = RED;
-            sibling.color = BLACK;
-            if (node == parent.lesser) {
-                rotateLeft(parent);
+            parent.color = RED
+            sibling.color = BLACK
+            when {
+                node === parent.lesser -> {
+                    rotateLeft(parent)
 
-                // Rotation, need to update parent/sibling
-                parent = (RedBlackNode<T>) node.parent;
-                sibling = node.getSibling();
-            } else if (node == parent.greater) {
-                rotateRight(parent);
+                    // Rotation, need to update parent/sibling
+                    parent = node.parent as RedBlackNode<T>
+                    sibling = node.getSibling()
+                }
+                node === parent.greater -> {
+                    rotateRight(parent)
 
-                // Rotation, need to update parent/sibling
-                parent = (RedBlackNode<T>) node.parent;
-                sibling = node.getSibling();
-            } else {
-                throw new RuntimeException("Yikes! I'm not related to my parent. " + node.toString());
+                    // Rotation, need to update parent/sibling
+                    parent = node.parent as RedBlackNode<T>
+                    sibling = node.getSibling()
+                }
+                else -> {
+                    throw RuntimeException("Yikes! I'm not related to my parent. $node")
+                }
             }
         }
 
-        if (parent.color == BLACK
+        if (sibling != null && parent.color == BLACK
             && sibling.color == BLACK
-            && ((RedBlackNode<T>) sibling.lesser).color == BLACK
-            && ((RedBlackNode<T>) sibling.greater).color == BLACK
+            && (sibling.lesser as? RedBlackNode<T>)?.color == BLACK
+            && (sibling.greater as? RedBlackNode<T>)?.color == BLACK
         ) {
             // Case 3 - parent, sibling, and sibling's children are black.
-            sibling.color = RED;
-            return balanceAfterDelete(parent);
+            sibling.color = RED
+            return balanceAfterDelete(parent)
         }
 
-        if (parent.color == RED
+        if (sibling != null && parent.color == RED
             && sibling.color == BLACK
-            && ((RedBlackNode<T>) sibling.lesser).color == BLACK
-            && ((RedBlackNode<T>) sibling.greater).color == BLACK
+            && (sibling.lesser as? RedBlackNode<T>)?.color == BLACK
+            && (sibling.greater as? RedBlackNode<T>)?.color == BLACK
         ) {
             // Case 4 - sibling and sibling's children are black, but parent is red.
-            sibling.color = RED;
-            parent.color = BLACK;
-            return true;
+            sibling.color = RED
+            parent.color = BLACK
+            return true
         }
 
-        if (sibling.color == BLACK) {
+        if (sibling != null && sibling.color == BLACK) {
             // Case 5 - sibling is black, sibling's left child is red,
             // sibling's right child is black, and node is the left child of
             // its parent.
-            if (node == parent.lesser
-                && ((RedBlackNode<T>) sibling.lesser).color == RED
-                && ((RedBlackNode<T>) sibling.greater).color == BLACK
+            if (node === parent.lesser
+                && (sibling.lesser as? RedBlackNode<T>)?.color == RED
+                && (sibling.greater as? RedBlackNode<T>)?.color == BLACK
             ) {
-                sibling.color = RED;
-                ((RedBlackNode<T>) sibling.lesser).color = RED;
+                sibling.color = RED
+                (sibling.lesser as RedBlackNode<T>).color = RED
 
-                rotateRight(sibling);
+                rotateRight(sibling)
 
                 // Rotation, need to update parent/sibling
-                parent = (RedBlackNode<T>) node.parent;
-                sibling = node.getSibling();
-            } else if (node == parent.greater
-                       && ((RedBlackNode<T>) sibling.lesser).color == BLACK
-                       && ((RedBlackNode<T>) sibling.greater).color == RED
+                parent = node.parent as RedBlackNode<T>
+                sibling = node.getSibling()
+            } else if (node === parent.greater
+                       && (sibling.lesser as? RedBlackNode<T>)?.color == BLACK
+                       && (sibling.greater as? RedBlackNode<T>)?.color == RED
             ) {
-                sibling.color = RED;
-                ((RedBlackNode<T>) sibling.greater).color = RED;
+                sibling.color = RED
+                (sibling.greater as RedBlackNode<T>).color = RED
 
-                rotateLeft(sibling);
+                rotateLeft(sibling)
 
                 // Rotation, need to update parent/sibling
-                parent = (RedBlackNode<T>) node.parent;
-                sibling = node.getSibling();
+                parent = node.parent as RedBlackNode<T>
+                sibling = node.getSibling()
             }
         }
 
         // Case 6 - sibling is black, sibling's right child is red, and node
         // is the left child of its parent.
-        sibling.color = parent.color;
-        parent.color = BLACK;
-        if (node == parent.lesser) {
-            ((RedBlackNode<T>) sibling.greater).color = BLACK;
-            rotateLeft(node.parent);
-        } else if (node == parent.greater) {
-            ((RedBlackNode<T>) sibling.lesser).color = BLACK;
-            rotateRight(node.parent);
-        } else {
-            throw new RuntimeException("Yikes! I'm not related to my parent. " + node.toString());
+        if (sibling != null) {
+            sibling.color = parent.color
+            parent.color = BLACK
+            if (node === parent.lesser) {
+                (sibling.greater as? RedBlackNode<T>)?.color = BLACK
+                rotateLeft(node.parent!!)
+            } else if (node === parent.greater) {
+                (sibling.lesser as? RedBlackNode<T>)?.color = BLACK
+                rotateRight(node.parent!!)
+            } else {
+                throw RuntimeException("Yikes! I'm not related to my parent. $node")
+            }
         }
 
-        return true;
+        return true
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public boolean validate() {
-        if (root == null)
-            return true;
+    override fun validate(): Boolean {
+        val rootNode = root as? RedBlackNode<T> ?: return true
 
-        if (((RedBlackNode<T>) root).color == RED) {
+        if (rootNode.color == RED) {
             // Root node should be black
-            return false;
+            return false
         }
 
-        return this.validateNode(root);
+        return this.validateNode(rootNode)
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    protected boolean validateNode(Node<T> node) {
-        RedBlackNode<T> rbNode = (RedBlackNode<T>) node;
-        RedBlackNode<T> lesser = (RedBlackNode<T>) rbNode.lesser;
-        RedBlackNode<T> greater = (RedBlackNode<T>) rbNode.greater;
+    override fun validateNode(node: Node<T>): Boolean {
+        val rbNode = node as RedBlackNode<T>
+        val lesser = rbNode.lesser as? RedBlackNode<T> ?: return true
+        val greater = rbNode.greater as? RedBlackNode<T> ?: return true
 
         if (rbNode.isLeaf() && rbNode.color == RED) {
             // Leafs should not be red
-            return false;
+            return false
         }
 
         if (rbNode.color == RED) {
             // You should not have two red nodes in a row
-            if (lesser.color == RED) return false;
-            if (greater.color == RED) return false;
+            if (lesser.color == RED) return false
+            if (greater.color == RED) return false
         }
 
         if (!lesser.isLeaf()) {
             // Check BST property
-            boolean lesserCheck = lesser.id.compareTo(rbNode.id) <= 0;
+            val lesserId = lesser.id!!
+            val rbNodeId = rbNode.id!!
+            val lesserCheck = lesserId.compareTo(rbNodeId) <= 0
             if (!lesserCheck)
-                return false;
+                return false
             // Check red-black property
-            lesserCheck = this.validateNode(lesser);
-            if (!lesserCheck)
-                return false;
+            if (!this.validateNode(lesser))
+                return false
         }
 
         if (!greater.isLeaf()) {
             // Check BST property
-            boolean greaterCheck = greater.id.compareTo(rbNode.id) > 0;
+            val greaterId = greater.id!!
+            val rbNodeId = rbNode.id!!
+            val greaterCheck = greaterId.compareTo(rbNodeId) > 0
             if (!greaterCheck)
-                return false;
+                return false
             // Check red-black property
-            greaterCheck = this.validateNode(greater);
-            if (!greaterCheck)
-                return false;
+            if (!this.validateNode(greater))
+                return false
         }
 
-        return true;
+        return true
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public java.util.Collection<T> toCollection() {
-        return (new JavaCompatibleRedBlackTree<T>(this));
+    override fun toCollection(): Collection<T> {
+        return JavaCompatibleRedBlackTree(this)
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public String toString() {
-        return RedBlackTreePrinter.getString(this);
+    override fun toString(): String {
+        return RedBlackTreePrinter.getString(this)
     }
 
-    protected static class RedBlackNode<T extends Comparable<T>> extends Node<T> {
+    class RedBlackNode<T : Comparable<T>>(
+        parent: Node<T>? = null,
+        id: T? = null,
+        var color: Boolean = BLACK
+    ) : Node<T>(parent, id) {
 
-        protected boolean color = BLACK;
-
-        protected RedBlackNode(Node<T> parent, T id, boolean color) {
-            super(parent, id);
-            this.color = color;
+        fun getGrandParent(): RedBlackNode<T>? {
+            if (parent == null || parent?.parent == null) return null
+            return parent?.parent as? RedBlackNode<T>
         }
 
-        protected RedBlackNode<T> getGrandParent() {
-            if (parent == null || parent.parent == null) return null;
-            return (RedBlackNode<T>) parent.parent;
-        }
-
-        protected RedBlackNode<T> getUncle(RedBlackNode<T> grandParent) {
-            if (grandParent == null) return null;
-            if (grandParent.lesser != null && grandParent.lesser == parent) {
-                return (RedBlackNode<T>) grandParent.greater;
-            } else if (grandParent.greater != null && grandParent.greater == parent) {
-                return (RedBlackNode<T>) grandParent.lesser;
-            }
-            return null;
-        }
-
-        protected RedBlackNode<T> getUncle() {
-            RedBlackNode<T> grandParent = getGrandParent();
-            return getUncle(grandParent);
-        }
-
-        protected RedBlackNode<T> getSibling() {
-            if (parent == null)
-                return null;
-            if (parent.lesser == this) {
-                return (RedBlackNode<T>) parent.greater;
-            } else if (parent.greater == this) {
-                return (RedBlackNode<T>) parent.lesser;
+        fun getUncle(grandParent: RedBlackNode<T>?): RedBlackNode<T>? {
+            val gp = grandParent ?: return null
+            return if (gp.lesser != null && gp.lesser === parent) {
+                gp.greater as? RedBlackNode<T>
+            } else if (gp.greater != null && gp.greater === parent) {
+                gp.lesser as? RedBlackNode<T>
             } else {
-                throw new RuntimeException("Yikes! I'm not related to my parent. " + this.toString());
+                null
             }
         }
 
-        protected boolean isLeaf() {
-            if (lesser != null)
-                return false;
-            if (greater != null)
-                return false;
-            return true;
+        fun getUncle(): RedBlackNode<T>? {
+            val grandParent = getGrandParent()
+            return getUncle(grandParent)
+        }
+
+        fun getSibling(): RedBlackNode<T>? {
+            val p = parent ?: return null
+            return when {
+                p.lesser === this -> p.greater as? RedBlackNode<T>
+                p.greater === this -> p.lesser as? RedBlackNode<T>
+                else -> throw RuntimeException("Yikes! I'm not related to my parent. $this")
+            }
+        }
+
+        fun isLeaf(): Boolean {
+            return lesser == null && greater == null
         }
 
         /**
          * {@inheritDoc}
          */
-        @Override
-        public String toString() {
-            return "id=" + id + " color=" + ((color == RED) ? "RED" : "BLACK") + " isLeaf=" + isLeaf() + " parent="
-                   + ((parent != null) ? parent.id : "NULL") + " lesser=" + ((lesser != null) ? lesser.id : "NULL")
-                   + " greater=" + ((greater != null) ? greater.id : "NULL");
+        override fun toString(): String {
+            return "id=$id color=${if (color == RED) "RED" else "BLACK"} isLeaf=${isLeaf()} parent=${parent?.id ?: "NULL"} lesser=${lesser?.id ?: "NULL"} greater=${greater?.id ?: "NULL"}"
         }
     }
 
-    protected static class RedBlackTreePrinter {
+    protected object RedBlackTreePrinter {
 
-        public static <T extends Comparable<T>> String getString(RedBlackTree<T> tree) {
-            if (tree.root == null)
-                return "Tree has no nodes.";
-            return getString((RedBlackNode<T>) tree.root, "", true);
+        fun <T : Comparable<T>> getString(tree: RedBlackTree<T>): String {
+            val root = tree.root as? RedBlackNode<T> ?: return "Tree has no nodes."
+            return getString(root, "", true)
         }
 
-        public static <T extends Comparable<T>> String getString(RedBlackNode<T> node) {
+        fun <T : Comparable<T>> getString(node: RedBlackNode<T>?): String {
             if (node == null)
-                return "Sub-tree has no nodes.";
-            return getString(node, "", true);
+                return "Sub-tree has no nodes."
+            return getString(node, "", true)
         }
 
-        private static <T extends Comparable<T>> String getString(RedBlackNode<T> node, String prefix, boolean isTail) {
-            StringBuilder builder = new StringBuilder();
+        private fun <T : Comparable<T>> getString(node: RedBlackNode<T>, prefix: String, isTail: Boolean): String {
+            val builder = StringBuilder()
 
-            builder.append(prefix + (isTail ? "└── " : "├── ") + "(" + ((node.color == RED) ? "RED" : "BLACK") + ") " + node.id
-                           + " [parent=" + ((node.parent!=null)?node.parent.id:"NULL")
-                           + " grand-parent=" + ((node.parent!=null && node.parent.parent!=null)?node.parent.parent.id:"NULL")
-                           + "]\n"
-            );
-            List<Node<T>> children = null;
-            if (node.lesser != null || node.greater != null) {
-                children = new ArrayList<Node<T>>(2);
-                if (node.lesser != null)
-                    children.add(node.lesser);
-                if (node.greater != null)
-                    children.add(node.greater);
+            builder.append("$prefix${if (isTail) "└── " else "├── "}(${if (node.color == RED) "RED" else "BLACK"}) ${node.id} [parent=${node.parent?.id ?: "NULL"} grand-parent=${node.parent?.parent?.id ?: "NULL"}]\n")
+            
+            val children = mutableListOf<Node<T>>()
+            node.lesser?.let { children.add(it) }
+            node.greater?.let { children.add(it) }
+
+            for (i in 0 until children.size - 1) {
+                builder.append(getString(children[i] as RedBlackNode<T>, prefix + if (isTail) "    " else "│   ", false))
             }
-            if (children != null) {
-                for (int i = 0; i < children.size() - 1; i++) {
-                    builder.append(getString((RedBlackNode<T>) children.get(i), prefix + (isTail ? "    " : "│   "), false));
-                }
-                if (children.size() >= 1) {
-                    builder.append(getString((RedBlackNode<T>) children.get(children.size() - 1), prefix + (isTail ? "    " : "│   "), true));
-                }
+            if (children.isNotEmpty()) {
+                builder.append(getString(children.last() as RedBlackNode<T>, prefix + if (isTail) "    " else "│   ", true))
             }
 
-            return builder.toString();
+            return builder.toString()
         }
     }
 
-    public static class JavaCompatibleRedBlackTree<T extends Comparable<T>> extends java.util.AbstractCollection<T> {
+    class JavaCompatibleRedBlackTree<T : Comparable<T>> : AbstractMutableCollection<T> {
 
-        private RedBlackTree<T> tree = null;
+        private val tree: RedBlackTree<T>
 
-        public JavaCompatibleRedBlackTree() {
-            this.tree = new RedBlackTree<T> ();
+        constructor() {
+            this.tree = RedBlackTree()
         }
 
-        public JavaCompatibleRedBlackTree(RedBlackTree<T> tree) {
-            this.tree = tree;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean add(T value) {
-            return tree.add(value);
+        constructor(tree: RedBlackTree<T>) {
+            this.tree = tree
         }
 
         /**
          * {@inheritDoc}
          */
-        @Override
-        public boolean remove(Object value) {
-            return (tree.remove((T)value)!=null);
+        override fun add(element: T): Boolean {
+            return tree.add(element)
         }
 
         /**
          * {@inheritDoc}
          */
-        @Override
-        public boolean contains(Object value) {
-            return tree.contains((T)value);
+        override fun remove(element: T): Boolean {
+            return tree.remove(element) != null
         }
 
         /**
          * {@inheritDoc}
          */
-        @Override
-        public int size() {
-            return tree.size();
+        override fun contains(element: T): Boolean {
+            return tree.contains(element)
         }
 
         /**
          * {@inheritDoc}
          */
-        @Override
-        public Iterator<T> iterator() {
-            return (new RedBlackTreeIterator<T>(this.tree));
+        override val size: Int
+            get() = tree.size()
+
+        /**
+         * {@inheritDoc}
+         */
+        override fun iterator(): MutableIterator<T> {
+            return RedBlackTreeIterator(this.tree)
         }
 
-        private static class RedBlackTreeIterator<C extends Comparable<C>> implements Iterator<C> {
+        private class RedBlackTreeIterator<C : Comparable<C>>(
+            private val tree: RedBlackTree<C>
+        ) : MutableIterator<C> {
 
-            private RedBlackTree<C> tree = null;
-            private RedBlackTree.Node<C> last = null;
-            private Deque<RedBlackTree.Node<C>> toVisit = new ArrayDeque<RedBlackTree.Node<C>>();
+            private var last: Node<C>? = null
+            private val toVisit: Deque<Node<C>> = ArrayDeque()
 
-            protected RedBlackTreeIterator(RedBlackTree<C> tree) {
-                this.tree = tree;
-                if (tree.root!=null) {
-                    toVisit.add(tree.root);
+            init {
+                tree.root?.let {
+                    toVisit.add(it)
                 }
             }
 
             /**
              * {@inheritDoc}
              */
-            @Override
-            public boolean hasNext() {
-                if (toVisit.size()>0) return true;
-                return false;
+            override fun hasNext(): Boolean {
+                return toVisit.isNotEmpty()
             }
 
             /**
              * {@inheritDoc}
              */
-            @Override
-            public C next() {
-                while (toVisit.size()>0) {
+            override fun next(): C {
+                if (toVisit.isEmpty()) throw NoSuchElementException()
+                
+                while (toVisit.isNotEmpty()) {
                     // Go thru the current nodes
-                    RedBlackTree.Node<C> n = toVisit.pop();
+                    val n = toVisit.pop()
 
                     // Add non-null children
-                    if (n.lesser!=null && n.lesser.id!=null) {
-                        toVisit.add(n.lesser);
-                    }
-                    if (n.greater!=null && n.greater.id!=null) {
-                        toVisit.add(n.greater);
-                    }
+                    n.lesser?.let { if (it.id != null) toVisit.add(it) }
+                    n.greater?.let { if (it.id != null) toVisit.add(it) }
 
-                    last = n;
-                    return n.id;
+                    last = n
+                    return n.id!!
                 }
-                return null;
+                throw NoSuchElementException()
             }
 
             /**
              * {@inheritDoc}
              */
-            @Override
-            public void remove() {
-                tree.removeNode(last);
+            override fun remove() {
+                tree.removeNode(last)
             }
         }
     }

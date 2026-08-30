@@ -1,189 +1,212 @@
-package com.aricneto.twistytimer.solver;
+package com.aricneto.twistytimer.solver
 
-import com.aricneto.twistify.R;
-import com.aricneto.twistytimer.solver.RubiksCubeSolver.State;
-import com.aricneto.twistytimer.utils.DefaultPrefs;
-import com.aricneto.twistytimer.utils.Prefs;
+import com.aricneto.twistify.R
+import com.aricneto.twistytimer.solver.RubiksCubeXCrossSolver.solve
+import com.aricneto.twistytimer.utils.DefaultPrefs.getBoolean
+import com.aricneto.twistytimer.utils.Prefs.getBoolean
 
-import java.util.ArrayList;
+class RubiksCubeOptimalXCross(private val description: String) : Tip {
+    override val tipId: String  = "RUBIKS-CUBE-OPTIMAL-X-CROSS"
 
-public class RubiksCubeOptimalXCross implements Tip {
-    private static State x;
-    private static State y;
-    private static State z;
 
-    private String description;
+    override val puzzleId: String =  "RUBIKS-CUBE"
 
-    public RubiksCubeOptimalXCross(String description) {
-        this.description = description;
-    }
+    override val tipDescription: String = "RUBIKS-CUBE-OPTIMAL-X-CROSS"
 
-    static {
-        x = new State(
-                new byte[] { 3, 2, 6, 7, 0, 1, 5, 4 },
-                new byte[] { 2, 1, 2, 1, 1, 2, 1, 2 },
-                new byte[] { 7, 5, 9, 11, 6, 2, 10, 3, 4, 1, 8, 0 },
-                new byte[] { 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0 });
+    override fun getTip(scramble: String): String {
+        val state = RubiksCubeSolver.State.id.applySequence(
+            scramble.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        )
 
-        y = new State(
-                new byte[] { 3, 0, 1, 2, 7, 4, 5, 6 },
-                new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 },
-                new byte[] { 3, 0, 1, 2, 7, 4, 5, 6, 11, 8, 9, 10 },
-                new byte[] { 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 });
-
-        z = new State(
-                new byte[] { 4, 0, 3, 7, 5, 1, 2, 6 },
-                new byte[] { 1, 2, 1, 2, 2, 1, 2, 1 },
-                new byte[] { 8, 4, 6, 10, 0, 7, 3, 11, 1, 5, 2, 9 },
-                new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 });
-    }
-
-    @Override
-    public String getTipId() {
-        return "RUBIKS-CUBE-OPTIMAL-X-CROSS";
-    }
-
-    @Override
-    public String getPuzzleId() {
-        return "RUBIKS-CUBE";
-    }
-
-    @Override
-    public String getTipDescription() {
-        return "RUBIKS-CUBE-OPTIMAL-X-CROSS";
-    }
-
-    @Override
-    public String getTip(String scramble) {
-        State state = State.id.applySequence(scramble.split(" "));
-
-        StringBuilder tip = new StringBuilder();
+        val tip = StringBuilder()
 
 
         // x-cross on U
-        if (Prefs.getBoolean(R.string.pk_cross_hint_top_enabled, DefaultPrefs.getBoolean(R.bool.default_crossHintTopEnabled))) {
-            State stateU = x.multiply(x).multiply(state).multiply(x).multiply(x);
-            tip.append(String.format(description, "U")).append("\n");
-            tip.append(getOptimalSolutions(stateU, "x2 "));
-            tip.append("\n");
+        if (getBoolean(
+                R.string.pk_cross_hint_top_enabled,
+                getBoolean(R.bool.default_crossHintTopEnabled)
+            )
+        ) {
+            val stateU: RubiksCubeSolver.State = x.multiply(x).multiply(state).multiply(x).multiply(
+                x
+            )
+            tip.append(String.format(description, "U")).append("\n")
+            tip.append(getOptimalSolutions(stateU, "x2 "))
+            tip.append("\n")
         }
 
         // x-cross on D
-        if (Prefs.getBoolean(R.string.pk_cross_hint_down_enabled, DefaultPrefs.getBoolean(R.bool.default_crossHintDownEnabled))) {
-            tip.append(String.format(description, "D")).append("\n");
-            tip.append(getOptimalSolutions(state, "")); // state == "stateD"
-            tip.append("\n");
+        if (getBoolean(
+                R.string.pk_cross_hint_down_enabled,
+                getBoolean(R.bool.default_crossHintDownEnabled)
+            )
+        ) {
+            tip.append(String.format(description, "D")).append("\n")
+            tip.append(getOptimalSolutions(state, "")) // state == "stateD"
+            tip.append("\n")
         }
 
         // x-cross on L
-        if (Prefs.getBoolean(R.string.pk_cross_hint_left_enabled, DefaultPrefs.getBoolean(R.bool.default_crossHintLeftEnabled))) {
-            State stateL = z.multiply(state).multiply(z).multiply(z).multiply(z);
-            tip.append(String.format(description, "L")).append("\n");
-            tip.append(getOptimalSolutions(stateL, "z' "));
-            tip.append("\n");
+        if (getBoolean(
+                R.string.pk_cross_hint_left_enabled,
+                getBoolean(R.bool.default_crossHintLeftEnabled)
+            )
+        ) {
+            val stateL: RubiksCubeSolver.State = z.multiply(state).multiply(z).multiply(z).multiply(
+                z
+            )
+            tip.append(String.format(description, "L")).append("\n")
+            tip.append(getOptimalSolutions(stateL, "z' "))
+            tip.append("\n")
         }
 
         // x-cross on R
-        if (Prefs.getBoolean(R.string.pk_cross_hint_right_enabled, DefaultPrefs.getBoolean(R.bool.default_crossHintRightEnabled))) {
-            State stateR = z.multiply(z).multiply(z).multiply(state).multiply(z);
-            tip.append(String.format(description, "R")).append("\n");
-            tip.append(getOptimalSolutions(stateR, "z "));
-            tip.append("\n");
+        if (getBoolean(
+                R.string.pk_cross_hint_right_enabled,
+                getBoolean(R.bool.default_crossHintRightEnabled)
+            )
+        ) {
+            val stateR: RubiksCubeSolver.State = z.multiply(z).multiply(z).multiply(state).multiply(
+                z
+            )
+            tip.append(String.format(description, "R")).append("\n")
+            tip.append(getOptimalSolutions(stateR, "z "))
+            tip.append("\n")
         }
 
         // x-cross on F
-        if (Prefs.getBoolean(R.string.pk_cross_hint_front_enabled, DefaultPrefs.getBoolean(R.bool.default_crossHintFrontEnabled))) {
-            State stateF = x.multiply(state).multiply(x).multiply(x).multiply(x);
-            tip.append(String.format(description, "F")).append("\n");
-            tip.append(getOptimalSolutions(stateF, "x' "));
-            tip.append("\n");
+        if (getBoolean(
+                R.string.pk_cross_hint_front_enabled,
+                getBoolean(R.bool.default_crossHintFrontEnabled)
+            )
+        ) {
+            val stateF: RubiksCubeSolver.State = x.multiply(state).multiply(x).multiply(x).multiply(
+                x
+            )
+            tip.append(String.format(description, "F")).append("\n")
+            tip.append(getOptimalSolutions(stateF, "x' "))
+            tip.append("\n")
         }
 
         // x-cross on B
-        if (Prefs.getBoolean(R.string.pk_cross_hint_back_enabled, DefaultPrefs.getBoolean(R.bool.default_crossHintBackEnabled))) {
-            State stateB = x.multiply(x).multiply(x).multiply(state).multiply(x);
-            tip.append(String.format(description, "B")).append("\n");
-            tip.append(getOptimalSolutions(stateB, "x "));
-            tip.append("\n");
+        if (getBoolean(
+                R.string.pk_cross_hint_back_enabled,
+                getBoolean(R.bool.default_crossHintBackEnabled)
+            )
+        ) {
+            val stateB: RubiksCubeSolver.State = x.multiply(x).multiply(x).multiply(state).multiply(
+                x
+            )
+            tip.append(String.format(description, "B")).append("\n")
+            tip.append(getOptimalSolutions(stateB, "x "))
+            tip.append("\n")
         }
 
-        return tip.toString().trim();
+        return tip.toString().trim { it <= ' ' }
     }
 
-    private String getOptimalSolutions(State state, String prefix) {
-        int count = 0;
+    private fun getOptimalSolutions(state: RubiksCubeSolver.State, prefix: String): String {
+        var count = 0
 
-        ArrayList<String> prefixes = new ArrayList<>();
-        ArrayList<String[]> solutions = new ArrayList<>();
+        val prefixes = ArrayList<String>()
+        val solutions = ArrayList<Array<String>>()
 
         // id
-        for (String[] solution : RubiksCubeXCrossSolver.solve(state)) {
-            prefixes.add(prefix);
-            solutions.add(solution);
-            count++;
+        for (solution in solve(state)) {
+            prefixes.add(prefix)
+            solutions.add(solution)
+            count++
             if (count == 2) {
-                break;
+                break
             }
         }
 
         // y
-        count = 0;
-        State stateY = y.multiply(y).multiply(y).multiply(state).multiply(y);
-        for (String[] solution : RubiksCubeXCrossSolver.solve(stateY)) {
-            prefixes.add(prefix + "y ");
-            solutions.add(solution);
-            count++;
+        count = 0
+        val stateY: RubiksCubeSolver.State = y.multiply(y).multiply(y).multiply(state).multiply(y)
+        for (solution in solve(stateY)) {
+            prefixes.add(prefix + "y ")
+            solutions.add(solution)
+            count++
             if (count == 2) {
-                break;
+                break
             }
         }
 
         // y2
-        count = 0;
-        State stateY2 = y.multiply(y).multiply(state).multiply(y).multiply(y);
-        for (String[] solution : RubiksCubeXCrossSolver.solve(stateY2)) {
-            prefixes.add(prefix + "y2 ");
-            solutions.add(solution);
-            count++;
+        count = 0
+        val stateY2: RubiksCubeSolver.State = y.multiply(y).multiply(state).multiply(y).multiply(y)
+        for (solution in solve(stateY2)) {
+            prefixes.add(prefix + "y2 ")
+            solutions.add(solution)
+            count++
             if (count == 2) {
-                break;
+                break
             }
         }
 
         // y'
-        count = 0;
-        State stateY3 = y.multiply(state).multiply(y).multiply(y).multiply(y);
-        for (String[] solution : RubiksCubeXCrossSolver.solve(stateY3)) {
-            prefixes.add(prefix + "y' ");
-            solutions.add(solution);
-            count++;
+        count = 0
+        val stateY3: RubiksCubeSolver.State = y.multiply(state).multiply(y).multiply(y).multiply(y)
+        for (solution in solve(stateY3)) {
+            prefixes.add(prefix + "y' ")
+            solutions.add(solution)
+            count++
             if (count == 2) {
-                break;
+                break
             }
         }
 
-        int minLength = Integer.MAX_VALUE;
-        for (String[] solution : solutions) {
-            if (solution.length < minLength) {
-                minLength = solution.length;
+        var minLength = Int.MAX_VALUE
+        for (solution in solutions) {
+            if (solution.size < minLength) {
+                minLength = solution.size
             }
         }
 
-        StringBuilder output = new StringBuilder();
-        for (int i = 0; i < solutions.size(); i++) {
-            if (solutions.get(i).length == minLength) {
+        val output = StringBuilder()
+        for (i in solutions.indices) {
+            if (solutions[i].size == minLength) {
                 output.append("  ")
-                        .append(prefixes.get(i))
-                        .append(StringUtils.join(" ", solutions.get(i)))
-                        .append('\n');
+                    .append(prefixes[i])
+                    .append(StringUtils.join(" ", solutions[i]))
+                    .append('\n')
             }
         }
 
-        return output.toString();
+        return output.toString()
     }
 
-    @Override
-    public String toString() {
-        return getTipDescription();
+    override fun toString(): String {
+        return tipDescription
+    }
+
+    companion object {
+        private val x: RubiksCubeSolver.State
+        private val y: RubiksCubeSolver.State
+        private val z: RubiksCubeSolver.State
+
+        init {
+            x = RubiksCubeSolver.State(
+                byteArrayOf(3, 2, 6, 7, 0, 1, 5, 4),
+                byteArrayOf(2, 1, 2, 1, 1, 2, 1, 2),
+                byteArrayOf(7, 5, 9, 11, 6, 2, 10, 3, 4, 1, 8, 0),
+                byteArrayOf(0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0)
+            )
+
+            y = RubiksCubeSolver.State(
+                byteArrayOf(3, 0, 1, 2, 7, 4, 5, 6),
+                byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0),
+                byteArrayOf(3, 0, 1, 2, 7, 4, 5, 6, 11, 8, 9, 10),
+                byteArrayOf(1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+            )
+
+            z = RubiksCubeSolver.State(
+                byteArrayOf(4, 0, 3, 7, 5, 1, 2, 6),
+                byteArrayOf(1, 2, 1, 2, 2, 1, 2, 1),
+                byteArrayOf(8, 4, 6, 10, 0, 7, 3, 11, 1, 5, 2, 9),
+                byteArrayOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+            )
+        }
     }
 }

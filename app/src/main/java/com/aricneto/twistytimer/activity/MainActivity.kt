@@ -1,639 +1,602 @@
-package com.aricneto.twistytimer.activity;
+package com.aricneto.twistytimer.activity
 
-import android.app.Activity;
-import android.content.ClipData;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.database.Cursor;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import android.text.Html;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.PorterDuff
+import android.net.Uri
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.text.Html
+import android.util.Log
+import android.view.Menu
+import android.view.View
+import android.widget.ImageView
+import android.widget.ProgressBar
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
+import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
+import com.aricneto.twistify.BuildConfig
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.ActivityMainBinding
+import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.fragment.AlgListFragment.Companion.newInstance
+import com.aricneto.twistytimer.fragment.TimerFragment
+import com.aricneto.twistytimer.fragment.TimerFragmentMain.Companion.newInstance
+import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog
+import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog.ExportImportCallbacks
+import com.aricneto.twistytimer.fragment.dialog.PuzzleChooserDialog.PuzzleCallback
+import com.aricneto.twistytimer.fragment.dialog.SchemeSelectDialogMain
+import com.aricneto.twistytimer.fragment.dialog.ThemeSelectDialog
+import com.aricneto.twistytimer.items.Solve
+import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener
+import com.aricneto.twistytimer.puzzle.TrainerScrambler
+import com.aricneto.twistytimer.utils.ExportImportUtils.backupFileNameForExport
+import com.aricneto.twistytimer.utils.ExportImportUtils.getExternalFileNameForExport
+import com.aricneto.twistytimer.utils.LocaleUtils.updateLocale
+import com.aricneto.twistytimer.utils.Prefs
+import com.aricneto.twistytimer.utils.Prefs.getBoolean
+import com.aricneto.twistytimer.utils.PuzzleUtils
+import com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString
+import com.aricneto.twistytimer.utils.StoreUtils.isExternalStorageWritable
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MODIFIED
+import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
+import com.aricneto.twistytimer.utils.TTIntent.broadcast
+import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrBool
+import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
+import com.aricneto.twistytimer.utils.ThemeUtils.preferredTextStyle
+import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.mikepenz.materialdrawer.holder.ImageHolder
+import com.mikepenz.materialdrawer.holder.StringHolder
+import com.mikepenz.materialdrawer.model.DividerDrawerItem
+import com.mikepenz.materialdrawer.model.ExpandableDrawerItem
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem
+import com.mikepenz.materialdrawer.model.SectionDrawerItem
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem
+import com.mikepenz.materialdrawer.widget.MaterialDrawerSliderView
+import com.opencsv.CSVParserBuilder
+import com.opencsv.CSVReaderBuilder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.joda.time.DateTime
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.util.Random
+import kotlin.math.max
 
-import androidx.activity.EdgeToEdge;
-import androidx.activity.OnBackPressedCallback;
-import androidx.appcompat.app.AlertDialog;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import com.aricneto.twistify.BuildConfig;
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.ActivityMainBinding;
-import com.aricneto.twistytimer.TwistyTimer;
-import com.aricneto.twistytimer.database.DatabaseHandler;
-import com.aricneto.twistytimer.fragment.AlgListFragment;
-import com.aricneto.twistytimer.fragment.TimerFragment;
-import com.aricneto.twistytimer.fragment.TimerFragmentMain;
-import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog;
-import com.aricneto.twistytimer.fragment.dialog.PuzzleChooserDialog;
-import com.aricneto.twistytimer.fragment.dialog.SchemeSelectDialogMain;
-import com.aricneto.twistytimer.fragment.dialog.ThemeSelectDialog;
-import com.aricneto.twistytimer.items.Solve;
-import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener;
-import com.aricneto.twistytimer.puzzle.TrainerScrambler;
-import com.aricneto.twistytimer.utils.ExportImportUtils;
-import com.aricneto.twistytimer.utils.LocaleUtils;
-import com.aricneto.twistytimer.utils.Prefs;
-import com.aricneto.twistytimer.utils.PuzzleUtils;
-import com.aricneto.twistytimer.utils.StoreUtils;
-import com.aricneto.twistytimer.utils.ThemeUtils;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.mikepenz.materialdrawer.holder.ColorHolder;
-import com.mikepenz.materialdrawer.holder.ImageHolder;
-import com.mikepenz.materialdrawer.holder.StringHolder;
-import com.mikepenz.materialdrawer.model.DividerDrawerItem;
-import com.mikepenz.materialdrawer.model.ExpandableDrawerItem;
-import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
-import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
-import com.mikepenz.materialdrawer.model.SectionDrawerItem;
-import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
-import com.mikepenz.materialdrawer.widget.MaterialDrawerSliderView;
-import kotlin.Unit;
-import kotlin.jvm.functions.Function3;
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
+class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback {
+    private var binding: ActivityMainBinding? = null
 
-import org.joda.time.DateTime;
+    var mDrawerToggle: SmoothActionBarDrawerToggle? = null
+    var fragmentManager: FragmentManager? = null
+    var mDrawerLayout: DrawerLayout? = null
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+    private var mDrawer: MaterialDrawerSliderView? = null
 
+    private var mExportPuzzleType: String = PuzzleUtils.TYPE_333
+    private var mExportPuzzleCategory: String = PuzzleUtils.TYPE_333
 
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_COMMENT;
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_DATE;
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_PENALTY;
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_SCRAMBLE;
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_SUBTYPE;
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_TIME;
-import static com.aricneto.twistytimer.database.DatabaseHandler.IDX_TYPE;
-import static com.aricneto.twistytimer.database.DatabaseHandler.ProgressListener;
-import static com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MODIFIED;
-import static com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES;
-import static com.aricneto.twistytimer.utils.TTIntent.broadcast;
+    private val settingsLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (DEBUG_ME) Log.d(TAG, "Returned from 'Settings'. Will recreate activity.")
+            onRecreateRequired()
+        }
 
-public class MainActivity extends AppCompatActivity
-        implements ExportImportDialog.ExportImportCallbacks,
-        PuzzleChooserDialog.PuzzleCallback {
-    /**
-     * Flag to enable debug logging for this class.
-     */
-    private static final boolean DEBUG_ME = false;
+    private val aboutLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            // No action needed
+        }
 
-    /**
-     * A "tag" to identify this class in log messages.
-     */
-    private static final String TAG = MainActivity.class.getSimpleName();
+    private val importBackupLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    importSolves(
+                        ExportImportDialog.EXIM_FORMAT_BACKUP,
+                        uri,
+                        mExportPuzzleType,
+                        mExportPuzzleCategory
+                    )
+                }
+            }
+        }
 
-    private ActivityMainBinding binding;
+    private val importExternalLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    importSolves(
+                        ExportImportDialog.EXIM_FORMAT_EXTERNAL,
+                        uri,
+                        mExportPuzzleType,
+                        mExportPuzzleCategory
+                    )
+                }
+            }
+        }
 
-    private static final int DEBUG_ID         = 11;
-    private static final int TIMER_ID         = 1;
-    private static final int THEME_ID         = 2;
-    private static final int SCHEME_ID        = 9;
-    private static final int OLL_ID           = 6;
-    private static final int PLL_ID           = 7;
-    private static final int EXPORT_IMPORT_ID = 10;
-    private static final int ABOUT_ID         = 4;
-    private static final int SETTINGS_ID      = 5;
-    private static final int TRAINER_OLL_ID      = 14;
-    private static final int TRAINER_PLL_ID      = 15;
+    private val exportBackupLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    exportSolves(
+                        ExportImportDialog.EXIM_FORMAT_BACKUP,
+                        uri,
+                        mExportPuzzleType,
+                        mExportPuzzleCategory
+                    )
+                }
+            }
+        }
 
-
-    private static final int REQUEST_SETTING           = 42;
-    private static final int REQUEST_ABOUT             = 23;
-
-    private static final int EXPORT_BACKUP      = 50;
-    private static final int EXPORT_EXTERNAL    = 51;
-    private static final int IMPORT_BACKUP      = 60;
-    private static final int IMPORT_EXTERNAL    = 61;
-
-    /**
-     * The fragment tag identifying the export/import dialog fragment.
-     */
-    private static final String FRAG_TAG_EXIM_DIALOG = "export_import_dialog";
-
-    // NOTE: Loader IDs used by fragments need to be unique within the context of an activity that
-    // creates those fragments. Therefore, it is safer to define all of the IDs in the same place.
-
-    /**
-     * The loader ID for the loader that loads data presented in the statistics table on the timer
-     * graph fragment and the summary statistics on the timer fragment.
-     */
-    public static final int STATISTICS_LOADER_ID = 101;
-
-    /**
-     * The loader ID for the loader that loads chart data presented in on the timer graph fragment.
-     */
-    public static final int CHART_DATA_LOADER_ID = 102;
-
-    /**
-     * The loader ID for the loader that loads the list of solve times for the timer list fragment.
-     */
-    public static final int TIME_LIST_LOADER_ID = 103;
-
-    /**
-     * The loader ID for the loader that loads the list of algorithms for the algorithm list
-     * fragment.
-     */
-    public static final int ALG_LIST_LOADER_ID = 104;
-
-    SmoothActionBarDrawerToggle mDrawerToggle;
-    FragmentManager             fragmentManager;
-    DrawerLayout                mDrawerLayout;
-
-    private MaterialDrawerSliderView mDrawer;
-
-    private String mExportPuzzleType = "";
-    private String mExportPuzzleCategory = "";
+    private val exportExternalLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                result.data?.data?.let { uri ->
+                    exportSolves(
+                        ExportImportDialog.EXIM_FORMAT_EXTERNAL,
+                        uri,
+                        mExportPuzzleType,
+                        mExportPuzzleCategory
+                    )
+                }
+            }
+        }
 
     /**
      * Sets drawer lock mode
-     * {@code DrawerLayout.LOCK_MODE_LOCKED_CLOSED} for force closed and
-     * {@code DrawerLayout.LOCK_MODE_LOCKED_UNDEFINED} for default behaviour
+     * `DrawerLayout.LOCK_MODE_LOCKED_CLOSED` for force closed and
+     * `DrawerLayout.LOCK_MODE_LOCKED_UNDEFINED` for default behavior
      */
-    public void setDrawerLock(int lockMode) {
-        mDrawerLayout.setDrawerLockMode(lockMode);
+    fun setDrawerLock(lockMode: Int) {
+        mDrawerLayout!!.setDrawerLockMode(lockMode)
     }
 
-    public void openDrawer() {
-        mDrawerLayout.openDrawer(mDrawer);
+    fun openDrawer() {
+        mDrawerLayout!!.openDrawer(mDrawer!!)
     }
 
-    public void closeDrawer() {
-        mDrawerLayout.closeDrawer(mDrawer);
-    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        if (DEBUG_ME) Log.d(
+            TAG, ("updateLocale(savedInstanceState="
+                    + savedInstanceState + "): " + this)
+        )
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        if (DEBUG_ME) Log.d(TAG, "updateLocale(savedInstanceState="
-                + savedInstanceState + "): " + this);
-
-        setTheme(ThemeUtils.getPreferredTheme());
+        setTheme(preferredTheme)
 
         // Set text styling
-        if (!Prefs.getString(R.string.pk_text_style, "default").equals("default")) {
-            getTheme().applyStyle(ThemeUtils.getPreferredTextStyle(), true);
+        if (Prefs.getString(R.string.pk_text_style, "default") != "default") {
+            theme.applyStyle(preferredTextStyle, true)
         }
 
         // Set navigation bar tint
-        if (Prefs.getBoolean(R.string.pk_tint_navigation_bar, false)) {
-            getTheme().applyStyle(R.style.TintedNavigationBar, true);
+        if (getBoolean(R.string.pk_tint_navigation_bar, false)) {
+            theme.applyStyle(R.style.TintedNavigationBar, true)
             // Set navigation bar icon tint
-            if (ThemeUtils.fetchAttrBool(this, ThemeUtils.getPreferredTheme(), R.styleable.BaseTwistyTheme_isLightTheme)) {
-                getTheme().applyStyle(R.style.LightNavBarIconStyle, true);
+            if (fetchAttrBool(this, preferredTheme, R.styleable.BaseTwistyTheme_isLightTheme)) {
+                theme.applyStyle(R.style.LightNavBarIconStyle, true)
             }
         }
 
-        EdgeToEdge.enable(this);
+        this.enableEdgeToEdge()
 
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding!!.getRoot())
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.contentLayout, (v, insets) -> {
-            v.setPadding(insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
-                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
-                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).right,
-                    insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom);
-            return insets;
-        });
-
-        fragmentManager = getSupportFragmentManager();
-
-        if (savedInstanceState == null) {
-            fragmentManager
-                .beginTransaction()
-                .replace(R.id.main_activity_container, TimerFragmentMain.newInstance(PuzzleUtils.TYPE_333, "Normal", TimerFragment.TIMER_MODE_TIMER, TrainerScrambler.TrainerSubset.OLL), "fragment_main")
-                .commit();
+        ViewCompat.setOnApplyWindowInsetsListener(
+            binding!!.contentLayout
+        ) { v: View, insets: WindowInsetsCompat ->
+            v.setPadding(
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).right,
+                insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            )
+            insets
         }
 
-        handleDrawer(savedInstanceState);
+        fragmentManager = supportFragmentManager
 
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (mDrawerLayout.isDrawerOpen(mDrawer)) {
-                    mDrawerLayout.closeDrawer(mDrawer);
-                    return;
+        if (savedInstanceState == null) {
+            fragmentManager!!
+                .beginTransaction()
+                .replace(
+                    R.id.main_activity_container,
+                    newInstance(
+                        PuzzleUtils.TYPE_333,
+                        "Normal",
+                        TimerFragment.TIMER_MODE_TIMER,
+                        TrainerScrambler.TrainerSubset.OLL
+                    ),
+                    "fragment_main"
+                )
+                .commit()
+        }
+
+        handleDrawer()
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (mDrawerLayout!!.isDrawerOpen(mDrawer!!)) {
+                    mDrawerLayout!!.closeDrawer(mDrawer!!)
+                    return
                 }
 
-                final Fragment mainFragment = fragmentManager.findFragmentByTag("fragment_main");
+                val mainFragment: Fragment? = fragmentManager!!.findFragmentByTag("fragment_main")
 
-                if (mainFragment instanceof OnBackPressedInFragmentListener) {
-                    if (((OnBackPressedInFragmentListener) mainFragment).onBackPressedInFragment()) {
-                        return;
+                if (mainFragment is OnBackPressedInFragmentListener) {
+                    if ((mainFragment as OnBackPressedInFragmentListener).onBackPressedInFragment()) {
+                        return
                     }
                 }
 
-                setEnabled(false);
-                getOnBackPressedDispatcher().onBackPressed();
-                setEnabled(true);
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
             }
-        });
+        })
     }
 
-    @Override
-    protected void onResume() {
-        if (DEBUG_ME) Log.d(TAG, "onResume(): " + this);
+    override fun onResume() {
+        if (DEBUG_ME) Log.d(TAG, "onResume(): $this")
         try {
-            super.onResume();
-        } catch (ClassCastException e) {
-            Log.e(TAG, "get life cycle exception (MIUI bug)", e);
+            super.onResume()
+        } catch (e: ClassCastException) {
+            Log.e(TAG, "get life cycle exception", e)
         }
     }
 
-    @Override
-    protected void onPause() {
+    override fun onPause() {
         // Method overridden just for logging. Tracing issues on return from "Settings".
-        if (DEBUG_ME) Log.d(TAG, "onPause(): " + this);
-        super.onPause();
+        if (DEBUG_ME) Log.d(TAG, "onPause(): $this")
+        super.onPause()
     }
 
-    @Override
-    protected void onStart() {
+    override fun onStart() {
         // Method overridden just for logging. Tracing issues on return from "Settings".
-        if (DEBUG_ME) Log.d(TAG, "onStart(): " + this);
-        super.onStart();
+        if (DEBUG_ME) Log.d(TAG, "onStart(): $this")
+        super.onStart()
     }
 
-    @Override
-    protected void onStop() {
+    override fun onStop() {
         // Method overridden just for logging. Tracing issues on return from "Settings".
-        if (DEBUG_ME) Log.d(TAG, "onStop(): " + this);
-        super.onStop();
+        if (DEBUG_ME) Log.d(TAG, "onStop(): $this")
+        super.onStop()
     }
 
-    private void handleDrawer(Bundle savedInstanceState) {
-        mDrawer = findViewById(R.id.slider);
-        mDrawerLayout = findViewById(R.id.root);
+    private fun handleDrawer() {
+        mDrawer = findViewById(R.id.slider)
+        mDrawerLayout = findViewById(R.id.root)
 
-        ImageView headerView = (ImageView) View.inflate(this, R.layout.drawer_header, null);
+        val headerView = View.inflate(this, R.layout.drawer_header, null) as ImageView
 
-        mDrawer.setHeaderView(headerView);
+        mDrawer!!.headerView = headerView
 
-        headerView.setColorFilter(ThemeUtils.fetchAttrColor(this, androidx.appcompat.R.attr.colorPrimary), PorterDuff.Mode.MULTIPLY);
+        headerView.setColorFilter(
+            fetchAttrColor(this, androidx.appcompat.R.attr.colorPrimary),
+            PorterDuff.Mode.MULTIPLY
+        )
 
-        int textColor = ThemeUtils.fetchAttrColor(this, R.attr.colorItemListText);
-        int accentColor = ThemeUtils.fetchAttrColor(this, R.attr.colorItemListTextAction);
-        int backgroundColor = ThemeUtils.fetchAttrColor(this, R.attr.colorBackgroundList);
+        val textColor = fetchAttrColor(this, R.attr.colorItemListText)
+        val accentColor = fetchAttrColor(this, R.attr.colorItemListTextAction)
+        val backgroundColor = fetchAttrColor(this, R.attr.colorBackgroundList)
 
-        mDrawer.setBackgroundColor(backgroundColor);
+        mDrawer!!.setBackgroundColor(backgroundColor)
 
-        ColorStateList itemColorStateList = new ColorStateList(
-                new int[][]{
-                        new int[]{android.R.attr.state_selected},
-                        new int[]{}
-                },
-                new int[]{
-                        accentColor,
-                        textColor
-                }
-        );
+        val itemColorStateList = ColorStateList(
+            arrayOf(
+                intArrayOf(android.R.attr.state_selected),
+                intArrayOf()
+            ),
+            intArrayOf(
+                accentColor,
+                textColor
+            )
+        )
 
-        ColorStateList normalColorStateList = ColorStateList.valueOf(textColor);
+        val normalColorStateList = ColorStateList.valueOf(textColor)
 
-        headerView.setBackgroundColor(backgroundColor);
+        headerView.setBackgroundColor(backgroundColor)
 
-        PrimaryDrawerItem timerItem = new PrimaryDrawerItem();
-        timerItem.setName(new StringHolder(R.string.drawer_title_timer));
-        timerItem.setIcon(new ImageHolder(R.drawable.ic_outline_timer_24px));
-        timerItem.setIdentifier((long) TIMER_ID);
-        timerItem.setTextColor(itemColorStateList);
-        timerItem.setIconColor(itemColorStateList);
+        val timerItem = PrimaryDrawerItem()
+        timerItem.name = StringHolder(R.string.drawer_title_timer)
+        timerItem.icon = ImageHolder(R.drawable.ic_outline_timer_24px)
+        timerItem.identifier = TIMER_ID.toLong()
+        timerItem.textColor = itemColorStateList
+        timerItem.iconColor = itemColorStateList
 
-        SecondaryDrawerItem trainerOllItem = new SecondaryDrawerItem();
-        trainerOllItem.setName(new StringHolder(R.string.drawer_title_oll));
-        trainerOllItem.setIcon(new ImageHolder(R.drawable.ic_oll_black_24dp));
-        trainerOllItem.setIdentifier((long) TRAINER_OLL_ID);
-        trainerOllItem.setTextColor(itemColorStateList);
-        trainerOllItem.setIconColor(itemColorStateList);
+        val trainerOllItem = SecondaryDrawerItem()
+        trainerOllItem.name = StringHolder(R.string.drawer_title_oll)
+        trainerOllItem.icon = ImageHolder(R.drawable.ic_oll_black_24dp)
+        trainerOllItem.identifier = TRAINER_OLL_ID.toLong()
+        trainerOllItem.textColor = itemColorStateList
+        trainerOllItem.iconColor = itemColorStateList
 
-        SecondaryDrawerItem trainerPllItem = new SecondaryDrawerItem();
-        trainerPllItem.setName(new StringHolder(R.string.drawer_title_pll));
-        trainerPllItem.setIcon(new ImageHolder(R.drawable.ic_pll_black_24dp));
-        trainerPllItem.setIdentifier((long) TRAINER_PLL_ID);
-        trainerPllItem.setTextColor(itemColorStateList);
-        trainerPllItem.setIconColor(itemColorStateList);
+        val trainerPllItem = SecondaryDrawerItem()
+        trainerPllItem.name = StringHolder(R.string.drawer_title_pll)
+        trainerPllItem.icon = ImageHolder(R.drawable.ic_pll_black_24dp)
+        trainerPllItem.identifier = TRAINER_PLL_ID.toLong()
+        trainerPllItem.textColor = itemColorStateList
+        trainerPllItem.iconColor = itemColorStateList
 
-        ExpandableDrawerItem trainerItem = new ExpandableDrawerItem();
-        trainerItem.setName(new StringHolder(R.string.drawer_title_trainer));
-        trainerItem.setIcon(new ImageHolder(R.drawable.ic_outline_control_camera_24px));
-        trainerItem.setSelectable(false);
-        trainerItem.setSubItems(Arrays.asList(trainerOllItem, trainerPllItem));
-        trainerItem.setTextColor(itemColorStateList);
-        trainerItem.setIconColor(itemColorStateList);
+        val trainerItem = ExpandableDrawerItem()
+        trainerItem.name = StringHolder(R.string.drawer_title_trainer)
+        trainerItem.icon = ImageHolder(R.drawable.ic_outline_control_camera_24px)
+        trainerItem.isSelectable = false
+        trainerItem.subItems = mutableListOf(trainerOllItem, trainerPllItem)
+        trainerItem.textColor = itemColorStateList
+        trainerItem.iconColor = itemColorStateList
 
-        SecondaryDrawerItem algsOllItem = new SecondaryDrawerItem();
-        algsOllItem.setName(new StringHolder(R.string.drawer_title_oll));
-        algsOllItem.setIcon(new ImageHolder(R.drawable.ic_oll_black_24dp));
-        algsOllItem.setIdentifier((long) OLL_ID);
-        algsOllItem.setTextColor(itemColorStateList);
-        algsOllItem.setIconColor(itemColorStateList);
+        val algsOllItem = SecondaryDrawerItem()
+        algsOllItem.name = StringHolder(R.string.drawer_title_oll)
+        algsOllItem.icon = ImageHolder(R.drawable.ic_oll_black_24dp)
+        algsOllItem.identifier = OLL_ID.toLong()
+        algsOllItem.textColor = itemColorStateList
+        algsOllItem.iconColor = itemColorStateList
 
-        SecondaryDrawerItem algsPllItem = new SecondaryDrawerItem();
-        algsPllItem.setName(new StringHolder(R.string.drawer_title_pll));
-        algsPllItem.setIcon(new ImageHolder(R.drawable.ic_pll_black_24dp));
-        algsPllItem.setIdentifier((long) PLL_ID);
-        algsPllItem.setTextColor(itemColorStateList);
-        algsPllItem.setIconColor(itemColorStateList);
+        val algsPllItem = SecondaryDrawerItem()
+        algsPllItem.name = StringHolder(R.string.drawer_title_pll)
+        algsPllItem.icon = ImageHolder(R.drawable.ic_pll_black_24dp)
+        algsPllItem.identifier = PLL_ID.toLong()
+        algsPllItem.textColor = itemColorStateList
+        algsPllItem.iconColor = itemColorStateList
 
-        ExpandableDrawerItem algorithmsItem = new ExpandableDrawerItem();
-        algorithmsItem.setName(new StringHolder(R.string.title_algorithms));
-        algorithmsItem.setIcon(new ImageHolder(R.drawable.ic_outline_library_books_24px));
-        algorithmsItem.setSelectable(false);
-        algorithmsItem.setSubItems(Arrays.asList(algsOllItem, algsPllItem));
-        algorithmsItem.setTextColor(itemColorStateList);
-        algorithmsItem.setIconColor(itemColorStateList);
+        val algorithmsItem = ExpandableDrawerItem()
+        algorithmsItem.name = StringHolder(R.string.title_algorithms)
+        algorithmsItem.icon = ImageHolder(R.drawable.ic_outline_library_books_24px)
+        algorithmsItem.isSelectable = false
+        algorithmsItem.subItems = mutableListOf(algsOllItem, algsPllItem)
+        algorithmsItem.textColor = itemColorStateList
+        algorithmsItem.iconColor = itemColorStateList
 
-        SectionDrawerItem otherSection = new SectionDrawerItem();
-        otherSection.setName(new StringHolder(R.string.drawer_title_other));
-        otherSection.setTextColor(normalColorStateList);
+        val otherSection = SectionDrawerItem()
+        otherSection.name = StringHolder(R.string.drawer_title_other)
+        otherSection.textColor = normalColorStateList
 
-        PrimaryDrawerItem exportImportItem = new PrimaryDrawerItem();
-        exportImportItem.setName(new StringHolder(R.string.drawer_title_export_import));
-        exportImportItem.setIcon(new ImageHolder(R.drawable.ic_outline_folder_24px));
-        exportImportItem.setSelectable(false);
-        exportImportItem.setIdentifier((long) EXPORT_IMPORT_ID);
-        exportImportItem.setTextColor(itemColorStateList);
-        exportImportItem.setIconColor(itemColorStateList);
+        val exportImportItem = PrimaryDrawerItem()
+        exportImportItem.name = StringHolder(R.string.drawer_title_export_import)
+        exportImportItem.icon = ImageHolder(R.drawable.ic_outline_folder_24px)
+        exportImportItem.isSelectable = false
+        exportImportItem.identifier = EXPORT_IMPORT_ID.toLong()
+        exportImportItem.textColor = itemColorStateList
+        exportImportItem.iconColor = itemColorStateList
 
-        PrimaryDrawerItem changeThemeItem = new PrimaryDrawerItem();
-        changeThemeItem.setName(new StringHolder(R.string.drawer_title_changeTheme));
-        changeThemeItem.setIcon(new ImageHolder(R.drawable.ic_outline_palette_24px));
-        changeThemeItem.setSelectable(false);
-        changeThemeItem.setIdentifier((long) THEME_ID);
-        changeThemeItem.setTextColor(itemColorStateList);
-        changeThemeItem.setIconColor(itemColorStateList);
+        val changeThemeItem = PrimaryDrawerItem()
+        changeThemeItem.name = StringHolder(R.string.drawer_title_changeTheme)
+        changeThemeItem.icon = ImageHolder(R.drawable.ic_outline_palette_24px)
+        changeThemeItem.isSelectable = false
+        changeThemeItem.identifier = THEME_ID.toLong()
+        changeThemeItem.textColor = itemColorStateList
+        changeThemeItem.iconColor = itemColorStateList
 
-        PrimaryDrawerItem changeColorSchemeItem = new PrimaryDrawerItem();
-        changeColorSchemeItem.setName(new StringHolder(R.string.drawer_title_changeColorScheme));
-        changeColorSchemeItem.setIcon(new ImageHolder(R.drawable.ic_outline_format_paint_24px));
-        changeColorSchemeItem.setSelectable(false);
-        changeColorSchemeItem.setIdentifier((long) SCHEME_ID);
-        changeColorSchemeItem.setTextColor(itemColorStateList);
-        changeColorSchemeItem.setIconColor(itemColorStateList);
+        val changeColorSchemeItem = PrimaryDrawerItem()
+        changeColorSchemeItem.name = StringHolder(R.string.drawer_title_changeColorScheme)
+        changeColorSchemeItem.icon = ImageHolder(R.drawable.ic_outline_format_paint_24px)
+        changeColorSchemeItem.isSelectable = false
+        changeColorSchemeItem.identifier = SCHEME_ID.toLong()
+        changeColorSchemeItem.textColor = itemColorStateList
+        changeColorSchemeItem.iconColor = itemColorStateList
 
-        PrimaryDrawerItem settingsItem = new PrimaryDrawerItem();
-        settingsItem.setName(new StringHolder(R.string.action_settings));
-        settingsItem.setIcon(new ImageHolder(R.drawable.ic_outline_settings_24px));
-        settingsItem.setSelectable(false);
-        settingsItem.setIdentifier((long) SETTINGS_ID);
-        settingsItem.setTextColor(itemColorStateList);
-        settingsItem.setIconColor(itemColorStateList);
+        val settingsItem = PrimaryDrawerItem()
+        settingsItem.name = StringHolder(R.string.action_settings)
+        settingsItem.icon = ImageHolder(R.drawable.ic_outline_settings_24px)
+        settingsItem.isSelectable = false
+        settingsItem.identifier = SETTINGS_ID.toLong()
+        settingsItem.textColor = itemColorStateList
+        settingsItem.iconColor = itemColorStateList
 
-        PrimaryDrawerItem aboutItem = new PrimaryDrawerItem();
-        aboutItem.setName(new StringHolder(R.string.drawer_about));
-        aboutItem.setIcon(new ImageHolder(R.drawable.ic_outline_help_outline_24px));
-        aboutItem.setSelectable(false);
-        aboutItem.setIdentifier((long) ABOUT_ID);
-        aboutItem.setTextColor(itemColorStateList);
-        aboutItem.setIconColor(itemColorStateList);
+        val aboutItem = PrimaryDrawerItem()
+        aboutItem.name = StringHolder(R.string.drawer_about)
+        aboutItem.icon = ImageHolder(R.drawable.ic_outline_help_outline_24px)
+        aboutItem.isSelectable = false
+        aboutItem.identifier = ABOUT_ID.toLong()
+        aboutItem.textColor = itemColorStateList
+        aboutItem.iconColor = itemColorStateList
 
-        mDrawer.getItemAdapter().add(
-                timerItem,
-                trainerItem,
-                algorithmsItem,
-                otherSection,
-                exportImportItem,
-                changeThemeItem,
-                changeColorSchemeItem,
-                new DividerDrawerItem(),
-                settingsItem,
-                aboutItem
-        );
+        mDrawer!!.itemAdapter.add(
+            timerItem,
+            trainerItem,
+            algorithmsItem,
+            otherSection,
+            exportImportItem,
+            changeThemeItem,
+            changeColorSchemeItem,
+            DividerDrawerItem(),
+            settingsItem,
+            aboutItem
+        )
 
         if (BuildConfig.DEBUG) {
-            SectionDrawerItem debugSection = new SectionDrawerItem();
-            debugSection.setName(new StringHolder("DEBUG"));
-            debugSection.setTextColor(normalColorStateList);
+            val debugSection = SectionDrawerItem()
+            debugSection.name = StringHolder("DEBUG")
+            debugSection.textColor = normalColorStateList
 
-            PrimaryDrawerItem debugItem = new PrimaryDrawerItem();
-            debugItem.setName(new StringHolder("DEBUG OPTION - ADD 10000 SOLVES"));
-            debugItem.setIcon(new ImageHolder(R.drawable.ic_outline_help_outline_24px));
-            debugItem.setSelectable(false);
-            debugItem.setIdentifier((long) DEBUG_ID);
-            debugItem.setTextColor(itemColorStateList);
-            debugItem.setIconColor(itemColorStateList);
+            val debugItem = PrimaryDrawerItem()
+            debugItem.name = StringHolder("DEBUG OPTION - ADD 10000 SOLVES")
+            debugItem.icon = ImageHolder(R.drawable.ic_outline_help_outline_24px)
+            debugItem.isSelectable = false
+            debugItem.identifier = DEBUG_ID.toLong()
+            debugItem.textColor = itemColorStateList
+            debugItem.iconColor = itemColorStateList
 
-            mDrawer.getItemAdapter().add(
-                    debugSection,
-                    debugItem
-            );
+            mDrawer!!.itemAdapter.add(
+                debugSection,
+                debugItem
+            )
         }
 
-        mDrawer.setOnDrawerItemClickListener(new Function3<View, IDrawerItem<?>, Integer, Boolean>() {
-            @Override
-            public Boolean invoke(View view, IDrawerItem<?> drawerItem, Integer integer) {
+        mDrawer!!.onDrawerItemClickListener =
+            { _: View?, drawerItem: IDrawerItem<*>, _: Int? ->
+                var closeDrawer = true
+                when (drawerItem.identifier.toInt()) {
+                    TIMER_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(
+                                    PuzzleUtils.TYPE_333,
+                                    "Normal",
+                                    TimerFragment.TIMER_MODE_TIMER,
+                                    TrainerScrambler.TrainerSubset.PLL
+                                ), "fragment_main"
+                            )
+                            .commit()
+                    }
 
-                boolean closeDrawer = true;
+                    TRAINER_OLL_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(
+                                    TrainerScrambler.TrainerSubset.OLL.name,
+                                    "Normal",
+                                    TimerFragment.TIMER_MODE_TRAINER,
+                                    TrainerScrambler.TrainerSubset.OLL
+                                ), "fragment_main"
+                            )
+                            .commit()
+                    }
 
-                switch ((int) drawerItem.getIdentifier()) {
-                    default:
-                        closeDrawer = false;
-                    case TIMER_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                fragmentManager
-                                        .beginTransaction()
-                                        .replace(R.id.main_activity_container,
-                                                 TimerFragmentMain.newInstance(PuzzleUtils.TYPE_333, "Normal", TimerFragment.TIMER_MODE_TIMER, TrainerScrambler.TrainerSubset.PLL), "fragment_main")
-                                        .commit();
-                            }
-                        });
-                        break;
+                    TRAINER_PLL_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(
+                                    TrainerScrambler.TrainerSubset.PLL.name,
+                                    "Normal",
+                                    TimerFragment.TIMER_MODE_TRAINER,
+                                    TrainerScrambler.TrainerSubset.PLL
+                                ), "fragment_main"
+                            )
+                            .commit()
+                    }
 
-                    case TRAINER_OLL_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                fragmentManager
-                                        .beginTransaction()
-                                        .replace(R.id.main_activity_container,
-                                                 TimerFragmentMain.newInstance(TrainerScrambler.TrainerSubset.OLL.name(), "Normal", TimerFragment.TIMER_MODE_TRAINER, TrainerScrambler.TrainerSubset.OLL), "fragment_main")
-                                        .commit();
-                            }
-                        });
-                        break;
+                    OLL_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(DatabaseHandler.SUBSET_OLL),
+                                "fragment_algs_oll"
+                            )
+                            .commit()
+                    }
 
-                    case TRAINER_PLL_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                fragmentManager
-                                        .beginTransaction()
-                                        .replace(R.id.main_activity_container,
-                                                 TimerFragmentMain.newInstance(TrainerScrambler.TrainerSubset.PLL.name(), "Normal", TimerFragment.TIMER_MODE_TRAINER, TrainerScrambler.TrainerSubset.PLL), "fragment_main")
-                                        .commit();
-                            }
-                        });
-                        break;
+                    PLL_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(DatabaseHandler.SUBSET_PLL),
+                                "fragment_algs_pll"
+                            )
+                            .commit()
+                    }
 
-                    case OLL_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                fragmentManager
-                                        .beginTransaction()
-                                        .replace(R.id.main_activity_container,
-                                                 AlgListFragment.newInstance(DatabaseHandler.SUBSET_OLL),
-                                                 "fragment_algs_oll")
-                                        .commit();
-                            }
-                        });
-                        break;
+                    EXPORT_IMPORT_ID -> ExportImportDialog.newInstance()
+                        .show(fragmentManager!!, FRAG_TAG_EXIM_DIALOG)
 
-                    case PLL_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                fragmentManager
-                                        .beginTransaction()
-                                        .replace(R.id.main_activity_container,
-                                                 AlgListFragment.newInstance(DatabaseHandler.SUBSET_PLL),
-                                                 "fragment_algs_pll")
-                                        .commit();
-                            }
-                        });
-                        break;
+                    THEME_ID -> ThemeSelectDialog.newInstance()
+                        .show(fragmentManager!!, "theme_dialog")
 
-                    case EXPORT_IMPORT_ID:
-                        ExportImportDialog.newInstance()
-                                .show(fragmentManager, FRAG_TAG_EXIM_DIALOG);
-                        break;
+                    SCHEME_ID -> SchemeSelectDialogMain.newInstance()
+                        .show(fragmentManager!!, "scheme_dialog")
 
-                    case THEME_ID:
-                        ThemeSelectDialog.newInstance().show(fragmentManager, "theme_dialog");
-                        break;
+                    SETTINGS_ID -> mDrawerToggle!!.runWhenIdle {
+                        settingsLauncher.launch(
+                            Intent(
+                                applicationContext,
+                                SettingsActivity::class.java
+                            )
+                        )
+                    }
 
-                    case SCHEME_ID:
-                        SchemeSelectDialogMain.newInstance()
-                                .show(fragmentManager, "scheme_dialog");
-                        break;
+                    ABOUT_ID -> mDrawerToggle!!.runWhenIdle {
+                        aboutLauncher.launch(Intent(applicationContext, AboutActivity::class.java))
+                    }
 
-                    case SETTINGS_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                startActivityForResult(new Intent(
-                                                               getApplicationContext(), SettingsActivity.class),
-                                                       REQUEST_SETTING);
-                            }
-                        });
-                        break;
-
-                    case ABOUT_ID:
-                        mDrawerToggle.runWhenIdle(new Runnable() {
-                            @Override
-                            public void run() {
-                                startActivityForResult(new Intent(getApplicationContext(),
-                                                                  AboutActivity.class), REQUEST_ABOUT);
-                            }
-                        });
-                        break;
-
-                    case DEBUG_ID:
-                        if (BuildConfig.DEBUG) {
-                            Random rand = new Random();
-                            DatabaseHandler dbHandler = TwistyTimer.getDBHandler();
-                            for (int i = 0; i < 10000; i++) {
-                                dbHandler.addSolve(new Solve(30000 + rand.nextInt(6000), "333",
-                                                             "|<<# DEBUG #>>|", 165165L +(i*10), "", 0, "", rand.nextBoolean()));
-                            }
+                    DEBUG_ID -> if (BuildConfig.DEBUG) {
+                        val rand = Random()
+                        val dbHandler = TwistyTimer.getDBHandler()
+                        var i = 0
+                        while (i < 10000) {
+                            dbHandler.addSolve(
+                                Solve(
+                                    30000 + rand.nextInt(6000),
+                                    "333",
+                                    "|<<# DEBUG #>>|",
+                                    165165L + (i * 10),
+                                    "",
+                                    0,
+                                    "",
+                                    rand.nextBoolean()
+                                )
+                            )
+                            i++
                         }
-                        break;
+                    }
+
+                    else -> {
+                        closeDrawer = false
+                        mDrawerToggle!!.runWhenIdle {
+                            fragmentManager!!
+                                .beginTransaction()
+                                .replace(
+                                    R.id.main_activity_container,
+                                    newInstance(
+                                        PuzzleUtils.TYPE_333,
+                                        "Normal",
+                                        TimerFragment.TIMER_MODE_TIMER,
+                                        TrainerScrambler.TrainerSubset.PLL
+                                    ), "fragment_main"
+                                )
+                                .commit()
+                        }
+                    }
                 }
-                if (closeDrawer)
-                    mDrawerLayout.closeDrawer(mDrawer);
-                return false;
+                if (closeDrawer) mDrawerLayout!!.closeDrawer(mDrawer!!)
+                false
             }
-        });
 
-        /*if (savedInstanceState != null) {
-            mDrawer.onRestoreInstanceState(savedInstanceState);
-        }*/
-
-        mDrawerToggle = new SmoothActionBarDrawerToggle(
-                this, mDrawerLayout, null, R.string.drawer_open, R.string.drawer_close);
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        mDrawerToggle = SmoothActionBarDrawerToggle(
+            this, mDrawerLayout!!, null, R.string.drawer_open, R.string.drawer_close
+        )
+        mDrawerLayout!!.addDrawerListener(mDrawerToggle!!)
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (DEBUG_ME) Log.d(TAG, "onActivityResult(requestCode=" + requestCode
-                + ", resultCode=" + resultCode + ", data=" + data + "): " + this);
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == REQUEST_SETTING) {
-            if (DEBUG_ME) {
-                Log.d(TAG, "  Returned from 'Settings'. Will recreate activity.");
-            }
-            onRecreateRequired();
-        } else if ((requestCode == EXPORT_BACKUP || requestCode == EXPORT_EXTERNAL)
-                && resultCode == Activity.RESULT_OK) {
-            if (data.getData() != null) {
-                Uri uri = data.getData();
-                Log.d(TAG, "EXPORT : " + uri.toString());
-                Log.d(TAG, "EXPORT : " + mExportPuzzleType + "," + mExportPuzzleCategory);
-
-                new ExportSolves(this,
-                        (requestCode == EXPORT_BACKUP ? ExportImportDialog.EXIM_FORMAT_BACKUP
-                                : ExportImportDialog.EXIM_FORMAT_EXTERNAL),
-                        uri, mExportPuzzleType, mExportPuzzleCategory)
-                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-            }
-        } else if ((requestCode == IMPORT_BACKUP || requestCode == IMPORT_EXTERNAL)
-                && resultCode == Activity.RESULT_OK) {
-            if (data.getData() != null) {
-                Uri uri = data.getData();
-                Log.d(TAG, "IMPORT : " + uri.toString());
-                Log.d(TAG, "IMPORT : " + mExportPuzzleType + "," + mExportPuzzleCategory);
-
-                new ImportSolves(this,
-                        (requestCode == IMPORT_BACKUP ? ExportImportDialog.EXIM_FORMAT_BACKUP
-                                : ExportImportDialog.EXIM_FORMAT_EXTERNAL),
-                        uri, mExportPuzzleType, mExportPuzzleCategory)
-                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-            }
-        }
-    }
 
     /**
      * Handles the need to recreate this activity due to a major change affecting the activity and
-     * its fragments. For example, if the theme is changed by {@link ThemeSelectDialog}, or if
-     * unknown changes have been made to the preferences in {@link SettingsActivity}.
+     * its fragments. For example, if the theme is changed by [ThemeSelectDialog], or if
+     * unknown changes have been made to the preferences in [SettingsActivity].
      */
-    public void onRecreateRequired() {
-        if (DEBUG_ME) Log.d(TAG, "onRecreationRequired(): " + this);
+    fun onRecreateRequired() {
+        if (DEBUG_ME) Log.d(TAG, "onRecreationRequired(): $this")
 
         // IMPORTANT: If this is not posted to the message queue, i.e., if "recreate()" is simply
         // called directly from "onRecreateRequired()" (or even if a flag is set here and
@@ -643,509 +606,488 @@ public class MainActivity extends AppCompatActivity
         // perfectly responsive. However, the next time it actually needs to pause, an exception is
         // logged complaining, "Performing pause of activity that is not resumed".
         //
-        // Perhaps the issue is caused by an incorrect synchronisation of the destruction of the
+        // Perhaps the issue is caused by an incorrect synchronization of the destruction of the
         // old activity and the creation of the new activity. Whatever, simply posting the
         // "recreate()" call here seems to fix this. After posting, the (old) activity will
         // continue on and reach "onResume()" before then going through an orderly shutdown and
         // the new activity will be created and settle properly at "onResume()".
-        new Handler().post(new Runnable() {
-            @Override
-            public void run() {
-                if (DEBUG_ME) Log.d(TAG, "  Activity.recreate() NOW!: " + this);
-                ActivityCompat.recreate(MainActivity.this);
+        Handler(Looper.getMainLooper()).post(object : Runnable {
+            override fun run() {
+                if (DEBUG_ME) Log.d(TAG, "  Activity.recreate() NOW!: $this")
+                ActivityCompat.recreate(this@MainActivity)
             }
-        });
+        })
     }
 
-    @Override
-    protected void attachBaseContext(Context newBase) {
-        super.attachBaseContext(LocaleUtils.updateLocale(newBase));
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(updateLocale(newBase))
     }
 
-    @Override
-    protected void onDestroy() {
-        if (DEBUG_ME) Log.d(TAG, "onDestroy(): " + this);
-        super.onDestroy();
+    override fun onDestroy() {
+        if (DEBUG_ME) Log.d(TAG, "onDestroy(): $this")
+        super.onDestroy()
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_overview, menu);
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_overview, menu)
 
-        return super.onCreateOptionsMenu(menu);
+        return super.onCreateOptionsMenu(menu)
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        if (DEBUG_ME) Log.d(TAG, "onSaveInstanceState(): " + this);
-        mDrawer.saveInstanceState(outState);
-        //outState.putBoolean(OPEN_EXPORT_IMPORT_DIALOG, openExportImportDialog);
-        super.onSaveInstanceState(outState);
+    override fun onSaveInstanceState(outState: Bundle) {
+        if (DEBUG_ME) Log.d(TAG, "onSaveInstanceState(): $this")
+        mDrawer!!.saveInstanceState(outState)
+        super.onSaveInstanceState(outState)
     }
 
-    @Override
-    public void onImportSolveTimes(int fileFormat, String puzzleType, String puzzleCategory) {
+    override fun onImportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?) {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        intent.type = "text/plain"
 
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("text/plain");
-
-        mExportPuzzleType = puzzleType;
-        mExportPuzzleCategory = puzzleCategory;
+        mExportPuzzleType = puzzleType ?: ""
+        mExportPuzzleCategory = puzzleCategory ?: ""
 
         if (fileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
-            startActivityForResult(intent, IMPORT_BACKUP);
+            importBackupLauncher.launch(intent)
         } else if (fileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
-            startActivityForResult(intent, IMPORT_EXTERNAL);
+            importExternalLauncher.launch(intent)
         }
     }
 
-    @Override
-    public void onExportSolveTimes(int fileFormat, String puzzleType, String puzzleCategory) {
-        if (!StoreUtils.isExternalStorageWritable()) {
-            return;
+    override fun onExportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?) {
+        if (!isExternalStorageWritable()) {
+            return
         }
 
-        if (fileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
-            // Expect that all other parameters are null, otherwise something is very wrong.
-            if (puzzleType != null || puzzleCategory != null) {
-                throw new RuntimeException("Bug in the export code for the back-up format!");
+        when (fileFormat) {
+            ExportImportDialog.EXIM_FORMAT_BACKUP -> {
+                // Expect that all other parameters are null, otherwise something is very wrong.
+                if (puzzleType != null || puzzleCategory != null) {
+                    throw RuntimeException("Bug in the export code for the back-up format!")
+                }
+
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                intent.type = "text/plain"
+                intent.putExtra(Intent.EXTRA_TITLE, backupFileNameForExport)
+
+                mExportPuzzleType = ""
+                mExportPuzzleCategory = ""
+
+                exportBackupLauncher.launch(intent)
             }
 
-            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TITLE, ExportImportUtils.getBackupFileNameForExport());
+            ExportImportDialog.EXIM_FORMAT_EXTERNAL -> {
+                // Expect that all other parameters are non-null, otherwise something is very wrong.
+                if (puzzleType == null || puzzleCategory == null) {
+                    throw RuntimeException("Bug in the export code for the external format!")
+                }
 
-            mExportPuzzleType = "";
-            mExportPuzzleCategory = "";
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
+                intent.addCategory(Intent.CATEGORY_OPENABLE)
+                intent.type = "text/plain"
+                intent.putExtra(
+                    Intent.EXTRA_TITLE,
+                    getExternalFileNameForExport(puzzleType, puzzleCategory)
+                )
 
-            startActivityForResult(intent, EXPORT_BACKUP);
-        } else if (fileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
-            // Expect that all other parameters are non-null, otherwise something is very wrong.
-            if (puzzleType == null || puzzleCategory == null) {
-                throw new RuntimeException("Bug in the export code for the external format!");
+                mExportPuzzleType = puzzleType
+                mExportPuzzleCategory = puzzleCategory
+
+                exportExternalLauncher.launch(intent)
             }
 
-            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TITLE,
-                    ExportImportUtils.getExternalFileNameForExport(puzzleType, puzzleCategory));
-
-            mExportPuzzleType = puzzleType;
-            mExportPuzzleCategory = puzzleCategory;
-
-            startActivityForResult(intent, EXPORT_EXTERNAL);
-        } else {
-            Log.e(TAG, "Unknown export file format: " + fileFormat);
+            else -> {
+                Log.e(TAG, "Unknown export file format: $fileFormat")
+            }
         }
     }
 
     /**
      * Handles the call-back from a fragment when a puzzle type and/or category are selected. This
      * is used for communication between the export/import fragments. The "source" fragment should
-     * set the {@code tag} to the value of the fragment tag that this activity uses to identify
+     * set the `tag` to the value of the fragment tag that this activity uses to identify
      * the "destination" fragment. This activity will then forward this notification to that
      * fragment, which is expected to implement this same interface method.
      */
-    @Override
-    public void onPuzzleSelected(
-            @NonNull String tag, @NonNull String puzzleType, @NonNull String puzzleCategory) {
+    override fun onPuzzleSelected(
+        tag: String, puzzleType: String, puzzleCategory: String
+    ) {
         // This "relay" scheme ensures that this activity is not embroiled in the gory details of
         // what the "destinationFrag" wanted with the puzzle type/category.
-        final Fragment destinationFrag = fragmentManager.findFragmentByTag(tag);
+        val destinationFrag: Fragment? = fragmentManager!!.findFragmentByTag(tag)
 
-        if (destinationFrag instanceof PuzzleChooserDialog.PuzzleCallback) {
-            ((PuzzleChooserDialog.PuzzleCallback) destinationFrag)
-                    .onPuzzleSelected(tag, puzzleType, puzzleCategory);
+        if (destinationFrag is PuzzleCallback) {
+            (destinationFrag as PuzzleCallback)
+                .onPuzzleSelected(tag, puzzleType, puzzleCategory)
         } else {
             // This is not expected unless there is a bug to be fixed.
-            Log.e(TAG, "onFileSelection(): Unknown or incompatible fragment: " + tag);
+            Log.e(TAG, "onFileSelection(): Unknown or incompatible fragment: $tag")
         }
     }
 
-    private static class ExportSolves extends AsyncTask<Void, Integer, Boolean> {
+    /**
+     * Exports solve times to a file using Coroutines.
+     */
+    private fun exportSolves(
+        fileFormat: Int,
+        uri: Uri,
+        puzzleType: String,
+        puzzleCategory: String
+    ) {
+        lifecycleScope.launch {
+            val view = layoutInflater.inflate(R.layout.dialog_progress_m3, null)
+            val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
 
-        private final Activity  mContext;
-        private final int      mFileFormat;
-        private final Uri      mUri;
-        private final String   mPuzzleType;
-        private final String   mPuzzleCategory;
-
-        private AlertDialog mProgressDialog;
-        private ProgressBar mProgressBar;
-
-        /**
-         * Creates a new task for exporting solve times to a file.
-         *
-         * @param context
-         *     The context required to access resources and to report progress.
-         * @param fileFormat
-         *     The solve file format, must be {@link ExportImportDialog#EXIM_FORMAT_EXTERNAL}, or
-         *     {@link ExportImportDialog#EXIM_FORMAT_BACKUP}.
-         * @param uri
-         *     The uri to which to export the solve times.
-         * @param puzzleType
-         *     The type of the puzzle whose times will be exported. This is required when
-         *     {@code fileFormat} is {@code EXIM_FORMAT_EXTERNAL}. For {@code EXIM_FORMAT_BACKUP},
-         *     it may be {@code null}, as it will not be used.
-         * @param puzzleCategory
-         *     The category (subtype) of the puzzle whose times will be exported. Required when
-         *     {@code fileFormat} is {@code EXIM_FORMAT_EXTERNAL}. For {@code EXIM_FORMAT_BACKUP},
-         *     it may be {@code null}, as it will not be used.
-         */
-        public ExportSolves(Activity context, int fileFormat, Uri uri,
-                            String puzzleType, String puzzleCategory) {
-            mContext = context;
-            mFileFormat = fileFormat;
-            mUri = uri;
-            mPuzzleType = puzzleType;
-            mPuzzleCategory = puzzleCategory;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            View view = mContext.getLayoutInflater().inflate(R.layout.dialog_progress_m3, null);
-            mProgressBar = view.findViewById(R.id.progress_bar);
-
-            mProgressDialog = new MaterialAlertDialogBuilder(mContext)
+            val progressDialog = MaterialAlertDialogBuilder(this@MainActivity)
                 .setTitle(R.string.export_progress_title)
                 .setView(view)
                 .setCancelable(false)
                 .setPositiveButton(R.string.action_done, null)
                 .setNeutralButton(R.string.list_options_item_share, null)
-                .create();
+                .create()
 
-            mProgressDialog.show();
-            mProgressDialog.getButton(AlertDialog.BUTTON_POSITIVE).setVisibility(View.GONE);
-            mProgressDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setVisibility(View.GONE);
-            super.onPreExecute();
-        }
+            progressDialog.show()
+            progressDialog.getButton(AlertDialog.BUTTON_POSITIVE).visibility = View.GONE
+            progressDialog.getButton(AlertDialog.BUTTON_NEUTRAL).visibility = View.GONE
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            if (mProgressDialog.isShowing()) {
-                if (values.length > 1) {
-                    // values[1] is the number of solve times, which could legitimately be zero.
-                    // Do not set max. to zero or it will display "NaN".
-                    mProgressBar.setMax(Math.max(values[1], 1));
-                }
-                mProgressBar.setProgress(values[0]);
-            }
-        }
+            val isExported = withContext(Dispatchers.IO) {
+                var returnCode: Boolean
+                var exports = 0
 
-        @Override
-        protected Boolean doInBackground(Void... voids) {
-            Boolean returnCode;
-            int exports = 0;
+                try {
+                    val handler = TwistyTimer.getDBHandler()
+                    val os = contentResolver.openOutputStream(uri)
+                    val out = OutputStreamWriter(os)
 
-            try {
-                final DatabaseHandler handler = TwistyTimer.getDBHandler();
-                final OutputStream os = mContext.getContentResolver().openOutputStream(mUri);
-                final OutputStreamWriter out = new OutputStreamWriter(os);
+                    when (fileFormat) {
+                        ExportImportDialog.EXIM_FORMAT_BACKUP -> {
+                            val csvHeader =
+                                "Puzzle,Category,Time(millis),Date(millis),Scramble,Penalty,Comment\n"
+                            val cursor = handler.allSolves
 
-                if (mFileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
-                    String csvHeader
-                            = "Puzzle,Category,Time(millis),Date(millis),Scramble,Penalty,Comment\n";
-                    Cursor cursor = handler.getAllSolves();
+                            try {
+                                withContext(Dispatchers.Main) {
+                                    progressBar.max = max(cursor.count, 1)
+                                    progressBar.progress = 0
+                                }
+                                out.write(csvHeader)
 
-                    try {
-                        publishProgress(0, cursor.getCount());
-                        out.write(csvHeader);
-
-                        while (cursor.moveToNext()) {
-                            out.write('"' + cursor.getString(IDX_TYPE)
-                                    + "\";\"" + cursor.getString(IDX_SUBTYPE)
-                                    + "\";\"" + cursor.getInt(IDX_TIME)
-                                    + "\";\"" + cursor.getLong(IDX_DATE)
-                                    + "\";\"" + cursor.getString(IDX_SCRAMBLE)
-                                    + "\";\"" + cursor.getInt(IDX_PENALTY)
-                                    + "\";\"" + cursor.getString(IDX_COMMENT)
-                                    + "\"\n");
-                            exports++;
-                            publishProgress(exports);
-                        }
-                    } finally {
-                        cursor.close();
-                        out.close();
-                    }
-                    returnCode = true;
-                } else if (mFileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
-                    Cursor cursor = handler.getAllSolvesFrom(mPuzzleType, mPuzzleCategory);
-
-                    try {
-                        publishProgress(0, cursor.getCount());
-
-                        while (cursor.moveToNext()) {
-                            String csvValues
-                                    = '"' + PuzzleUtils.convertTimeToString(cursor.getInt(IDX_TIME), PuzzleUtils.FORMAT_DEFAULT)
-                                    + "\";\"" + cursor.getString(IDX_SCRAMBLE)
-                                    + "\";\"" + new DateTime(cursor.getLong(IDX_DATE))
-                                    + '"';
-
-                            // Add optional "DNF" in fourth field.
-                            if (cursor.getInt(IDX_PENALTY) == PuzzleUtils.PENALTY_DNF) {
-                                csvValues += ";\"DNF\"";
+                                while (cursor.moveToNext()) {
+                                    out.write(
+                                        ("\"" + cursor.getString(DatabaseHandler.IDX_TYPE)
+                                                + "\";\"" + cursor.getString(DatabaseHandler.IDX_SUBTYPE)
+                                                + "\";\"" + cursor.getInt(DatabaseHandler.IDX_TIME)
+                                                + "\";\"" + cursor.getLong(DatabaseHandler.IDX_DATE)
+                                                + "\";\"" + cursor.getString(DatabaseHandler.IDX_SCRAMBLE)
+                                                + "\";\"" + cursor.getInt(DatabaseHandler.IDX_PENALTY)
+                                                + "\";\"" + cursor.getString(DatabaseHandler.IDX_COMMENT)
+                                                + "\"\n")
+                                    )
+                                    exports++
+                                    withContext(Dispatchers.Main) {
+                                        progressBar.progress = exports
+                                    }
+                                }
+                            } finally {
+                                cursor.close()
+                                out.close()
                             }
-
-                            csvValues += '\n';
-
-                            out.write(csvValues);
-                            exports++;
-                            publishProgress(exports);
+                            returnCode = true
                         }
-                    } finally {
-                        cursor.close();
-                        out.close();
+
+                        ExportImportDialog.EXIM_FORMAT_EXTERNAL -> {
+                            val cursor = handler.getAllSolvesFrom(puzzleType, puzzleCategory)
+
+                            try {
+                                withContext(Dispatchers.Main) {
+                                    progressBar.max = max(cursor.count, 1)
+                                    progressBar.progress = 0
+                                }
+
+                                while (cursor.moveToNext()) {
+                                    var csvValues = ("\"" + convertTimeToString(
+                                        cursor.getInt(DatabaseHandler.IDX_TIME).toLong(),
+                                        PuzzleUtils.FORMAT_DEFAULT
+                                    )
+                                            + "\";\"" + cursor.getString(DatabaseHandler.IDX_SCRAMBLE)
+                                            + "\";\"" + DateTime(cursor.getLong(DatabaseHandler.IDX_DATE))
+                                            + "\"")
+
+                                    if (cursor.getInt(DatabaseHandler.IDX_PENALTY) == PuzzleUtils.PENALTY_DNF) {
+                                        csvValues += ";\"DNF\""
+                                    }
+
+                                    csvValues += '\n'
+
+                                    out.write(csvValues)
+                                    exports++
+                                    withContext(Dispatchers.Main) {
+                                        progressBar.progress = exports
+                                    }
+                                }
+                            } finally {
+                                cursor.close()
+                                out.close()
+                            }
+                            returnCode = true
+                        }
+
+                        else -> {
+                            Log.e(TAG, "Unknown export file format: $fileFormat")
+                            returnCode = false
+                        }
                     }
-                    returnCode = true;
-                } else {
-                    Log.e(TAG, "Unknown export file format: " + mFileFormat);
-                    returnCode = false;
+                } catch (e: IOException) {
+                    returnCode = false
+                    Log.d("ERROR", "IOException: " + e.message)
                 }
-            } catch (IOException e) {
-                returnCode = false;
-                Log.d("ERROR", "IOException: " + e.getMessage());
+                returnCode
             }
 
-            return returnCode;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean isExported) {
-            if (mProgressDialog.isShowing()) {
-                mProgressDialog.getButton(AlertDialog.BUTTON_POSITIVE).setVisibility(View.VISIBLE);
-
-                if (isExported) {
-                    mProgressDialog.setMessage(
-                            Html.fromHtml(mContext.getString(R.string.export_progress_complete_wo_to)));
-                    // Optional share action
-                    mProgressDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setVisibility(View.VISIBLE);
-                    mProgressDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
-                        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-
-                        shareIntent.setAction(Intent.ACTION_SEND);
-                        shareIntent.putExtra(Intent.EXTRA_STREAM, mUri);
-                        shareIntent.setType("application/octet-stream");
-
-                        // FileProvider can sometimes crash devices lower than Lollipop
-                        // due to permission issues, so we have to do some magic to the intent
-                        // This is explained in a Medium post by @quiro91
-                        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP) {
-                            shareIntent.setClipData(ClipData.newRawUri("", mUri));
-                            shareIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                        }
-
-                        mContext.startActivity(Intent.createChooser(shareIntent, "Share"));
-                        mProgressDialog.dismiss();
-                    });
-                } else {
-                    mProgressDialog.setMessage(mContext.getString(R.string.export_progress_error));
+            progressDialog.getButton(AlertDialog.BUTTON_POSITIVE).visibility = View.VISIBLE
+            if (isExported) {
+                progressDialog.setMessage(
+                    Html.fromHtml(
+                        getString(R.string.export_progress_complete_wo_to),
+                        FROM_HTML_MODE_LEGACY
+                    )
+                )
+                progressDialog.getButton(AlertDialog.BUTTON_NEUTRAL).visibility = View.VISIBLE
+                progressDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                    val shareIntent = Intent(Intent.ACTION_SEND)
+                    shareIntent.action = Intent.ACTION_SEND
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+                    shareIntent.type = "application/octet-stream"
+                    startActivity(Intent.createChooser(shareIntent, "Share"))
+                    progressDialog.dismiss()
                 }
+            } else {
+                progressDialog.setMessage(getString(R.string.export_progress_error))
             }
         }
     }
 
-    private static class ImportSolves extends AsyncTask<Void, Integer, Void> {
+    /**
+     * Imports solve times from a file using Coroutines.
+     */
+    private fun importSolves(
+        fileFormat: Int,
+        uri: Uri,
+        puzzleType: String,
+        puzzleCategory: String
+    ) {
+        lifecycleScope.launch {
+            val view = layoutInflater.inflate(R.layout.dialog_progress_m3, null)
+            val progressBar = view.findViewById<ProgressBar>(R.id.progress_bar)
 
-        private final Context  mContext;
-        private final int      mFileFormat;
-        private final Uri      mUri;
-        private final String   mPuzzleType;
-        private final String   mPuzzleCategory;
-
-        private AlertDialog mProgressDialog;
-        private ProgressBar mProgressBar;
-        private int parseErrors = 0;
-        private int duplicates  = 0;
-        private int successes   = 0;
-
-        /**
-         * Creates a new task for importing solve times from a file.
-         *
-         * @param context
-         *     The context required to access resources and to report progress.
-         * @param uri
-         *     The file uri from which to import the solve times.
-         * @param fileFormat
-         *     The solve file format, must be {@link ExportImportDialog#EXIM_FORMAT_EXTERNAL}, or
-         *     {@link ExportImportDialog#EXIM_FORMAT_BACKUP}.
-         * @param puzzleType
-         *     The type of the puzzle whose times will be imported. This is required when
-         *     {@code fileFormat} is {@code EXIM_FORMAT_EXTERNAL}. For {@code EXIM_FORMAT_BACKUP},
-         *     it may be {@code null}, as it will not be used.
-         * @param puzzleCategory
-         *     The category (subtype) of the puzzle whose times will be imported. Required when
-         *     {@code fileFormat} is {@code EXIM_FORMAT_EXTERNAL}. For {@code EXIM_FORMAT_BACKUP},
-         *     it may be {@code null}, as it will not be used.
-         */
-        public ImportSolves(Context context, int fileFormat, Uri uri,
-                            String puzzleType, String puzzleCategory) {
-            mContext = context;
-            mFileFormat = fileFormat;
-            mUri = uri;
-            mPuzzleType = puzzleType;
-            mPuzzleCategory = puzzleCategory;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            View view = LayoutInflater.from(mContext).inflate(R.layout.dialog_progress_m3, null);
-            mProgressBar = view.findViewById(R.id.progress_bar);
-
-            mProgressDialog = new MaterialAlertDialogBuilder(mContext)
+            val progressDialog = MaterialAlertDialogBuilder(this@MainActivity)
                 .setTitle(R.string.import_progress_title)
                 .setView(view)
                 .setCancelable(false)
                 .setPositiveButton(R.string.action_done, null)
-                .create();
-            mProgressDialog.show();
-            mProgressDialog.getButton(AlertDialog.BUTTON_POSITIVE).setVisibility(View.GONE);
-        }
+                .create()
+            progressDialog.show()
+            progressDialog.getButton(AlertDialog.BUTTON_POSITIVE).visibility = View.GONE
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            if (mProgressDialog.isShowing()) {
-                if (values.length > 1) {
-                    // values[1] is the number of solve times, which could legitimately be zero.
-                    // Do not set max. to zero or it will display "NaN".
-                    mProgressBar.setMax(Math.max(values[1], 1));
-                }
-                mProgressBar.setProgress(values[0]);
-            }
-        }
+            val result = withContext(Dispatchers.IO) {
+                val solveList: MutableList<Solve> = ArrayList()
+                var parseErrors = 0
+                var successes = 0
 
-        @Override
-        protected Void doInBackground(Void... voids) {
-            List<Solve> solveList = new ArrayList<>();
-
-            try {
-                InputStream is = mContext.getContentResolver().openInputStream(mUri);
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);
-                CSVParser parser = new CSVParserBuilder()
+                try {
+                    val `is` = contentResolver.openInputStream(uri)
+                        ?: throw IOException("Could not open input stream")
+                    val isr = InputStreamReader(`is`)
+                    val br = BufferedReader(isr)
+                    val parser = CSVParserBuilder()
                         .withSeparator(';')
                         .withQuoteChar('"')
                         .withStrictQuotes(true)
-                        .build();
-                CSVReader csvReader = new CSVReaderBuilder(br)
+                        .build()
+                    val csvReader = CSVReaderBuilder(br)
                         .withCSVParser(parser)
-                        .build();
-                String[] line;
-                if (mFileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
-                    // throw away the header
-                    csvReader.readNext();
+                        .build()
 
-                    while ((line = csvReader.readNext()) != null) {
-                        try {
-                            solveList.add(new Solve(
-                                Integer.parseInt(line[2]), line[0], line[1], Long.parseLong(line[3]),
-                                line[4], Integer.parseInt(line[5]), line[6], true));
-                        } catch (Exception e) {
-                            parseErrors++;
-                        }
-                    }
-                } else if (mFileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
-                    final long now = DateTime.now().getMillis();
+                    if (fileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
+                        csvReader.readNext() // throw away header
 
-                    while ((line = csvReader.readNext()) != null) {
-                        if (line.length <= 4) {
+                        while (true) {
+                            val nextLine = csvReader.readNext() ?: break
                             try {
-                                Log.d("IMPORTING EXTERNAL", "time: " + line[0]);
-
-                                int time = PuzzleUtils.parseTime(line[0]);
-                                String scramble = "";
-                                long date = now;
-                                int penalty = PuzzleUtils.NO_PENALTY;
-
-                                if (line.length >= 2) {
-                                    scramble = line[1];
+                                if (nextLine.size >= 7) {
+                                    solveList.add(
+                                        Solve(
+                                            nextLine[2]?.toIntOrNull()
+                                                ?: throw Exception("Invalid time"),
+                                            nextLine[0] ?: "",
+                                            nextLine[1] ?: "",
+                                            nextLine[3]?.toLongOrNull() ?: 0L,
+                                            nextLine[4] ?: "",
+                                            nextLine[5]?.toIntOrNull() ?: 0,
+                                            nextLine[6] ?: "",
+                                            true
+                                        )
+                                    )
+                                } else {
+                                    parseErrors++
                                 }
-                                if (line.length >= 3) {
-                                    try {
-                                        date = DateTime.parse(line[2]).getMillis();
-                                    } catch (Exception e) {
-                                        // "date" remains equal to "now".
-                                        e.printStackTrace();
-                                    }
-                                }
-                                // Optional fourth field (index 3) may contain "DNF". If it is
-                                // something else, ignore it.
-                                if (line.length >= 4 && "DNF".equals(line[3])) {
-                                    penalty = PuzzleUtils.PENALTY_DNF;
-                                }
-
-                                solveList.add(new Solve(
-                                        time, mPuzzleType, mPuzzleCategory,
-                                        date, scramble, penalty, "", true));
-                            } catch (Exception e) {
-                                parseErrors++;
+                            } catch (_: Exception) {
+                                parseErrors++
                             }
-                        } else {
-                            parseErrors++;
+                        }
+                    } else if (fileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
+                        val now = DateTime.now().millis
+
+                        while (true) {
+                            val nextLine = csvReader.readNext() ?: break
+                            if (nextLine.size <= 4) {
+                                try {
+                                    val time = PuzzleUtils.parseTime(
+                                        nextLine[0] ?: throw Exception("Missing time")
+                                    )
+                                    var scramble = ""
+                                    var date = now
+                                    var penalty = PuzzleUtils.NO_PENALTY
+
+                                    if (nextLine.size >= 2) scramble = nextLine[1] ?: ""
+                                    if (nextLine.size >= 3) {
+                                        nextLine[2]?.let {
+                                            try {
+                                                date = DateTime.parse(it).millis
+                                            } catch (e: Exception) {
+                                                e.printStackTrace()
+                                            }
+                                        }
+                                    }
+                                    if (nextLine.size >= 4 && "DNF" == nextLine[3]) {
+                                        penalty = PuzzleUtils.PENALTY_DNF
+                                    }
+
+                                    solveList.add(
+                                        Solve(
+                                            time, puzzleType, puzzleCategory,
+                                            date, scramble, penalty, "", true
+                                        )
+                                    )
+                                } catch (_: Exception) {
+                                    parseErrors++
+                                }
+                            } else {
+                                parseErrors++
+                            }
                         }
                     }
-                } else {
-                    Log.e(TAG, "Unknown import file format: " + mFileFormat);
-                }
 
-                final DatabaseHandler handler = TwistyTimer.getDBHandler();
-
-                // Perform a bulk insertion of the solves.
-                successes = handler.addSolves(mFileFormat, solveList, new ProgressListener() {
-                            @Override
-                            public void onProgress(int numCompleted, int total) {
-                                publishProgress(numCompleted, total);
+                    val handler = TwistyTimer.getDBHandler()
+                    successes = handler.addSolves(
+                        fileFormat,
+                        solveList,
+                        object : DatabaseHandler.ProgressListener {
+                            override fun onProgress(numCompleted: Int, total: Int) {
+                                lifecycleScope.launch(Dispatchers.Main) {
+                                    progressBar.max = max(total, 1)
+                                    progressBar.progress = numCompleted
+                                }
                             }
-                        });
-                duplicates = solveList.size() - successes;
-            } catch (Exception e) {
-                e.printStackTrace();
+                        })
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                Triple(successes, solveList.size - successes, parseErrors)
             }
 
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            if (mProgressDialog.isShowing()) {
-                mProgressDialog.getButton(AlertDialog.BUTTON_POSITIVE).setVisibility(View.VISIBLE);
-                mProgressDialog.setMessage(Html.fromHtml(
-                        mContext.getString(R.string.import_progress_content)
-                        + "<br><br><small><tt>"
-                        + "<b>" + successes + "</b> "
-                        + mContext.getString(R.string.import_progress_content_successful_imports)
-                        + "<br><b>" + duplicates + "</b> "
-                        + mContext.getString(R.string.import_progress_content_ignored_duplicates)
-                        + "<br><b>" + parseErrors + "</b> "
-                        + mContext.getString(R.string.import_progress_content_errors)
-                        + "</small></tt>"));
-            }
-            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED);
+            val (successes, duplicates, parseErrors) = result
+            progressDialog.getButton(AlertDialog.BUTTON_POSITIVE).visibility = View.VISIBLE
+            progressDialog.setMessage(
+                Html.fromHtml(
+                    (getString(R.string.import_progress_content)
+                            + "<br><br><small><tt>"
+                            + "<b>" + successes + "</b> "
+                            + getString(R.string.import_progress_content_successful_imports)
+                            + "<br><b>" + duplicates + "</b> "
+                            + getString(R.string.import_progress_content_ignored_duplicates)
+                            + "<br><b>" + parseErrors + "</b> "
+                            + getString(R.string.import_progress_content_errors)
+                            + "</small></tt>"),
+                    FROM_HTML_MODE_LEGACY
+                )
+            )
+            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
         }
     }
 
     // So the drawer doesn't lag when closing
-    private class SmoothActionBarDrawerToggle extends ActionBarDrawerToggle {
+    inner class SmoothActionBarDrawerToggle(
+        activity: Activity?,
+        drawerLayout: DrawerLayout?,
+        toolbar: Toolbar?,
+        openDrawerContentDescRes: Int,
+        closeDrawerContentDescRes: Int
+    ) : ActionBarDrawerToggle(
+        activity,
+        drawerLayout,
+        toolbar,
+        openDrawerContentDescRes,
+        closeDrawerContentDescRes
+    ) {
+        private var runnable: Runnable? = null
 
-        private Runnable runnable;
-
-        public SmoothActionBarDrawerToggle(Activity activity, DrawerLayout drawerLayout, Toolbar toolbar, int openDrawerContentDescRes, int closeDrawerContentDescRes) {
-            super(activity, drawerLayout, toolbar, openDrawerContentDescRes, closeDrawerContentDescRes);
-        }
-
-        @Override
-        public void onDrawerStateChanged(int newState) {
-            super.onDrawerStateChanged(newState);
-            if (runnable != null && newState == DrawerLayout.STATE_IDLE) {
-                runnable.run();
-                runnable = null;
+        override fun onDrawerStateChanged(newState: Int) {
+            super.onDrawerStateChanged(newState)
+            if (newState == DrawerLayout.STATE_IDLE) {
+                runnable?.run()
+                runnable = null
             }
         }
 
-        public void runWhenIdle(Runnable runnable) {
-            this.runnable = runnable;
+        fun runWhenIdle(runnable: Runnable?) {
+            this.runnable = runnable
         }
+    }
+
+    companion object {
+        /**
+         * Flag to enable debug logging for this class.
+         */
+        private const val DEBUG_ME = false
+
+        /**
+         * A "tag" to identify this class in log messages.
+         */
+        private val TAG: String = MainActivity::class.java.simpleName
+
+        private const val DEBUG_ID = 11
+        private const val TIMER_ID = 1
+        private const val THEME_ID = 2
+        private const val SCHEME_ID = 9
+        private const val OLL_ID = 6
+        private const val PLL_ID = 7
+        private const val EXPORT_IMPORT_ID = 10
+        private const val ABOUT_ID = 4
+        private const val SETTINGS_ID = 5
+        private const val TRAINER_OLL_ID = 14
+        private const val TRAINER_PLL_ID = 15
+
+
+        /**
+         * The fragment tag identifying the export/import dialog fragment.
+         */
+        private const val FRAG_TAG_EXIM_DIALOG = "export_import_dialog"
+
+        // NOTE: Loader IDs used by fragments need to be unique within the context of an activity that
+        // creates those fragments. Therefore, it is safer to define all the IDs in the same place.
+        /**
+         * The loader ID for the loader that loads data presented in the statistics table on the timer
+         * graph fragment and the summary statistics on the timer fragment.
+         */
+        const val STATISTICS_LOADER_ID: Int = 101
+
+        /**
+         * The loader ID for the loader that loads chart data presented in on the timer graph fragment.
+         */
+        const val CHART_DATA_LOADER_ID: Int = 102
+
     }
 }

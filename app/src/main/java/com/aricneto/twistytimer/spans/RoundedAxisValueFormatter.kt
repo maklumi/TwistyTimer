@@ -1,57 +1,51 @@
-package com.aricneto.twistytimer.spans;
+package com.aricneto.twistytimer.spans
 
-import com.github.mikephil.charting.components.AxisBase;
-import com.github.mikephil.charting.formatter.ValueFormatter;
-
-import java.text.DecimalFormat;
+import com.github.mikephil.charting.components.AxisBase
+import com.github.mikephil.charting.formatter.ValueFormatter
+import java.text.DecimalFormat
 
 /**
  * Created by philipp on 02/06/16.
  */
-public class RoundedAxisValueFormatter extends ValueFormatter
-{
 
+/**
+ * Constructor that specifies to how many digits the value should be
+ * formatted.
+ *
+ * @param digits
+ */
+
+open class RoundedAxisValueFormatter(digits: Int) : ValueFormatter() {
     /**
-     * decimalformat for formatting
+     * decimal format for formatting
      */
-    protected DecimalFormat mFormat;
-
-    /**
-     * the number of decimal digits this formatter uses
-     */
-    protected int digits = 0;
-
-    /**
-     * Constructor that specifies to how many digits the value should be
-     * formatted.
-     *
-     * @param digits
-     */
-    public RoundedAxisValueFormatter(int digits) {
-        this.digits = digits;
-
-        StringBuffer b = new StringBuffer();
-        for (int i = 0; i < digits; i++) {
-            if (i == 0)
-                b.append(".");
-            b.append("0");
-        }
-
-        mFormat = new DecimalFormat("###,###,###,##0" + b.toString());
-    }
-
-    @Override
-    public String getAxisLabel(float value, AxisBase axis) {
-        // avoid memory allocations here (for performance)
-        return mFormat.format((int) value);
-    }
+    protected var mFormat: DecimalFormat
 
     /**
      * Returns the number of decimal digits this formatter uses or -1, if unspecified.
-     *
+     * 
      * @return
      */
-    public int getDecimalDigits() {
-        return digits;
+    /**
+     * the number of decimal digits this formatter uses
+     */
+    var decimalDigits: Int = 0
+        protected set
+
+    init {
+        this.decimalDigits = digits
+
+        val b = StringBuffer()
+        for (i in 0..<digits) {
+            if (i == 0) b.append(".")
+            b.append("0")
+        }
+
+        mFormat = DecimalFormat("###,###,###,##0$b")
+    }
+
+    override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+        // avoid memory allocations here (for performance)
+        return mFormat.format(value.toInt().toLong())
     }
 }

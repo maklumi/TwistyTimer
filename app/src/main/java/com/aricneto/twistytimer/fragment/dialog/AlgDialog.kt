@@ -1,165 +1,169 @@
-package com.aricneto.twistytimer.fragment.dialog;
+package com.aricneto.twistytimer.fragment.dialog
 
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.os.Bundle;
-
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.appcompat.widget.AppCompatSeekBar;
-import android.text.InputType;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.inputmethod.EditorInfo;
-import android.widget.EditText;
-
-import com.aricneto.twistify.R;
-import com.aricneto.twistify.databinding.DialogAlgDetailsBinding;
-import com.aricneto.twistytimer.TwistyTimer;
-import com.aricneto.twistytimer.database.DatabaseHandler;
-import com.aricneto.twistytimer.items.Algorithm;
-import com.aricneto.twistytimer.listener.DialogListener;
-import com.aricneto.twistytimer.utils.AlgUtils;
-import com.aricneto.twistytimer.utils.TTIntent;
-import com.aricneto.twistytimer.utils.ThemeUtils;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.textfield.TextInputEditText;
+import android.content.Context
+import android.content.DialogInterface
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.appcompat.widget.AppCompatSeekBar
+import androidx.fragment.app.DialogFragment
+import com.aricneto.twistify.R
+import com.aricneto.twistify.databinding.DialogAlgDetailsBinding
+import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.items.Algorithm
+import com.aricneto.twistytimer.listener.DialogListener
+import com.aricneto.twistytimer.utils.AlgUtils
+import com.aricneto.twistytimer.utils.TTIntent
+import com.aricneto.twistytimer.utils.TTIntent.broadcast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import androidx.core.graphics.drawable.toDrawable
 
 /**
  * Shows the algList dialog
  */
-public class AlgDialog extends DialogFragment {
+class AlgDialog : DialogFragment() {
+    private var binding: DialogAlgDetailsBinding? = null
+    private var mContext: Context? = null
 
-    private DialogAlgDetailsBinding binding;
-    private Context mContext;
+    private var mId: Long = 0
+    private var algorithm: Algorithm? = null
+    private var dialogListener: DialogListener? = null
 
-    private long            mId;
-    private Algorithm       algorithm;
-    private DialogListener  dialogListener;
+    private val clickListener: View.OnClickListener = View.OnClickListener { view ->
+        val dbHandler = TwistyTimer.getDBHandler()
 
-    private View.OnClickListener clickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            final DatabaseHandler dbHandler = TwistyTimer.getDBHandler();
+        when (view.id) {
+            R.id.editButton -> {
+                val editView =
+                    layoutInflater.inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
+                val editEditText = editView.findViewById<TextInputEditText>(R.id.edit_text)
+                editEditText.setText(algorithm!!.algs)
 
-            switch (view.getId()) {
-                case R.id.editButton:
-                    View editView = LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null);
-                    TextInputEditText editEditText = editView.findViewById(R.id.edit_text);
-                    editEditText.setText(algorithm.getAlgs());
-
-                    new MaterialAlertDialogBuilder(mContext)
-                            .setTitle(R.string.edit_algorithm)
-                            .setView(editView)
-                            .setPositiveButton(R.string.action_done, (dialog1, which) -> {
-                                String input = editEditText.getText().toString();
-                                algorithm.setAlgs(input);
-                                dbHandler.updateAlgorithmAlg(mId, input);
-                                binding.algText.setText(input);
-                                updateList();
-                            })
-                            .setNegativeButton(R.string.action_cancel, null)
-                            .show();
-                    break;
-
-                case R.id.progressButton:
-                    final AppCompatSeekBar seekBar = (AppCompatSeekBar) LayoutInflater.from(mContext).inflate(R.layout.dialog_progress, null);
-                    seekBar.setProgress(algorithm.getProgress());
-                    new MaterialAlertDialogBuilder(mContext)
-                            .setTitle(R.string.dialog_set_progress)
-                            .setView(seekBar)
-                            .setPositiveButton(R.string.action_update, (dialog12, which) -> {
-                                int seekProgress = seekBar.getProgress();
-                                algorithm.setProgress(seekProgress);
-                                dbHandler.updateAlgorithmProgress(mId, seekProgress);
-                                binding.progressBar.setProgress(seekProgress);
-                                updateList();
-                            })
-                            .setNegativeButton(R.string.action_cancel, null)
-                            .show();
-                    break;
-
-                case R.id.revertButton:
-                    new MaterialAlertDialogBuilder(mContext)
-                            .setTitle(R.string.dialog_revert_title_confirmation)
-                            .setMessage(R.string.dialog_revert_content_confirmation)
-                            .setPositiveButton(R.string.action_reset, (dialog13, which) -> {
-                                algorithm.setAlgs(AlgUtils.getDefaultAlgs(algorithm.getSubset(), algorithm.getName()));
-                                dbHandler.updateAlgorithmAlg(mId, algorithm.getAlgs());
-                                binding.algText.setText(algorithm.getAlgs());
-                            })
-                            .setNegativeButton(R.string.action_cancel, null)
-                            .show();
-                    break;
+                MaterialAlertDialogBuilder(mContext!!)
+                    .setTitle(R.string.edit_algorithm)
+                    .setView(editView)
+                    .setPositiveButton(
+                        R.string.action_done
+                    ) { _: DialogInterface?, _: Int ->
+                        val input = editEditText.getText().toString()
+                        algorithm!!.algs = input
+                        dbHandler.updateAlgorithmAlg(mId, input)
+                        binding!!.algText.text = input
+                        updateList()
+                    }
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
             }
+
+            R.id.progressButton -> {
+                val seekBar = layoutInflater.inflate(R.layout.dialog_progress, null) as AppCompatSeekBar
+                seekBar.progress = algorithm!!.progress
+                MaterialAlertDialogBuilder(mContext!!)
+                    .setTitle(R.string.dialog_set_progress)
+                    .setView(seekBar)
+                    .setPositiveButton(
+                        R.string.action_update
+                    ) { _: DialogInterface?, _: Int ->
+                        val seekProgress = seekBar.progress
+                        algorithm!!.progress = seekProgress
+                        dbHandler.updateAlgorithmProgress(mId, seekProgress)
+                        binding!!.progressBar.progress = seekProgress
+                        updateList()
+                    }
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
+            }
+
+            R.id.revertButton -> MaterialAlertDialogBuilder(mContext!!)
+                .setTitle(R.string.dialog_revert_title_confirmation)
+                .setMessage(R.string.dialog_revert_content_confirmation)
+                .setPositiveButton(
+                    R.string.action_reset
+                ) { _: DialogInterface?, _: Int ->
+                    algorithm!!.algs =
+                        AlgUtils.getDefaultAlgs(algorithm!!.subset, algorithm!!.name)
+                    dbHandler.updateAlgorithmAlg(mId, algorithm!!.algs)
+                    binding!!.algText.text = algorithm!!.algs
+                }
+                .setNegativeButton(R.string.action_cancel, null)
+                .show()
         }
-    };
-
-    public static AlgDialog newInstance(long id) {
-        AlgDialog timeDialog = new AlgDialog();
-        Bundle args = new Bundle();
-        args.putLong("id", id);
-        timeDialog.setArguments(args);
-        return timeDialog;
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setStyle(DialogFragment.STYLE_NO_TITLE, 0);
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setStyle(STYLE_NO_TITLE, 0)
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        binding = DialogAlgDetailsBinding.inflate(inflater, container, false);
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        binding = DialogAlgDetailsBinding.inflate(inflater, container, false)
 
-        mContext = getContext();
-        mId = getArguments().getLong("id");
+        mContext = context
+        mId = requireArguments().getLong("id")
 
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
-        final Algorithm matchedAlgorithm = TwistyTimer.getDBHandler().getAlgorithm(mId);
+        val matchedAlgorithm = TwistyTimer.getDBHandler().getAlgorithm(mId)
 
         if (matchedAlgorithm != null) {
-            algorithm = matchedAlgorithm;
-            binding.algText.setText(algorithm.getAlgs());
-            binding.nameText.setText(algorithm.getName());
+            algorithm = matchedAlgorithm
+            binding!!.algText.text = algorithm!!.algs
+            binding!!.nameText.text = algorithm!!.name
 
-            binding.cube.setCubeState(AlgUtils.getCaseState(getContext(), algorithm.getSubset(), algorithm.getName()));
+            binding!!.cube.cubeState =
+                AlgUtils.getCaseState(requireContext(), algorithm!!.subset, algorithm!!.name)
 
-            binding.progressBar.setProgress(algorithm.getProgress());
+            binding!!.progressBar.progress = algorithm!!.progress
 
-            binding.revertButton.setOnClickListener(clickListener);
-            binding.progressButton.setOnClickListener(clickListener);
-            binding.editButton.setOnClickListener(clickListener);
+            binding!!.revertButton.setOnClickListener(clickListener)
+            binding!!.progressButton.setOnClickListener(clickListener)
+            binding!!.editButton.setOnClickListener(clickListener)
 
             // If the subset is PLL, it'll need to show the pll arrows.
-            if (algorithm.getSubset().equals("PLL")) {
-                binding.pllArrows.setImageDrawable(AlgUtils.getPllArrow(getContext(), algorithm.getName()));
-                binding.pllArrows.setVisibility(View.VISIBLE);
+            if (algorithm!!.subset == "PLL") {
+                binding!!.pllArrows.setImageDrawable(
+                    AlgUtils.getPllArrow(
+                        requireContext(),
+                        algorithm!!.name!!
+                    )
+                )
+                binding!!.pllArrows.visibility = View.VISIBLE
             }
-
         }
 
-        return binding.getRoot();
+        return binding!!.getRoot()
     }
 
-    public void setDialogListener(DialogListener listener) {
-        dialogListener = listener;
+    fun setDialogListener(listener: DialogListener?) {
+        dialogListener = listener
     }
 
-    private void updateList() {
-        TTIntent.broadcast(TTIntent.CATEGORY_ALG_DATA_CHANGES, TTIntent.ACTION_ALGS_MODIFIED);
+    private fun updateList() {
+        broadcast(TTIntent.CATEGORY_ALG_DATA_CHANGES, TTIntent.ACTION_ALGS_MODIFIED)
         //dismiss();
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        binding = null;
-        if (dialogListener != null)
-            dialogListener.onDismissDialog();
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+        if (dialogListener != null) dialogListener!!.onDismissDialog()
+    }
+
+    companion object {
+        fun newInstance(id: Long): AlgDialog {
+            val timeDialog = AlgDialog()
+            val args = Bundle()
+            args.putLong("id", id)
+            timeDialog.setArguments(args)
+            return timeDialog
+        }
     }
 }

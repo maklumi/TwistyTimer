@@ -1,16 +1,11 @@
-package com.aricneto.twistytimer.structures;
+package com.aricneto.twistytimer.structures
 
-import com.aricneto.twistytimer.structures.ITree;
-
-import java.lang.reflect.Array;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Queue;
-import java.util.Set;
+import java.lang.reflect.Array as javaArray
+import java.util.ArrayDeque
+import java.util.Deque
+import java.util.HashSet
+import java.util.Queue
+import java.util.Random
 
 /**
  * A binary search tree (BST), which may sometimes also be called an ordered or
@@ -24,50 +19,46 @@ import java.util.Set;
  * <br>
  * @author Justin Wetherell <phishman3579@gmail.com>
  */
-@SuppressWarnings("unchecked")
-public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
+@Suppress("UNCHECKED_CAST")
+open class BinarySearchTree<T : Comparable<T>> : ITree<T> {
 
-    private int modifications = 0;
+    private var modifications = 0
 
-    protected static final Random RANDOM = new Random();
+    protected var root: Node<T>? = null
+    protected var size = 0
+    protected var creator: INodeCreator<T>
 
-    protected Node<T> root = null;
-    protected int size = 0;
-    protected INodeCreator<T> creator = null;
-
-    public enum DepthFirstSearchOrder {
-        inOrder, preOrder, postOrder
+    enum class DepthFirstSearchOrder {
+        IN_ORDER, PRE_ORDER, POST_ORDER
     }
 
     /**
      * Default constructor.
      */
-    public BinarySearchTree() {
-        this.creator = new INodeCreator<T>() {
+    constructor() {
+        this.creator = object : INodeCreator<T> {
             /**
              * {@inheritDoc}
              */
-            @Override
-            public Node<T> createNewNode(Node<T> parent, T id) {
-                return (new Node<T>(parent, id));
+            override fun createNewNode(parent: Node<T>?, id: T?): Node<T> {
+                return Node(parent, id)
             }
-        };
+        }
     }
 
     /**
      * Constructor with external Node creator.
      */
-    public BinarySearchTree(INodeCreator<T> creator) {
-        this.creator = creator;
+    constructor(creator: INodeCreator<T>) {
+        this.creator = creator
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public boolean add(T value) {
-        Node<T> nodeAdded = this.addValue(value);
-        return (nodeAdded != null);
+    override fun add(value: T): Boolean {
+        val nodeAdded = this.addValue(value)
+        return nodeAdded != null
     }
 
     /**
@@ -78,51 +69,51 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *            T to add to the tree.
      * @return Node<T> which was added to the tree.
      */
-    protected Node<T> addValue(T value) {
-        Node<T> newNode = this.creator.createNewNode(null, value);
+    protected open fun addValue(value: T): Node<T>? {
+        val newNode = this.creator.createNewNode(null, value)
 
         // If root is null, assign
         if (root == null) {
-            root = newNode;
-            size++;
-            return newNode;
+            root = newNode
+            size++
+            return newNode
         }
 
-        Node<T> node = root;
+        var node = root
         while (node != null) {
-            if (newNode.id.compareTo(node.id) <= 0) {
+            val nodeId = node.id ?: return null
+            if (value <= nodeId) {
                 // Less than or equal to goes left
                 if (node.lesser == null) {
                     // New left node
-                    node.lesser = newNode;
-                    newNode.parent = node;
-                    size++;
-                    return newNode;
+                    node.lesser = newNode
+                    newNode.parent = node
+                    size++
+                    return newNode
                 }
-                node = node.lesser;
+                node = node.lesser
             } else {
                 // Greater than goes right
                 if (node.greater == null) {
                     // New right node
-                    node.greater = newNode;
-                    newNode.parent = node;
-                    size++;
-                    return newNode;
+                    node.greater = newNode
+                    newNode.parent = node
+                    size++
+                    return newNode
                 }
-                node = node.greater;
+                node = node.greater
             }
         }
 
-        return newNode;
+        return newNode
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public boolean contains(T value) {
-        Node<T> node = getNode(value);
-        return (node != null);
+    override fun contains(value: T): Boolean {
+        val node = getNode(value)
+        return node != null
     }
 
     /**
@@ -133,18 +124,19 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      * @return Node<T> representing first reference of value in tree or NULL if
      *         not found.
      */
-    protected Node<T> getNode(T value) {
-        Node<T> node = root;
+    protected open fun getNode(value: T): Node<T>? {
+        var node = root
         while (node != null && node.id != null) {
-            if (value.compareTo(node.id) < 0) {
-                node = node.lesser;
-            } else if (value.compareTo(node.id) > 0) {
-                node = node.greater;
-            } else if (value.compareTo(node.id) == 0) {
-                return node;
+            val nodeId = node.id!!
+            if (value < nodeId) {
+                node = node.lesser
+            } else if (value > nodeId) {
+                node = node.greater
+            } else {
+                return node
             }
         }
-        return null;
+        return null
     }
 
     /**
@@ -153,31 +145,31 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      * @param node
      *            Root of tree to rotate left.
      */
-    protected void rotateLeft(Node<T> node) {
-        Node<T> parent = node.parent;
-        Node<T> greater = node.greater;
-        Node<T> lesser = greater.lesser;
+    protected open fun rotateLeft(node: Node<T>) {
+        val parent = node.parent
+        val greater = node.greater ?: return
+        val lesser = greater.lesser
 
-        greater.lesser = node;
-        node.parent = greater;
+        greater.lesser = node
+        node.parent = greater
 
-        node.greater = lesser;
+        node.greater = lesser
 
         if (lesser != null)
-            lesser.parent = node;
+            lesser.parent = node
 
-        if (parent!=null) {
-            if (node == parent.lesser) {
-                parent.lesser = greater;
-            } else if (node == parent.greater) {
-                parent.greater = greater;
+        if (parent != null) {
+            if (node === parent.lesser) {
+                parent.lesser = greater
+            } else if (node === parent.greater) {
+                parent.greater = greater
             } else {
-                throw new RuntimeException("Yikes! I'm not related to my parent. " + node.toString());
+                throw RuntimeException("Yikes! I'm not related to my parent. $node")
             }
-            greater.parent = parent;
+            greater.parent = parent
         } else {
-            root = greater;
-            root.parent = null;
+            root = greater
+            root?.parent = null
         }
     }
 
@@ -187,31 +179,31 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      * @param node
      *            Root of tree to rotate right.
      */
-    protected void rotateRight(Node<T> node) {
-        Node<T> parent = node.parent;
-        Node<T> lesser = node.lesser;
-        Node<T> greater = lesser.greater;
+    protected open fun rotateRight(node: Node<T>) {
+        val parent = node.parent
+        val lesser = node.lesser ?: return
+        val greater = lesser.greater
 
-        lesser.greater = node;
-        node.parent = lesser;
+        lesser.greater = node
+        node.parent = lesser
 
-        node.lesser = greater;
+        node.lesser = greater
 
         if (greater != null)
-            greater.parent = node;
+            greater.parent = node
 
-        if (parent!=null) {
-            if (node == parent.lesser) {
-                parent.lesser = lesser;
-            } else if (node == parent.greater) {
-                parent.greater = lesser;
+        if (parent != null) {
+            if (node === parent.lesser) {
+                parent.lesser = lesser
+            } else if (node === parent.greater) {
+                parent.greater = lesser
             } else {
-                throw new RuntimeException("Yikes! I'm not related to my parent. " + node.toString());
+                throw RuntimeException("Yikes! I'm not related to my parent. $node")
             }
-            lesser.parent = parent;
+            lesser.parent = parent
         } else {
-            root = lesser;
-            root.parent = null;
+            root = lesser
+            root?.parent = null
         }
     }
 
@@ -224,19 +216,19 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      * @return Node<T> which represents the greatest node in the startingNode
      *         sub-tree or NULL if startingNode has no greater children.
      */
-    protected Node<T> getGreatest(Node<T> startingNode) {
+    protected open fun getGreatest(startingNode: Node<T>?): Node<T>? {
         if (startingNode == null)
-            return null;
+            return null
 
-        Node<T> greater = startingNode.greater;
+        var greater = startingNode.greater
         while (greater != null && greater.id != null) {
-            Node<T> node = greater.greater;
+            val node = greater.greater
             if (node != null && node.id != null)
-                greater = node;
+                greater = node
             else
-                break;
+                break
         }
-        return greater;
+        return greater
     }
 
     /**
@@ -244,19 +236,18 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *
      * @return Value of the greatest node in root, or NULL if root is empty
      */
-    public T getGreatest() {
-        if (root == null)
-            return null;
+    override fun getGreatest(): T? {
+        val rootNode = root ?: return null
 
-        Node<T> greater = root;
+        var greater = rootNode
         while (greater.id != null) {
-            Node<T> node = greater.greater;
+            val node = greater.greater
             if (node != null && node.id != null)
-                greater = node;
+                greater = node
             else
-                break;
+                break
         }
-        return greater.id;
+        return greater.id
     }
 
     /**
@@ -268,19 +259,19 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      * @return Node<T> which represents the least node in the startingNode
      *         sub-tree or NULL if startingNode has no lesser children.
      */
-    protected Node<T> getLeast(Node<T> startingNode) {
+    protected open fun getLeast(startingNode: Node<T>?): Node<T>? {
         if (startingNode == null)
-            return null;
+            return null
 
-        Node<T> lesser = startingNode.lesser;
+        var lesser = startingNode.lesser
         while (lesser != null && lesser.id != null) {
-            Node<T> node = lesser.lesser;
+            val node = lesser.lesser
             if (node != null && node.id != null)
-                lesser = node;
+                lesser = node
             else
-                break;
+                break
         }
-        return lesser;
+        return lesser
     }
 
     /**
@@ -288,28 +279,26 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *
      * @return Value of the least node in root, or NULL if root is empty
      */
-    public T getLeast() {
-        if (root == null)
-            return null;
+    override fun getLeast(): T? {
+        val rootNode = root ?: return null
 
-        Node<T> lesser = root;
+        var lesser = rootNode
         while (lesser.id != null) {
-            Node<T> node = lesser.lesser;
+            val node = lesser.lesser
             if (node != null && node.id != null)
-                lesser = node;
+                lesser = node
             else
-                break;
+                break
         }
-        return lesser.id;
+        return lesser.id
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public T remove(T value) {
-        Node<T> nodeToRemove = this.removeValue(value);
-        return ((nodeToRemove!=null)?nodeToRemove.id:null);
+    override fun remove(value: T): T? {
+        val nodeToRemove = this.removeValue(value)
+        return nodeToRemove?.id
     }
 
     /**
@@ -319,11 +308,11 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *            T to remove from the tree.
      * @return Node<T> which was removed from the tree.
      */
-    protected Node<T> removeValue(T value) {
-        Node<T> nodeToRemoved = this.getNode(value);
+    protected open fun removeValue(value: T): Node<T>? {
+        var nodeToRemoved = this.getNode(value)
         if (nodeToRemoved != null)
-            nodeToRemoved = removeNode(nodeToRemoved);
-        return nodeToRemoved;
+            nodeToRemoved = removeNode(nodeToRemoved)
+        return nodeToRemoved
     }
 
     /**
@@ -335,12 +324,12 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *            Node<T> removed from the tree, it can be different
      *            then the parameter in some cases.
      */
-    protected Node<T> removeNode(Node<T> nodeToRemoved) {
+    open fun removeNode(nodeToRemoved: Node<T>?): Node<T>? {
         if (nodeToRemoved != null) {
-            Node<T> replacementNode = this.getReplacementNode(nodeToRemoved);
-            replaceNodeWithNode(nodeToRemoved, replacementNode);
+            val replacementNode = this.getReplacementNode(nodeToRemoved)
+            replaceNodeWithNode(nodeToRemoved, replacementNode)
         }
-        return nodeToRemoved;
+        return nodeToRemoved
     }
 
     /**
@@ -352,30 +341,30 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      * @return Node<T> which can be used to replace nodeToRemoved. nodeToRemoved
      *         should NOT be NULL.
      */
-    protected Node<T> getReplacementNode(Node<T> nodeToRemoved) {
-        Node<T> replacement = null;
+    protected open fun getReplacementNode(nodeToRemoved: Node<T>): Node<T>? {
+        var replacement: Node<T>? = null
         if (nodeToRemoved.greater != null && nodeToRemoved.lesser != null) {
             // Two children.
             // Add some randomness to deletions, so we don't always use the
             // greatest/least on deletion
             if (modifications % 2 != 0) {
-                replacement = this.getGreatest(nodeToRemoved.lesser);
+                replacement = this.getGreatest(nodeToRemoved.lesser)
                 if (replacement == null)
-                    replacement = nodeToRemoved.lesser;
+                    replacement = nodeToRemoved.lesser
             } else {
-                replacement = this.getLeast(nodeToRemoved.greater);
+                replacement = this.getLeast(nodeToRemoved.greater)
                 if (replacement == null)
-                    replacement = nodeToRemoved.greater;
+                    replacement = nodeToRemoved.greater
             }
-            modifications++;
-        } else if (nodeToRemoved.lesser != null && nodeToRemoved.greater == null) {
+            modifications++
+        } else if (nodeToRemoved.lesser != null) {
             // Using the less subtree
-            replacement = nodeToRemoved.lesser;
-        } else if (nodeToRemoved.greater != null && nodeToRemoved.lesser == null) {
+            replacement = nodeToRemoved.lesser
+        } else if (nodeToRemoved.greater != null) {
             // Using the greater subtree (there is no lesser subtree, no refactoring)
-            replacement = nodeToRemoved.greater;
+            replacement = nodeToRemoved.greater
         }
-        return replacement;
+        return replacement
     }
 
     /**
@@ -388,85 +377,77 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *            Node<T> to replace nodeToRemoved in the tree. replacementNode
      *            can be NULL.
      */
-    protected void replaceNodeWithNode(Node<T> nodeToRemoved, Node<T> replacementNode) {
+    protected open fun replaceNodeWithNode(nodeToRemoved: Node<T>, replacementNode: Node<T>?) {
         if (replacementNode != null) {
             // Save for later
-            Node<T> replacementNodeLesser = replacementNode.lesser;
-            Node<T> replacementNodeGreater = replacementNode.greater;
+            val replacementNodeLesser = replacementNode.lesser
+            val replacementNodeGreater = replacementNode.greater
 
             // Replace replacementNode's branches with nodeToRemove's branches
-            Node<T> nodeToRemoveLesser = nodeToRemoved.lesser;
-            if (nodeToRemoveLesser != null && nodeToRemoveLesser != replacementNode) {
-                replacementNode.lesser = nodeToRemoveLesser;
-                nodeToRemoveLesser.parent = replacementNode;
+            val nodeToRemoveLesser = nodeToRemoved.lesser
+            if (nodeToRemoveLesser != null && nodeToRemoveLesser !== replacementNode) {
+                replacementNode.lesser = nodeToRemoveLesser
+                nodeToRemoveLesser.parent = replacementNode
             }
-            Node<T> nodeToRemoveGreater = nodeToRemoved.greater;
-            if (nodeToRemoveGreater != null && nodeToRemoveGreater != replacementNode) {
-                replacementNode.greater = nodeToRemoveGreater;
-                nodeToRemoveGreater.parent = replacementNode;
+            val nodeToRemoveGreater = nodeToRemoved.greater
+            if (nodeToRemoveGreater != null && nodeToRemoveGreater !== replacementNode) {
+                replacementNode.greater = nodeToRemoveGreater
+                nodeToRemoveGreater.parent = replacementNode
             }
 
             // Remove link from replacementNode's parent to replacement
-            Node<T> replacementParent = replacementNode.parent;
-            if (replacementParent != null && replacementParent != nodeToRemoved) {
-                Node<T> replacementParentLesser = replacementParent.lesser;
-                Node<T> replacementParentGreater = replacementParent.greater;
-                if (replacementParentLesser != null && replacementParentLesser == replacementNode) {
-                    replacementParent.lesser = replacementNodeGreater;
-                    if (replacementNodeGreater != null)
-                        replacementNodeGreater.parent = replacementParent;
-                } else if (replacementParentGreater != null && replacementParentGreater == replacementNode) {
-                    replacementParent.greater = replacementNodeLesser;
-                    if (replacementNodeLesser != null)
-                        replacementNodeLesser.parent = replacementParent;
+            val replacementParent = replacementNode.parent
+            if (replacementParent != null && replacementParent !== nodeToRemoved) {
+                val replacementParentLesser = replacementParent.lesser
+                val replacementParentGreater = replacementParent.greater
+                if (replacementParentLesser != null && replacementParentLesser === replacementNode) {
+                    replacementParent.lesser = replacementNodeGreater
+                    replacementNodeGreater?.parent = replacementParent
+                } else if (replacementParentGreater != null && replacementParentGreater === replacementNode) {
+                    replacementParent.greater = replacementNodeLesser
+                    replacementNodeLesser?.parent = replacementParent
                 }
             }
         }
 
         // Update the link in the tree from the nodeToRemoved to the
         // replacementNode
-        Node<T> parent = nodeToRemoved.parent;
+        val parent = nodeToRemoved.parent
         if (parent == null) {
             // Replacing the root node
-            root = replacementNode;
-            if (root != null)
-                root.parent = null;
-        } else if (parent.lesser != null && (parent.lesser.id.compareTo(nodeToRemoved.id) == 0)) {
-            parent.lesser = replacementNode;
-            if (replacementNode != null)
-                replacementNode.parent = parent;
-        } else if (parent.greater != null && (parent.greater.id.compareTo(nodeToRemoved.id) == 0)) {
-            parent.greater = replacementNode;
-            if (replacementNode != null)
-                replacementNode.parent = parent;
+            root = replacementNode
+            root?.parent = null
+        } else if (parent.lesser != null && parent.lesser!!.id!!.compareTo(nodeToRemoved.id!!) == 0) {
+            parent.lesser = replacementNode
+            replacementNode?.parent = parent
+        } else if (parent.greater != null && parent.greater!!.id!!.compareTo(nodeToRemoved.id!!) == 0) {
+            parent.greater = replacementNode
+            replacementNode?.parent = parent
         }
-        size--;
+        size--
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public void clear() {
-        root = null;
-        size = 0;
+    override fun clear() {
+        root = null
+        size = 0
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public int size() {
-        return size;
+    override fun size(): Int {
+        return size
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public boolean validate() {
-        if (root == null) return true;
-        return validateNode(root);
+    override fun validate(): Boolean {
+        val rootNode = root ?: return true
+        return validateNode(rootNode)
     }
 
     /**
@@ -476,26 +457,26 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *            Node<T> to validate in the tree. node should NOT be NULL.
      * @return True if the node is valid.
      */
-    protected boolean validateNode(Node<T> node) {
-        Node<T> lesser = node.lesser;
-        Node<T> greater = node.greater;
+    protected open fun validateNode(node: Node<T>): Boolean {
+        val lesser = node.lesser
+        val greater = node.greater
 
-        boolean lesserCheck = true;
+        var lesserCheck = true
         if (lesser != null && lesser.id != null) {
-            lesserCheck = (lesser.id.compareTo(node.id) <= 0);
+            lesserCheck = lesser.id!!.compareTo(node.id!!) <= 0
             if (lesserCheck)
-                lesserCheck = validateNode(lesser);
+                lesserCheck = validateNode(lesser)
         }
         if (!lesserCheck)
-            return false;
+            return false
 
-        boolean greaterCheck = true;
+        var greaterCheck = true
         if (greater != null && greater.id != null) {
-            greaterCheck = (greater.id.compareTo(node.id) > 0);
+            greaterCheck = greater.id!!.compareTo(node.id!!) > 0
             if (greaterCheck)
-                greaterCheck = validateNode(greater);
+                greaterCheck = validateNode(greater)
         }
-        return greaterCheck;
+        return greaterCheck
     }
 
     /**
@@ -503,35 +484,9 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *
      * @return breath first search sorted array representing the tree.
      */
-    public T[] getBFS() {
-        return getBFS(this.root, this.size);
-    }
-
-    /**
-     * Get an array representation of the tree in breath first search order.
-     *
-     * @param start rooted node
-     * @param size of tree rooted at start
-     *
-     * @return breath first search sorted array representing the tree.
-     */
-    public static <T extends Comparable<T>> T[] getBFS(Node<T> start, int size) {
-        final Queue<Node<T>> queue = new ArrayDeque<Node<T>>();
-        final T[] values = (T[])Array.newInstance(start.id.getClass(), size);
-        int count = 0;
-        Node<T> node = start;
-        while (node != null) {
-            values[count++] = node.id;
-            if (node.lesser != null)
-                queue.add(node.lesser);
-            if (node.greater != null)
-                queue.add(node.greater);
-            if (!queue.isEmpty())
-                node = queue.remove();
-            else
-                node = null;
-        }
-        return values;
+    fun getBFS(): Array<T>? {
+        val rootNode = root ?: return null
+        return getBFS(rootNode, this.size)
     }
 
     /**
@@ -539,8 +494,8 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *
      * @return level order sorted array representing the tree.
      */
-    public T[] getLevelOrder() {
-        return getBFS();
+    fun getLevelOrder(): Array<T>? {
+        return getBFS()
     }
 
     /**
@@ -550,84 +505,9 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *
      * @return order sorted array representing the tree.
      */
-    public T[] getDFS(DepthFirstSearchOrder order) {
-        return getDFS(order, this.root, this.size);
-    }
-
-    /**
-     * Get an array representation of the tree in-order.
-     *
-     * @param order of search
-     * @param start rooted node
-     * @param size of tree rooted at start
-     *
-     * @return order sorted array representing the tree.
-     */
-    public static <T extends Comparable<T>> T[] getDFS(DepthFirstSearchOrder order, Node<T> start, int size) {
-        final Set<Node<T>> added = new HashSet<Node<T>>(2);
-        final T[] nodes = (T[])Array.newInstance(start.id.getClass(), size);
-        int index = 0;
-        Node<T> node = start;
-        while (index < size && node != null) {
-            Node<T> parent = node.parent;
-            Node<T> lesser = (node.lesser != null && !added.contains(node.lesser)) ? node.lesser : null;
-            Node<T> greater = (node.greater != null && !added.contains(node.greater)) ? node.greater : null;
-
-            if (parent == null && lesser == null && greater == null) {
-                if (!added.contains(node))
-                    nodes[index++] = node.id;
-                break;
-            }
-
-            if (order == DepthFirstSearchOrder.inOrder) {
-                if (lesser != null) {
-                    node = lesser;
-                } else {
-                    if (!added.contains(node)) {
-                        nodes[index++] = node.id;
-                        added.add(node);
-                    }
-                    if (greater != null) {
-                        node = greater;
-                    } else if (added.contains(node)) {
-                        node = parent;
-                    } else {
-                        // We should not get here. Stop the loop!
-                        node = null;
-                    }
-                }
-            } else if (order == DepthFirstSearchOrder.preOrder) {
-                if (!added.contains(node)) {
-                    nodes[index++] = node.id;
-                    added.add(node);
-                }
-                if (lesser != null) {
-                    node = lesser;
-                } else if (greater != null) {
-                    node = greater;
-                } else if (added.contains(node)) {
-                    node = parent;
-                } else {
-                    // We should not get here. Stop the loop!
-                    node = null;
-                }
-            } else {
-                // post-Order
-                if (lesser != null) {
-                    node = lesser;
-                } else {
-                    if (greater != null) {
-                        node = greater;
-                    } else {
-                        // lesser==null && greater==null
-                        nodes[index++] = node.id;
-                        added.add(node);
-                        node = parent;
-                    }
-                }
-            }
-        }
-        return nodes;
+    fun getDFS(order: DepthFirstSearchOrder): Array<T>? {
+        val rootNode = root ?: return null
+        return getDFS(order, rootNode, this.size)
     }
 
     /**
@@ -635,58 +515,41 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
      *
      * @return sorted array representing the tree.
      */
-    public T[] getSorted() {
+    fun getSorted(): Array<T>? {
         // Depth first search to traverse the tree in-order sorted.
-        return getDFS(DepthFirstSearchOrder.inOrder);
+        return getDFS(DepthFirstSearchOrder.IN_ORDER)
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public java.util.Collection<T> toCollection() {
-        return (new JavaCompatibleBinarySearchTree<T>(this));
+    override fun toCollection(): Collection<T> {
+        return JavaCompatibleBinarySearchTree(this)
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    public String toString() {
-        return TreePrinter.getString(this);
+    override fun toString(): String {
+        return TreePrinter.getString(this)
     }
 
-    protected static class Node<T extends Comparable<T>> {
-
-        protected T id = null;
-        protected Node<T> parent = null;
-        protected Node<T> lesser = null;
-        protected Node<T> greater = null;
-
-        /**
-         * Node constructor.
-         *
-         * @param parent
-         *            Parent link in tree. parent can be NULL.
-         * @param id
-         *            T representing the node in the tree.
-         */
-        protected Node(Node<T> parent, T id) {
-            this.parent = parent;
-            this.id = id;
-        }
+    open class Node<T : Comparable<T>>(
+        var parent: Node<T>? = null,
+        var id: T? = null
+    ) {
+        var lesser: Node<T>? = null
+        var greater: Node<T>? = null
 
         /**
          * {@inheritDoc}
          */
-        @Override
-        public String toString() {
-            return "id=" + id + " parent=" + ((parent != null) ? parent.id : "NULL") + " lesser="
-                   + ((lesser != null) ? lesser.id : "NULL") + " greater=" + ((greater != null) ? greater.id : "NULL");
+        override fun toString(): String {
+            return "id=$id parent=${parent?.id ?: "NULL"} lesser=${lesser?.id ?: "NULL"} greater=${greater?.id ?: "NULL"}"
         }
     }
 
-    protected static interface INodeCreator<T extends Comparable<T>> {
+    interface INodeCreator<T : Comparable<T>> {
 
         /**
          * Create a new Node with the following parameters.
@@ -697,144 +560,208 @@ public class BinarySearchTree<T extends Comparable<T>> implements ITree<T> {
          *            of this node.
          * @return new Node
          */
-        public Node<T> createNewNode(Node<T> parent, T id);
+        fun createNewNode(parent: Node<T>?, id: T?): Node<T>
     }
 
-    protected static class TreePrinter {
+    protected object TreePrinter {
 
-        public static <T extends Comparable<T>> String getString(BinarySearchTree<T> tree) {
-            if (tree.root == null)
-                return "Tree has no nodes.";
-            return getString(tree.root, "", true);
+        fun <T : Comparable<T>> getString(tree: BinarySearchTree<T>): String {
+            val root = tree.root ?: return "Tree has no nodes."
+            return getString(root, "", true)
         }
 
-        private static <T extends Comparable<T>> String getString(Node<T> node, String prefix, boolean isTail) {
-            StringBuilder builder = new StringBuilder();
+        private fun <T : Comparable<T>> getString(node: Node<T>, prefix: String, isTail: Boolean): String {
+            val builder = StringBuilder()
 
-            if (node.parent != null) {
-                String side = "left";
-                if (node.equals(node.parent.greater))
-                    side = "right";
-                builder.append(prefix + (isTail ? "└── " : "├── ") + "(" + side + ") " + node.id + "\n");
+            val parent = node.parent
+            if (parent != null) {
+                var side = "left"
+                if (node === parent.greater)
+                    side = "right"
+                builder.append("$prefix${if (isTail) "└── " else "├── "}($side) ${node.id}\n")
             } else {
-                builder.append(prefix + (isTail ? "└── " : "├── ") + node.id + "\n");
+                builder.append("$prefix${if (isTail) "└── " else "├── "}${node.id}\n")
             }
-            List<Node<T>> children = null;
-            if (node.lesser != null || node.greater != null) {
-                children = new ArrayList<Node<T>>(2);
-                if (node.lesser != null)
-                    children.add(node.lesser);
-                if (node.greater != null)
-                    children.add(node.greater);
+            
+            val children = mutableListOf<Node<T>>()
+            node.lesser?.let { children.add(it) }
+            node.greater?.let { children.add(it) }
+
+            for (i in 0 until children.size - 1) {
+                builder.append(getString(children[i], prefix + if (isTail) "    " else "│   ", false))
             }
-            if (children != null) {
-                for (int i = 0; i < children.size() - 1; i++) {
-                    builder.append(getString(children.get(i), prefix + (isTail ? "    " : "│   "), false));
-                }
-                if (children.size() >= 1) {
-                    builder.append(getString(children.get(children.size() - 1), prefix + (isTail ? "    " : "│   "), true));
-                }
+            if (children.isNotEmpty()) {
+                builder.append(getString(children.last(), prefix + if (isTail) "    " else "│   ", true))
             }
 
-            return builder.toString();
+            return builder.toString()
         }
     }
 
-    private static class JavaCompatibleBinarySearchTree<T extends Comparable<T>> extends java.util.AbstractCollection<T> {
+    private class JavaCompatibleBinarySearchTree<T : Comparable<T>>(
+        private val tree: BinarySearchTree<T>
+    ) : AbstractMutableCollection<T>() {
 
-        protected BinarySearchTree<T> tree = null;
-
-        public JavaCompatibleBinarySearchTree(BinarySearchTree<T> tree) {
-            this.tree = tree;
+        override fun add(element: T): Boolean {
+            return tree.add(element)
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean add(T value) {
-            return tree.add(value);
+        override fun remove(element: T): Boolean {
+            return tree.remove(element) != null
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean remove(Object value) {
-            return (tree.remove((T)value)!=null);
+        override fun contains(element: T): Boolean {
+            return tree.contains(element)
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean contains(Object value) {
-            return tree.contains((T)value);
+        override val size: Int
+            get() = tree.size()
+
+        override fun iterator(): MutableIterator<T> {
+            return BinarySearchTreeIterator(this.tree)
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int size() {
-            return tree.size();
-        }
+        private class BinarySearchTreeIterator<C : Comparable<C>>(
+            private val tree: BinarySearchTree<C>
+        ) : MutableIterator<C> {
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public java.util.Iterator<T> iterator() {
-            return (new BinarySearchTreeIterator<T>(this.tree));
-        }
+            private var last: Node<C>? = null
+            private val toVisit: Deque<Node<C>> = ArrayDeque()
 
-        private static class BinarySearchTreeIterator<C extends Comparable<C>> implements java.util.Iterator<C> {
-
-            private BinarySearchTree<C> tree = null;
-            private BinarySearchTree.Node<C> last = null;
-            private Deque<BinarySearchTree.Node<C>> toVisit = new ArrayDeque<BinarySearchTree.Node<C>>();
-
-            protected BinarySearchTreeIterator(BinarySearchTree<C> tree) {
-                this.tree = tree;
-                if (tree.root!=null) toVisit.add(tree.root);
+            init {
+                tree.root?.let { toVisit.add(it) }
             }
 
             /**
              * {@inheritDoc}
              */
-            @Override
-            public boolean hasNext() {
-                if (toVisit.size()>0) return true;
-                return false;
+            override fun hasNext(): Boolean {
+                return toVisit.isNotEmpty()
             }
 
             /**
              * {@inheritDoc}
              */
-            @Override
-            public C next() {
-                while (toVisit.size()>0) {
-                    // Go thru the current nodes
-                    BinarySearchTree.Node<C> n = toVisit.pop();
+            override fun next(): C {
+                if (toVisit.isEmpty()) throw NoSuchElementException()
+                val n = toVisit.pop()
+                n.lesser?.let { toVisit.add(it) }
+                n.greater?.let { toVisit.add(it) }
+                last = n
+                return n.id!!
+            }
 
-                    // Add non-null children
-                    if (n.lesser!=null) toVisit.add(n.lesser);
-                    if (n.greater!=null) toVisit.add(n.greater);
+            /**
+             * {@inheritDoc}
+             */
+            override fun remove() {
+                tree.removeNode(last)
+            }
+        }
+    }
 
-                    // Update last node (used in remove method)
-                    last = n;
-                    return n.id;
+    companion object {
+        protected val RANDOM = Random()
+
+        /**
+         * Get an array representation of the tree in breath first search order.
+         *
+         * @param start rooted node
+         * @param size of tree rooted at start
+         *
+         * @return breath first search sorted array representing the tree.
+         */
+        fun <T : Comparable<T>> getBFS(start: Node<T>, size: Int): Array<T> {
+            val queue: Queue<Node<T>> = ArrayDeque()
+            val values = javaArray.newInstance(start.id!!.javaClass, size) as Array<T>
+            var count = 0
+            var node: Node<T>? = start
+            while (node != null) {
+                values[count++] = node.id!!
+                node.lesser?.let { queue.add(it) }
+                node.greater?.let { queue.add(it) }
+                node = if (queue.isNotEmpty()) queue.remove() else null
+            }
+            return values
+        }
+
+        /**
+         * Get an array representation of the tree in-order.
+         *
+         * @param order of search
+         * @param start rooted node
+         * @param size of tree rooted at start
+         *
+         * @return order sorted array representing the tree.
+         */
+        fun <T : Comparable<T>> getDFS(order: DepthFirstSearchOrder, start: Node<T>, size: Int): Array<T> {
+            val added = HashSet<Node<T>>(2)
+            val nodes = javaArray.newInstance(start.id!!.javaClass, size) as Array<T>
+            var index = 0
+            var node: Node<T>? = start
+            while (index < size && node != null) {
+                val parent = node.parent
+                val lesser = if (node.lesser != null && !added.contains(node.lesser)) node.lesser else null
+                val greater = if (node.greater != null && !added.contains(node.greater)) node.greater else null
+
+                if (parent == null && lesser == null && greater == null) {
+                    if (!added.contains(node))
+                        nodes[index++] = node.id!!
+                    break
                 }
-                return null;
-            }
 
-            /**
-             * {@inheritDoc}
-             */
-            @Override
-            public void remove() {
-                tree.removeNode(last);
+                when (order) {
+                    DepthFirstSearchOrder.IN_ORDER -> {
+                        if (lesser != null) {
+                            node = lesser
+                        } else {
+                            if (!added.contains(node)) {
+                                nodes[index++] = node.id!!
+                                added.add(node)
+                            }
+                            if (greater != null) {
+                                node = greater
+                            } else if (added.contains(node)) {
+                                node = parent
+                            } else {
+                                // We should not get here. Stop the loop!
+                                node = null
+                            }
+                        }
+                    }
+                    DepthFirstSearchOrder.PRE_ORDER -> {
+                        if (!added.contains(node)) {
+                            nodes[index++] = node.id!!
+                            added.add(node)
+                        }
+                        if (lesser != null) {
+                            node = lesser
+                        } else if (greater != null) {
+                            node = greater
+                        } else if (added.contains(node)) {
+                            node = parent
+                        } else {
+                            // We should not get here. Stop the loop!
+                            node = null
+                        }
+                    }
+                    DepthFirstSearchOrder.POST_ORDER -> {
+                        if (lesser != null) {
+                            node = lesser
+                        } else {
+                            if (greater != null) {
+                                node = greater
+                            } else {
+                                // lesser==null && greater==null
+                                nodes[index++] = node.id!!
+                                added.add(node)
+                                node = parent
+                            }
+                        }
+                    }
+                }
             }
+            return nodes
         }
     }
 }

@@ -1,36 +1,34 @@
-package com.aricneto.twistytimer.utils;
+package com.aricneto.twistytimer.utils
 
-import android.content.res.Resources;
-import android.os.Environment;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-
-import androidx.annotation.RawRes;
+import android.content.res.Resources
+import android.os.Environment
+import androidx.annotation.RawRes
+import java.io.ByteArrayOutputStream
+import java.io.IOException
 
 /**
  * Created by Ari on 24/03/2016.
  */
-public class StoreUtils {
-    public static boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        return Environment.MEDIA_MOUNTED.equals(state);
+object StoreUtils {
+    @JvmStatic
+    fun isExternalStorageWritable(): Boolean {
+        val state = Environment.getExternalStorageState()
+        return Environment.MEDIA_MOUNTED == state
     }
 
-    public static String getStringFromRaw(Resources res, @RawRes int rawFile) {
-        InputStream inputStream = res.openRawResource(rawFile);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-        int in;
-        try {
-            while ((in = inputStream.read()) != -1)
-                byteArrayOutputStream.write(in);
-            inputStream.close();
-
-            return byteArrayOutputStream.toString();
-        } catch (IOException e) {
-            throw new Error("Could not read from raw file");
+    @JvmStatic
+    fun getStringFromRaw(res: Resources, @RawRes rawFile: Int): String {
+        return try {
+            res.openRawResource(rawFile).use { inputStream ->
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                var inputByte: Int
+                while (inputStream.read().also { inputByte = it } != -1) {
+                    byteArrayOutputStream.write(inputByte)
+                }
+                byteArrayOutputStream.toString()
+            }
+        } catch (e: IOException) {
+            throw Error("Could not read from raw file")
         }
     }
 }
