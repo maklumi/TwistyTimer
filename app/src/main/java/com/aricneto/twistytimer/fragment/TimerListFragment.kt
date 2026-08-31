@@ -73,6 +73,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
 
     // True if you want to search history, false if you only want to search session
     var history: Boolean = false
+    var mode: Int = 0
 
     private var binding: FragmentTimeListBinding? = null
 
@@ -99,7 +100,8 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                 val addTimeDialog = AddTimeDialog.newInstance(
                     currentPuzzle,
                     currentPuzzleCategory,
-                    currentScramble
+                    currentScramble,
+                    mode
                 )
                 val manager = parentFragmentManager
                 addTimeDialog.show(manager, "dialog_add_time")
@@ -122,7 +124,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                         R.string.action_move
                     ) { _: DialogInterface?, _: Int ->
                         TwistyTimer.getDBHandler().moveAllSolvesToHistory(
-                            currentPuzzle!!, currentPuzzleCategory!!
+                            currentPuzzle!!, currentPuzzleCategory!!, mode
                         )
                         broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MOVED_TO_HISTORY)
                     }
@@ -137,7 +139,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     R.string.action_remove
                 ) { _: DialogInterface?, _: Int ->
                     TwistyTimer.getDBHandler().deleteAllFromSession(
-                        currentPuzzle!!, currentPuzzleCategory!!
+                        currentPuzzle!!, currentPuzzleCategory!!, mode
                     )
                     broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
                 }
@@ -170,7 +172,8 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                                         TwistyTimer.getDBHandler()
                                             .getNumArchivedSolves(
                                                 currentPuzzle!!,
-                                                currentPuzzleCategory!!
+                                                currentPuzzleCategory!!,
+                                                mode
                                             )
                                     )
                                 )
@@ -182,6 +185,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                                         TwistyTimer.getDBHandler().unarchiveSolves(
                                             currentPuzzle!!,
                                             currentPuzzleCategory!!,
+                                            mode,
                                             unarchiveEditText.getText().toString().toInt()
                                         )
                                         broadcast(
@@ -323,6 +327,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
             currentPuzzle = requireArguments().getString(PUZZLE)
             currentPuzzleCategory = requireArguments().getString(PUZZLE_SUBTYPE)
             history = requireArguments().getBoolean(HISTORY)
+            mode = requireArguments().getInt(MODE)
         }
         if (savedInstanceState != null) {
             currentScramble = savedInstanceState.getString("scramble")
@@ -373,8 +378,9 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
             }
         }
         viewModel.updateParams(
-            currentPuzzle,
-            currentPuzzleCategory,
+            currentPuzzle ?: "",
+            currentPuzzleCategory ?: "",
+            mode,
             history,
             searchComment,
             orderByKey,
@@ -443,8 +449,9 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
     fun reloadList() {
         if (isAdded && !isDetached) {
             viewModel.updateParams(
-                currentPuzzle,
-                currentPuzzleCategory,
+                currentPuzzle ?: "",
+                currentPuzzleCategory ?: "",
+                mode,
                 history,
                 searchComment,
                 orderByKey,
@@ -562,14 +569,16 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
         private const val PUZZLE = "puzzle"
         private const val PUZZLE_SUBTYPE = "puzzle_type"
         private const val HISTORY = "history"
+        private const val MODE = "mode"
 
         // We have to put a boolean history here because it resets when we change puzzles.
-        fun newInstance(puzzle: String?, puzzleType: String?, history: Boolean): TimerListFragment {
+        fun newInstance(puzzle: String?, puzzleType: String?, mode: Int, history: Boolean): TimerListFragment {
             val fragment = TimerListFragment()
             val args = Bundle()
             args.putString(PUZZLE, puzzle)
             args.putBoolean(HISTORY, history)
             args.putString(PUZZLE_SUBTYPE, puzzleType)
+            args.putInt(MODE, mode)
             fragment.setArguments(args)
             if (DEBUG_ME) Log.d(TAG, "newInstance() -> $fragment")
             return fragment

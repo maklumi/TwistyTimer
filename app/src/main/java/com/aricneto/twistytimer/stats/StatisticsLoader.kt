@@ -18,6 +18,7 @@ import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.getSolve
 import com.aricneto.twistytimer.utils.Wrapper
 import com.aricneto.twistytimer.utils.Wrapper.Companion.wrap
+import kotlinx.coroutines.runBlocking
 
 /**
  * 
@@ -25,37 +26,10 @@ import com.aricneto.twistytimer.utils.Wrapper.Companion.wrap
  * A loader used to populate a [Statistics] object from the database for use in the timer
  * and timer graph (statistics table) fragments. The main timer fragment will manage the listener
  * and notify its subordinate fragments of any updates.
- * 
- * 
- * 
- * It is expected that the fragment will be destroyed and recreated if the puzzle type or subtype
- * are changed. However, the fragment may also be destroyed and recreated for other reasons, such
- * as a configuration change when a user changes the device orientation. If a fragment is using
- * this loader and is destroyed and re-created in the context of the same activity, the loader
- * instance created by the previous fragment may be returned to the new fragment. If the puzzle
- * type and subtype passed to the fragment are the same, `LoaderManager.initLoader` can be
- * called to reuse the old loader and its loaded statistics (i.e., `onCreateLoader` may not
- * be called on the fragment). However, if the puzzle type or subtype have changed,
- * `LoaderManager.restartLoader` must be called to create a new loader with the correct
- * puzzle type and subtype, which forces a call of `onCreateLoader` on the fragment. It is
- * the responsibility of the fragment to call `initLoader` or `restartLoader`. If in
- * doubt, however, just call the latter method always; or the former method, but call
- * `LoaderManager.destroyLoader` from `Fragment.onDetach`.
- * 
- * 
- * 
- * A [Wrapper] is required around the loaded `Statistics` to ensure that the loader
- * manager delivers updates via `onLoadFinished`. The same `Statistics` instance is
- * delivered each time, but the loader manager will only deliver the object if it is different
- * from the previous one delivered. Creating a new `Wrapper` instance around the same
- * `Statistics` instance for each delivery works around that behaviour.
- * 
- * 
- * @author damo
  */
 class StatisticsLoader(
     context: Context, statistics: Statistics,
-    puzzleType: String?, puzzleSubtype: String?
+    puzzleType: String?, puzzleSubtype: String?, mode: Int
 ) : AsyncTaskLoader<Wrapper<Statistics?>?>(context) {
     /**
      * The cached statistics that have been loaded previously. This reference will be reset to
@@ -81,6 +55,8 @@ class StatisticsLoader(
      */
     private val mPuzzleSubtype: String?
 
+    private val mMode: Int
+
     /**
      * The broadcast receiver that is notified of changes to the solve time data.
      */
@@ -89,13 +65,7 @@ class StatisticsLoader(
     /**
      * A broadcast receiver that is notified of changes to the solve time data.
      */
-    private class TimeDataChangedReceiver
-    /**
-     * Creates a new broadcast receiver that will notify a loader of changes to the solve
-     * time data.
-     * 
-     * @param loader The loader to be notified of changes to the solve times.
-     */(
+    private class TimeDataChangedReceiver(
         /**
          * The loader to be notified of changes to the solve time data.
          */
@@ -117,15 +87,6 @@ class StatisticsLoader(
                 } // else updated statistics have been delivered without a full re-load.
 
                 ACTION_TIMES_MODIFIED, ACTION_TIMES_MOVED_TO_HISTORY -> {
-                    // If times were moved to the history or other unspecified modifications were
-                    // made (e.g., deletions, changes to penalties, etc.), then "mStatistics"
-                    // cannot be simply updated. A full re-load will be needed.
-                    //
-                    // NOTE: The default implementation of "onContentChanged" will only force a
-                    // re-load if the loader is currently started (i.e., in use by a live fragment).
-                    // If the loader is not started, a reload will not occur until the next time it
-                    // is restarted (which might never happen). The test of "takeContentChanged()"
-                    // in "onStartLoading" picks up on any such deferred reloading task.
                     if (DEBUG_ME) Log.d(TAG, "  Unknown changes or history toggle. Will reload!")
                     mLoader.onContentChanged()
                 }
@@ -138,16 +99,10 @@ class StatisticsLoader(
      * "average-of-N" calculations to be made.
      * 
      * @param context
-     * The context for this loader. This may be an application context.
      * @param statistics
-     * The `Statistics` instance to be populated from the solve times loaded from the
-     * database. Any existing statistics will be reset before loading new statistics. Must not
-     * be `null`.
      * @param puzzleType
-     * The name of the puzzle type for which statistics are required. See the `TYPE_*`
-     * constants in [PuzzleUtils].
      * @param puzzleSubtype
-     * The name of the puzzle subtype.
+     * @param mode
      */
     init {
         if (DEBUG_ME) Log.d(TAG, "Created new Loader for Statistics!")
@@ -155,9 +110,9 @@ class StatisticsLoader(
         mStatistics = statistics
         mPuzzleType = puzzleType
         mPuzzleSubtype = puzzleSubtype
+        mMode = mode
 
-        mStatistics.reset() // NPE if null is OK, as it is documented above.
-        // Wrapper remains empty until the first load is attempted.
+        mStatistics.reset()
         mLoadedData = wrap<Statistics?>(null)
     }
 
@@ -182,7 +137,7 @@ class StatisticsLoader(
             // empty), so try a quick update.
             val solve = getSolve(intent)
 
-            if (solve != null) {
+            if (solve != null && solve.mode == mMode) {
                 if (solve.penalty == PuzzleUtils.PENALTY_DNF) {
                     mStatistics.addDNF(true)
                 } else {
@@ -272,7 +227,9 @@ class StatisticsLoader(
 
         // TODO: Add support for cancellation: add a call-back to "populateStatistics", so it can
         // poll the cancellation status as it iterates over the solves it reads from the database.
-        TwistyTimer.getDBHandler().populateStatistics(mPuzzleType!!, mPuzzleSubtype!!, mStatistics)
+        runBlocking<Unit> {
+            TwistyTimer.getSolveRepository().populateStatistics(mPuzzleType!!, mPuzzleSubtype!!, mMode, mStatistics)
+        }
 
         if (DEBUG_ME) {
             Log.d(

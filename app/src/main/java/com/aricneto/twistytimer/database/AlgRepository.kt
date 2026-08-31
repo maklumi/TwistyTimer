@@ -1,48 +1,73 @@
 package com.aricneto.twistytimer.database
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import com.aricneto.twistytimer.items.Algorithm
-import com.aricneto.twistytimer.utils.TTIntent
-import kotlinx.coroutines.channels.awaitClose
+import com.aricneto.twistytimer.items.Algorithm as DomainAlgorithm
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
 
-class AlgRepository(private val dbHandler: DatabaseHandler) {
+class AlgRepository(private val queries: AlgorithmQueries) {
 
-    fun getAlgorithms(subset: String): Flow<List<Algorithm>> = callbackFlow {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                trySend(fetchAlgorithms(subset))
+    fun getAlgorithms(subset: String): Flow<List<DomainAlgorithm>> =
+        queries.selectBySubset(subset)
+            .asFlow()
+            .mapToList(Dispatchers.IO)
+            .map { list ->
+                list.map { sqAlg ->
+                    DomainAlgorithm(
+                        id = sqAlg._id,
+                        subset = sqAlg.subset ?: "",
+                        name = sqAlg.name ?: "",
+                        state = sqAlg.state ?: "",
+                        algs = sqAlg.algs ?: "",
+                        progress = (sqAlg.progress ?: 0).toInt()
+                    )
+                }
             }
-        }
 
-        TTIntent.registerReceiver(receiver, TTIntent.CATEGORY_ALG_DATA_CHANGES)
-        
-        // Initial fetch
-        trySend(fetchAlgorithms(subset))
-
-        awaitClose {
-            TTIntent.unregisterReceiver(receiver)
+    suspend fun getAllAlgorithms() = withContext(Dispatchers.IO) {
+        queries.selectAll().executeAsList().map { sqAlg ->
+            DomainAlgorithm(
+                id = sqAlg._id,
+                subset = sqAlg.subset ?: "",
+                name = sqAlg.name ?: "",
+                state = sqAlg.state ?: "",
+                algs = sqAlg.algs ?: "",
+                progress = (sqAlg.progress ?: 0).toInt()
+            )
         }
     }
 
-    private fun fetchAlgorithms(subset: String): List<Algorithm> {
-        val algs = mutableListOf<Algorithm>()
-        val cursor = dbHandler.readableDatabase.query(
-            DatabaseHandler.TABLE_ALGS, null,
-            DatabaseHandler.KEY_SUBSET + "=?",
-            arrayOf(subset), null, null, null
-        )
+    suspend fun insertAlgorithm(
+        subset: String,
+        name: String,
+        state: String,
+        algs: String,
+        progress: Long
+    ) = withContext(Dispatchers.IO) {
+        queries.insertAlg(subset, name, state, algs, progress)
+    }
 
-        cursor.use {
-            if (it.moveToFirst()) {
-                do {
-                    algs.add(Algorithm.fromCursor(it))
-                } while (it.moveToNext())
-            }
+    suspend fun updateAlgorithmAlg(id: Long, algs: String) = withContext(Dispatchers.IO) {
+        queries.updateAlg(algs, id)
+    }
+
+    suspend fun updateAlgorithmProgress(id: Long, progress: Long) = withContext(Dispatchers.IO) {
+        queries.updateProgress(progress, id)
+    }
+    
+    suspend fun getAlgorithmById(id: Long) = withContext(Dispatchers.IO) {
+        queries.selectById(id).executeAsOneOrNull()?.let { sqAlg ->
+            DomainAlgorithm(
+                id = sqAlg._id,
+                subset = sqAlg.subset ?: "",
+                name = sqAlg.name ?: "",
+                state = sqAlg.state ?: "",
+                algs = sqAlg.algs ?: "",
+                progress = (sqAlg.progress ?: 0).toInt()
+            )
         }
-        return algs
     }
 }

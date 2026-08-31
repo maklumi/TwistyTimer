@@ -57,6 +57,7 @@ import java.util.Locale
 class TimerGraphFragment : Fragment(), StatisticsObserver {
     private var currentPuzzle: String? = null
     private var currentPuzzleSubtype: String? = null
+    private var mode: Int = 0
     private var history = false
 
     private var binding: FragmentTimerGraphBinding? = null
@@ -105,6 +106,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
             currentPuzzle = requireArguments().getString(PUZZLE)
             currentPuzzleSubtype = requireArguments().getString(PUZZLE_SUBTYPE)
             history = requireArguments().getBoolean(HISTORY)
+            mode = requireArguments().getInt(MODE)
         }
     }
 
@@ -308,7 +310,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
                     // which would be likely to cause memory leaks and crashes.
                     return ChartStatisticsLoader(
                         requireContext(), ChartStyle(requireActivity()), currentPuzzle,
-                        currentPuzzleSubtype, !history
+                        currentPuzzleSubtype, !history, mode
                     )
                 }
 
@@ -806,6 +808,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         private const val PUZZLE = "puzzle"
         private const val PUZZLE_SUBTYPE = "puzzle_type"
         private const val HISTORY = "history"
+        private const val MODE = "mode"
 
         private const val TAB_FAVORITE = 0
         private const val TAB_AVERAGE = 1
@@ -815,6 +818,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         fun newInstance(
             puzzle: String?,
             puzzleType: String?,
+            mode: Int,
             history: Boolean
         ): TimerGraphFragment {
             val fragment = TimerGraphFragment()
@@ -822,6 +826,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
             args.putString(PUZZLE, puzzle)
             args.putBoolean(HISTORY, history)
             args.putString(PUZZLE_SUBTYPE, puzzleType)
+            args.putInt(MODE, mode)
             fragment.setArguments(args)
             if (DEBUG_ME) Log.d(TAG, "newInstance() -> $fragment")
             return fragment

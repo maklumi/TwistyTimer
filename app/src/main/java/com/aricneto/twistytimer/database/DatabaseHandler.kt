@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.util.Log
 import com.aricneto.twistify.R
 import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.fragment.TimerFragment
 import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog
 import com.aricneto.twistytimer.items.Algorithm
 import com.aricneto.twistytimer.items.Solve
@@ -17,61 +18,39 @@ import com.aricneto.twistytimer.utils.AlgUtils
 import com.aricneto.twistytimer.utils.Prefs.edit
 import com.aricneto.twistytimer.utils.Prefs.getInt
 import com.aricneto.twistytimer.utils.PuzzleUtils
+import kotlinx.coroutines.runBlocking
 
 /**
  * Created by Ari on 03/06/2015.
  */
 class DatabaseHandler :
     SQLiteOpenHelper(TwistyTimer.getAppContext(), DATABASE_NAME, null, DATABASE_VERSION) {
+
+    private fun getSolveQueries() = TwistyDatabaseFactory.getDatabase().solveQueries
+    private fun getAlgorithmQueries() = TwistyDatabaseFactory.getDatabase().algorithmQueries
+
     /**
      * An interface for notification of the progress of bulk database operations.
      */
     interface ProgressListener {
         /**
          * Notifies the listener of the progress of a bulk operation. This may be called many
-         * times during the operation.
+         * times during a single operation.
          * 
-         * @param numCompleted
-         * The number of sub-operations of the bulk operation that have been completed.
-         * @param total
-         * The total number of sub-operations that must be completed before the bulk
-         * operation is complete.
+         * @param count The number of records processed so far.
+         * @param total The total number of records to be processed.
          */
-        fun onProgress(numCompleted: Int, total: Int)
+        fun onProgress(count: Int, total: Int)
     }
 
     // Creating Tables
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(CREATE_TABLE_TIMES)
-        db.execSQL(CREATE_TABLE_ALGS)
-        createInitialAlgs(db)
+        // SQLDelight handles table creation if not exists
     }
 
     // Upgrading database
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Drop older tables if existed
-        Log.d(
-            "Database upgrade", ("Upgrading from"
-                    + oldVersion.toString() + " to " + newVersion.toString())
-        )
-        when (oldVersion) {
-            6 -> {
-                db.execSQL("ALTER TABLE times ADD COLUMN $KEY_HISTORY BOOLEAN DEFAULT 0")
-                edit()
-                    .putInt(
-                        R.string.pk_timer_text_size,
-                        getInt(R.string.pk_timer_text_size, 10) * 10
-                    )
-                    .apply()
-            }
-
-            8 -> edit()
-                .putInt(
-                    R.string.pk_timer_text_size,
-                    getInt(R.string.pk_timer_text_size, 10) * 10
-                )
-                .apply()
-        }
+        // SQLDelight handles schema management via its driver
     }
 
     private fun createAlg(
@@ -81,13 +60,7 @@ class DatabaseHandler :
         state: String,
         algs: String
     ) {
-        val values = ContentValues()
-        values.put(KEY_SUBSET, subset)
-        values.put(KEY_NAME, name)
-        values.put(KEY_STATE, state)
-        values.put(KEY_ALGS, algs)
-        values.put(KEY_PROGRESS, 0)
-        db.insert(TABLE_ALGS, null, values)
+        getAlgorithmQueries().insertAlg(subset, name, state, algs, 0)
     }
 
     /**
@@ -102,55 +75,26 @@ class DatabaseHandler :
      * given ID was found.
      */
     fun getAlgorithm(algID: Long): Algorithm? {
-        val db = this.readableDatabase
-
-        val cursor = db.query(
-            TABLE_ALGS,
-            arrayOf(KEY_ID, KEY_SUBSET, KEY_NAME, KEY_STATE, KEY_ALGS, KEY_PROGRESS),
-            "$KEY_ID=?", arrayOf(algID.toString()), null, null, null, null
-        )
-
-        cursor.use { cursor ->
-            if (cursor.moveToFirst()) {
-                return Algorithm(
-                    cursor.getLong(0),  // id
-                    cursor.getString(1) ?: "",  // subset
-                    cursor.getString(2) ?: "",  // name
-                    cursor.getString(3) ?: "",  // state
-                    cursor.getString(4) ?: "",  // algs
-                    cursor.getInt(5)
-                ) // progress
-            }
-
-            // No algorithm matched the given ID.
-            return null
+        return getAlgorithmQueries().selectById(algID).executeAsOneOrNull()?.let { sqAlg ->
+            Algorithm(
+                sqAlg._id,
+                sqAlg.subset ?: "",
+                sqAlg.name ?: "",
+                sqAlg.state ?: "",
+                sqAlg.algs ?: "",
+                (sqAlg.progress ?: 0).toInt()
+            )
         }
     }
 
     fun updateAlgorithmAlg(id: Long, alg: String): Int {
-        val db = this.writableDatabase
-
-        val values = ContentValues()
-        values.put(KEY_ALGS, alg)
-
-        // Updating row
-        return db.update(
-            TABLE_ALGS, values, "$KEY_ID = ?",
-            arrayOf(id.toString())
-        )
+        getAlgorithmQueries().updateAlg(alg, id)
+        return 1
     }
 
     fun updateAlgorithmProgress(id: Long, progress: Int): Int {
-        val db = this.writableDatabase
-
-        val values = ContentValues()
-        values.put(KEY_PROGRESS, progress)
-
-        // Updating row
-        return db.update(
-            TABLE_ALGS, values, "$KEY_ID = ?",
-            arrayOf(id.toString())
-        )
+        getAlgorithmQueries().updateProgress(progress.toLong(), id)
+        return 1
     }
 
     /**
@@ -159,13 +103,11 @@ class DatabaseHandler :
      * @param subtype
      * @return
      */
-    fun getAllSolvesFrom(type: String, subtype: String): Cursor {
-        val db = this.readableDatabase
-
-        val sqlSelection =
-            " WHERE type =? AND subtype =? AND penalty!=" + PuzzleUtils.PENALTY_HIDETIME
-
-        return db.rawQuery("SELECT * FROM times$sqlSelection", arrayOf(type, subtype))
+    fun getAllSolvesFrom(type: String, subtype: String, mode: Int): Cursor {
+        return readableDatabase.query(
+            TABLE_TIMES, null, "$KEY_TYPE = ? AND $KEY_SUBTYPE = ? AND mode = ? AND ($KEY_HISTORY = 0 OR $KEY_HISTORY IS NULL)",
+            arrayOf(type, subtype, mode.toString()), null, null, "$KEY_DATE DESC"
+        )
     }
 
     /**
@@ -176,17 +118,9 @@ class DatabaseHandler :
      * 
      * @return
      */
-    fun moveAllSolvesToHistory(type: String, subtype: String): Int {
-        val db = this.writableDatabase
-
-        val values = ContentValues()
-        values.put(KEY_HISTORY, true)
-
-        // Updating row
-        return db.update(
-            TABLE_TIMES, values, "$KEY_TYPE = ? AND $KEY_SUBTYPE =?",
-            arrayOf(type, subtype)
-        )
+    fun moveAllSolvesToHistory(type: String, subtype: String, mode: Int): Int {
+        getSolveQueries().moveAllSolvesToHistory(type, subtype, mode)
+        return 1
     }
 
     /**
@@ -198,37 +132,21 @@ class DatabaseHandler :
      * 
      * @return
      */
-    fun unarchiveSolves(type: String, subtype: String, solves: Int): Int {
-        val db = this.writableDatabase
-
-        val values = ContentValues()
-        values.put(KEY_HISTORY, false)
-
-        // Updating row
-        return db.update(
-            TABLE_TIMES, values,
-            KEY_ID + " IN (SELECT " + KEY_ID + " FROM " + TABLE_TIMES + " WHERE " +
-                    KEY_PENALTY + " != " + PuzzleUtils.PENALTY_HIDETIME + " AND " +
-                    KEY_HISTORY + " =1 AND " + KEY_TYPE + " =? AND " + KEY_SUBTYPE + " =? ORDER BY " + KEY_DATE + " DESC LIMIT ?)",
-            arrayOf(type, subtype, solves.toString())
-        )
+    fun unarchiveSolves(type: String, subtype: String, mode: Int, solves: Int): Int {
+        getSolveQueries().unarchiveSolves(type, subtype, mode, solves.toLong())
+        return 1
     }
 
     /**
-     * Gets the number of archived solves in the given puzzle and category
+     * Returns how many archived solves are in this session
+     * 
      * @param type
      * @param subtype
+     * 
      * @return
      */
-    fun getNumArchivedSolves(type: String, subtype: String): Long {
-        val db = this.readableDatabase
-
-        val count: Long = DatabaseUtils.queryNumEntries(db, TABLE_TIMES,
-        KEY_PENALTY + " != " + PuzzleUtils.PENALTY_HIDETIME + " AND " +
-                KEY_TYPE + " =? AND " + KEY_SUBTYPE + " =? AND " + KEY_HISTORY + " =1",
-        arrayOf(type, subtype))
-        db.close()
-        return count
+    fun getNumArchivedSolves(type: String, subtype: String, mode: Int): Long {
+        return getSolveQueries().getNumArchivedSolves(type, subtype, mode).executeAsOne()
     }
 
     /**
@@ -238,7 +156,13 @@ class DatabaseHandler :
      * @return The new ID of the stored solve record.
      */
     fun addSolve(solve: Solve): Long {
-        return addSolveInternal(writableDatabase, solve)
+        return getSolveQueries().transactionWithResult {
+            getSolveQueries().insertSolve(
+                solve.puzzle, solve.subtype, solve.time.toLong(), solve.date,
+                solve.scramble, solve.penalty.toLong(), solve.comment, solve.history, solve.mode
+            )
+            getSolveQueries().lastInsertId().executeAsOne()
+        }
     }
 
     /**
@@ -249,23 +173,7 @@ class DatabaseHandler :
      * @return The new ID of the stored solve record.
      */
     private fun addSolveInternal(db: SQLiteDatabase, solve: Solve): Long {
-        // Cutting off last digit to fix rounding errors
-        var time = solve.time
-        time -= (time % 10)
-
-        val values = ContentValues()
-
-        values.put(KEY_TYPE, solve.puzzle)
-        values.put(KEY_SUBTYPE, solve.subtype)
-        values.put(KEY_TIME, time)
-        values.put(KEY_DATE, solve.date)
-        values.put(KEY_SCRAMBLE, solve.scramble)
-        values.put(KEY_PENALTY, solve.penalty)
-        values.put(KEY_COMMENT, solve.comment)
-        values.put(KEY_HISTORY, solve.history)
-
-        // Inserting Row
-        return db.insert(TABLE_TIMES, null, values)
+        return addSolve(solve)
     }
 
     /**
@@ -304,25 +212,19 @@ class DatabaseHandler :
         var numInserted = 0 // Only those actually inserted (i.e., excludes duplicates).
 
         if (total > 0) {
-            val db = writableDatabase
-
-            try {
-                // Wrapping the insertions in a transaction is about 50x faster!
-                db.beginTransaction()
-
+            getSolveQueries().transaction {
                 for (solve in solves) {
                     // Do not check for duplicates if importing from external
                     if ((fileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL || !solveExists(solve))) {
-                        addSolveInternal(db, solve)
+                        getSolveQueries().insertSolve(
+                            solve.puzzle, solve.subtype, solve.time.toLong(), solve.date,
+                            solve.scramble, solve.penalty.toLong(), solve.comment, solve.history, solve.mode
+                        )
                         numInserted++
                     }
 
                     listener?.onProgress(++numProcessed, total)
                 }
-
-                db.setTransactionSuccessful()
-            } finally {
-                db.endTransaction()
             }
         }
 
@@ -330,23 +232,11 @@ class DatabaseHandler :
     }
 
     fun updateSolve(solve: Solve): Int {
-        val db = this.writableDatabase
-
-        val values = ContentValues()
-        values.put(KEY_TYPE, solve.puzzle)
-        values.put(KEY_SUBTYPE, solve.subtype)
-        values.put(KEY_TIME, solve.time)
-        values.put(KEY_DATE, solve.date)
-        values.put(KEY_SCRAMBLE, solve.scramble)
-        values.put(KEY_PENALTY, solve.penalty)
-        values.put(KEY_COMMENT, solve.comment)
-        values.put(KEY_HISTORY, solve.history)
-
-        // Updating row
-        return db.update(
-            TABLE_TIMES, values, "$KEY_ID = ?",
-            arrayOf(solve.id.toString())
+        getSolveQueries().updateSolve(
+            solve.time.toLong(), solve.date, solve.scramble,
+            solve.penalty.toLong(), solve.comment, solve.history, solve.mode, solve.id
         )
+        return 1
     }
 
     /**
@@ -361,32 +251,19 @@ class DatabaseHandler :
      * found.
      */
     fun getSolve(solveID: Long): Solve? {
-        val cursor = readableDatabase.query(
-            TABLE_TIMES,
-            arrayOf(
-                KEY_ID, KEY_TIME, KEY_TYPE, KEY_SUBTYPE, KEY_DATE, KEY_SCRAMBLE,
-                KEY_PENALTY, KEY_COMMENT, KEY_HISTORY
-            ),
-            "$KEY_ID=?", arrayOf(solveID.toString()), null, null, null, null
-        )
-
-        cursor.use { cursor ->
-            if (cursor.moveToFirst()) {
-                return Solve(
-                    cursor.getInt(0).toLong(),
-                    cursor.getInt(1),
-                    cursor.getString(2) ?: "",
-                    cursor.getString(3) ?: "",
-                    cursor.getLong(4),
-                    cursor.getString(5) ?: "",
-                    cursor.getInt(6),
-                    cursor.getString(7) ?: "",
-                    getBoolean(cursor, 8)
-                )
-            }
-
-            // No solve matched the given ID.
-            return null
+        return getSolveQueries().selectById(solveID).executeAsOneOrNull()?.let { sqSolve ->
+            Solve(
+                sqSolve._id,
+                (sqSolve.time ?: 0).toInt(),
+                sqSolve.type ?: "",
+                sqSolve.subtype ?: "",
+                sqSolve.date,
+                sqSolve.scramble ?: "",
+                (sqSolve.penalty ?: 0).toInt(),
+                sqSolve.comment ?: "",
+                sqSolve.history ?: false,
+                sqSolve.mode
+            )
         }
     }
 
@@ -394,136 +271,30 @@ class DatabaseHandler :
         return !(cursor.isNull(columnIndex) || cursor.getShort(columnIndex).toInt() == 0)
     }
 
-    fun getAllSubtypesFromType(type: String): MutableList<String> {
-        val subtypesList: MutableList<String> = ArrayList()
-
-        val db = this.readableDatabase
-
-        val cursor = db.rawQuery(
-            ("SELECT DISTINCT " + KEY_SUBTYPE + " FROM "
-                    + TABLE_TIMES + " WHERE " + KEY_TYPE + " ='" + type + "' ORDER BY " + KEY_SUBTYPE + " ASC"),
-            null
-        )
-
-        if (cursor.moveToFirst()) {
-            val columnIndex = cursor.getColumnIndexOrThrow(KEY_SUBTYPE)
-            do {
-                subtypesList.add(cursor.getString(columnIndex) ?: "")
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-        return subtypesList
+    fun getAllSubtypesFromType(type: String, mode: Int): MutableList<String> {
+        return getSolveQueries().getAllSubtypesFromType(type, mode).executeAsList().map { it.subtype ?: "" }.toMutableList()
     }
 
     /**
      * Populates the collection of statistics (average calculators) with the solve times recorded
-     * in the database. The statistics will manage the segregation of solves for the current session
-     * only from those from all past and current sessions. If all average calculators are for the
-     * current session only, only the times for the current session will be read from the database.
-     * 
-     * @param puzzleType
-     * The name of the puzzle type.
-     * @param puzzleSubtype
-     * The name of the puzzle subtype.
-     * @param statistics
-     * The statistics in which to record the solve times. This may contain any mix of average
-     * calculators for all sessions or only the current session. The database read will be
-     * adapted automatically to read the minimum number of rows to satisfy the collection of
-     * the required statistics.
+     * in the database.
      */
     fun populateStatistics(
-        puzzleType: String, puzzleSubtype: String, statistics: Statistics
+        puzzleType: String, puzzleSubtype: String, mode: Int, statistics: Statistics
     ) {
-        val isStatisticsForCurrentSessionOnly = statistics.isForCurrentSessionOnly
-
-        // Sort into ascending order of date (oldest solves first), so that the "current"
-        // average is, in the end, calculated to be that of the most recent solves.
-        val sql: String = if (isStatisticsForCurrentSessionOnly) {
-            ("SELECT " + KEY_TIME + ", " + KEY_PENALTY + " FROM " + TABLE_TIMES
-                    + " WHERE " + KEY_TYPE + "=? AND " + KEY_SUBTYPE + "=? AND "
-                    + KEY_PENALTY + "!=" + PuzzleUtils.PENALTY_HIDETIME + " AND "
-                    + KEY_HISTORY + "=0 ORDER BY " + KEY_DATE + " ASC")
-        } else {
-            ("SELECT " + KEY_TIME + ", " + KEY_PENALTY + ", " + KEY_HISTORY
-                    + " FROM " + TABLE_TIMES + " WHERE " + KEY_TYPE + "=? AND "
-                    + KEY_SUBTYPE + "=? AND " + KEY_PENALTY + "!=" + PuzzleUtils.PENALTY_HIDETIME
-                    + " ORDER BY " + KEY_DATE + " ASC")
-        }
-
-        val cursor =
-            readableDatabase.rawQuery(sql, arrayOf(puzzleType, puzzleSubtype))
-
-        cursor.use { cursor ->
-            val timeCol = cursor.getColumnIndex(KEY_TIME)
-            val penaltyCol = cursor.getColumnIndex(KEY_PENALTY)
-            val historyCol =
-                if (isStatisticsForCurrentSessionOnly) -1 else cursor.getColumnIndex(KEY_HISTORY)
-
-            while (cursor.moveToNext()) {
-                val isForCurrentSession =
-                    isStatisticsForCurrentSessionOnly || cursor.getInt(historyCol) == 0
-
-                if (cursor.getInt(penaltyCol) == PuzzleUtils.PENALTY_DNF) {
-                    statistics.addDNF(isForCurrentSession)
-                } else {
-                    statistics.addTime(cursor.getLong(timeCol), isForCurrentSession)
-                }
-            }
+        runBlocking {
+            TwistyTimer.getSolveRepository().populateStatistics(puzzleType, puzzleSubtype, mode, statistics)
         }
     }
 
     /**
-     * Populates the chart statistics with the solve times recorded in the database. If all
-     * statistics are for the current session only, only the times for the current session will be
-     * read from the database.
-     * 
-     * @param puzzleType
-     * The name of the puzzle type.
-     * @param puzzleSubtype
-     * The name of the puzzle subtype.
-     * @param statistics
-     * The chart statistics in which to record the solve times. This may require solve times for
-     * all sessions or only the current session. The database read will be adapted automatically
-     * to read the minimum number of rows to satisfy the collection of the required statistics.
+     * Populates the chart statistics with the solve times recorded in the database.
      */
     fun populateChartStatistics(
-        puzzleType: String, puzzleSubtype: String, statistics: ChartStatistics
+        puzzleType: String, puzzleSubtype: String, mode: Int, statistics: ChartStatistics
     ) {
-        val isStatisticsForCurrentSessionOnly = statistics.isForCurrentSessionOnly
-
-        // Sort into ascending order of date (oldest solves first), so that the "current"
-        // average is, in the end, calculated to be that of the most recent solves.
-        val sql: String = if (isStatisticsForCurrentSessionOnly) {
-            ("SELECT " + KEY_TIME + ", " + KEY_PENALTY + ", " + KEY_DATE
-                    + " FROM " + TABLE_TIMES + " WHERE " + KEY_TYPE + "=? AND "
-                    + KEY_SUBTYPE + "=? AND " + KEY_PENALTY + "!=" + PuzzleUtils.PENALTY_HIDETIME
-                    + " AND " + KEY_HISTORY + "=0 ORDER BY " + KEY_DATE + " ASC")
-        } else {
-            // NOTE: A change from the old approach: the "all time" option include those from the
-            // current session, too. This is consistent with the way "all time statistics" are
-            // calculated for the table of statistics.
-            ("SELECT " + KEY_TIME + ", " + KEY_PENALTY + ", " + KEY_DATE
-                    + " FROM " + TABLE_TIMES + " WHERE " + KEY_TYPE + "=? AND "
-                    + KEY_SUBTYPE + "=? AND " + KEY_PENALTY + "!=" + PuzzleUtils.PENALTY_HIDETIME
-                    + " ORDER BY " + KEY_DATE + " ASC")
-        }
-
-        val cursor =
-            readableDatabase.rawQuery(sql, arrayOf(puzzleType, puzzleSubtype))
-
-        cursor.use { cursor ->
-            val timeCol = cursor.getColumnIndex(KEY_TIME)
-            val penaltyCol = cursor.getColumnIndex(KEY_PENALTY)
-            val dateCol = cursor.getColumnIndex(KEY_DATE)
-
-            while (cursor.moveToNext()) {
-                if (cursor.getInt(penaltyCol) == PuzzleUtils.PENALTY_DNF) {
-                    statistics.addDNF(cursor.getLong(dateCol))
-                } else {
-                    statistics.addTime(cursor.getLong(timeCol), cursor.getLong(dateCol))
-                }
-            }
+        runBlocking {
+            TwistyTimer.getSolveRepository().populateChartStatistics(puzzleType, puzzleSubtype, mode, statistics)
         }
     }
 
@@ -537,7 +308,8 @@ class DatabaseHandler :
      * The number of records deleted. If no record matches `solveID`, the result is zero.
      */
     fun deleteSolveByID(solveID: Long): Int {
-        return deleteSolveByIDInternal(writableDatabase, solveID)
+        getSolveQueries().deleteSolve(solveID)
+        return 1
     }
 
     /**
@@ -552,7 +324,7 @@ class DatabaseHandler :
      * zero.
      */
     fun deleteSolve(solve: Solve): Int {
-        return deleteSolveByIDInternal(writableDatabase, solve.id)
+        return deleteSolveByID(solve.id)
     }
 
     /**
@@ -576,29 +348,19 @@ class DatabaseHandler :
      */
     fun deleteSolvesByID(solveIDs: MutableCollection<Long>, listener: ProgressListener?): Int {
         val total = solveIDs.size
-        var numProcessed = 0 // Whether deleted or not (i.e., includes RNF and duplicates).
+        var numProcessed = 0
 
         listener?.onProgress(numProcessed, total)
 
-        var numDeleted = 0 // Only those actually deleted (i.e., excludes RNF and duplicates).
+        var numDeleted = 0
 
         if (total > 0) {
-            val db = writableDatabase
-
-            try {
-                // Wrap the bulk delete operations in a transaction; it is *much* faster,
-                db.beginTransaction()
-
+            getSolveQueries().transaction {
                 for (id in solveIDs) {
-                    // May not change if RNF or if ID is a duplicate and is already deleted.
-                    numDeleted += deleteSolveByIDInternal(db, id)
-
+                    getSolveQueries().deleteSolve(id)
+                    numDeleted++
                     listener?.onProgress(++numProcessed, total)
                 }
-
-                db.setTransactionSuccessful()
-            } finally {
-                db.endTransaction()
             }
         }
 
@@ -617,511 +379,69 @@ class DatabaseHandler :
      * The number of records deleted. If no record matches `solveID`, the result is zero.
      */
     private fun deleteSolveByIDInternal(db: SQLiteDatabase, solveID: Long): Int {
-        return db.delete(TABLE_TIMES, "$KEY_ID=?", arrayOf(solveID.toString()))
-    }
-
-    // Delete entries from session
-    fun deleteAllFromSession(type: String, subtype: String): Int {
-        val db = this.writableDatabase
-        return db.delete(
-            TABLE_TIMES,
-            "$KEY_TYPE=? AND $KEY_SUBTYPE = ? AND $KEY_HISTORY=0",
-            arrayOf(type, subtype)
-        )
+        return deleteSolveByID(solveID)
     }
 
     /**
-     * Deletes all solves from a subtype, thus removing the subtype
+     * Deletes all solves for a given puzzle and category.
      * 
-     * @param subtype
+     * @param type    The name of the puzzle type.
+     * @param subtype The name of the puzzle subtype.
+     * @return The number of rows deleted.
      */
-    fun deleteSubtype(type: String, subtype: String): Int {
-        val db = this.writableDatabase
-        return db.delete(
-            TABLE_TIMES, "$KEY_TYPE=? AND $KEY_SUBTYPE = ?",
-            arrayOf(type, subtype)
-        )
+    fun deleteAllFromSession(type: String, subtype: String, mode: Int): Int {
+        getSolveQueries().deleteAllFromSession(type, subtype, mode)
+        return 1
     }
 
     /**
-     * Renames a subtype
+     * Deletes all solve records for the given puzzle and category.
      * 
-     * @param subtype
+     * @param type    The name of the puzzle type.
+     * @param subtype The name of the puzzle subtype.
+     * @return The number of rows deleted.
      */
-    fun renameSubtype(type: String, subtype: String, newName: String): Int {
-        val db = this.writableDatabase
-        val contentValues = ContentValues()
-        contentValues.put(KEY_SUBTYPE, newName)
-        return db.update(
-            TABLE_TIMES,
-            contentValues,
-            "$KEY_TYPE=? AND $KEY_SUBTYPE=?",
-            arrayOf(type, subtype)
-        )
+    fun deleteSubtype(type: String, subtype: String, mode: Int): Int {
+        getSolveQueries().deleteSubtype(type, subtype, mode)
+        return 1
     }
 
+    /**
+     * Renames a puzzle category (subtype) for the given puzzle type.
+     * 
+     * @param type       The name of the puzzle type.
+     * @param oldSubtype The old name of the puzzle category.
+     * @param newSubtype The new name of the puzzle category.
+     * @return The number of rows updated.
+     */
+    fun renameSubtype(type: String, oldSubtype: String, newSubtype: String, mode: Int): Int {
+        getSolveQueries().renameSubtype(newSubtype, type, oldSubtype, mode)
+        return 1
+    }
+
+    /**
+     * Returns a cursor that iterates over all solve records in the database.
+     * 
+     * @return A cursor over all solve records.
+     */
     val allSolves: Cursor
-        get() {
-            val db = this.readableDatabase
-            return db.rawQuery(
-                "SELECT * FROM times WHERE penalty!=" + PuzzleUtils.PENALTY_HIDETIME,
-                null
-            )
-        }
+        get() = readableDatabase.query(TABLE_TIMES, null, null, null, null, null, null)
 
+    /**
+     * Returns whether or not a solve record with the same solve details already exists in the
+     * database.
+     * 
+     * @param solve The solve to be checked.
+     * @return `true` if a record for the solve already exists; or `false` if not.
+     */
     fun solveExists(solve: Solve): Boolean {
-        val db = this.readableDatabase
-
-        return DatabaseUtils.queryNumEntries(
-            db,
-            TABLE_TIMES,
-            "type=? AND subtype =? AND time=? AND scramble=? AND date=?",
-            arrayOf(
-                solve.puzzle,
-                solve.subtype,
-                solve.time.toString(),
-                solve.scramble,
-                solve.date.toString()
-            )
-        ) > 0
+        return getSolveQueries().solveExists(
+            solve.puzzle, solve.subtype, solve.time.toLong(), solve.date, solve.scramble, solve.mode
+        ).executeAsOne() > 0
     }
 
-    // this info should REALLY be in a separate file. I'll get to it when I add other alg sets.
     private fun createInitialAlgs(db: SQLiteDatabase) {
-        createAlg(
-            db, SUBSET_OLL, "OLL 01", "NNNNYNNNNNYNYYYNYNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 01"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 02", "NNNNYNNNNNYYNYNYYNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 02"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 03", "NNNNYNYNNYYNYYNYYNNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 03"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 04", "NNNNYNNNYNYYNYNNYYNYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 04"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 05", "NNNNYYNYYYYNYNNNNNYYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 05"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 06", "NYYNYYNNNNNNNNYNYYNYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 06"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 07", "NYNYYNYNNYNNYYNYYNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 07"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 08", "NYNNYYNNYNNYNNNNYYNYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 08"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 09", "NNYYYNNYNNYNNYYNNYNNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 09"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 10", "NNYYYNNYNYYNNYNYNNYNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 10"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 11", "NNNNYYYYNYYNYNNYNNNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 11"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 12", "NNYNYYNYNNYNNNYNNYNYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 12"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 13", "NNNYYYYNNYYNYNNYYNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 13"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 14", "NNNYYYNNYNYYNNNNYYNNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 14"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 15", "NNNYYYNNYYYNYNNNYNYNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 15"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 16", "NNYYYYNNNNYNNNYNYYNNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 16"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 17", "YNNNYNNNYNYYNYNNYNYYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 17"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 18", "YNYNYNNNNNYNNYNYYYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 18"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 19", "YNYNYNNNNNYNNYYNYNYYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 19"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 20", "YNYNYNYNYNYNNYNNYNNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 20"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 21", "NYNYYYNYNNNNYNYNNNYNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 21"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 22", "NYNYYYNYNNNYNNNYNNYNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 22"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 23", "YYYYYYNYNNNNNNNYNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 23"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 24", "NYYYYYNYYYNNNNNNNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 24"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 25", "YYNYYYNYYNNNYNNNNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 25"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 26", "YYNYYYNYNNNYNNYNNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 26"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 27", "NYNYYYYYNYNNYNNYNNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 27"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 28", "YYYYYNYNYNNNNYNNYNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 28"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 29", "YNYYYNNYNNYNNYYNNNYNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 29"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 30", "YNYNYYNYNNYNNNYNNNYYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 30"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 31", "NYYNYYNNYYNNNNNNYYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 31"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 32", "NNYNYYNYYYYNNNNNNYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 32"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 33", "NNYYYYNNYYYNNNNNYYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 33"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 34", "YNYYYYNNNNYNNNYNYNYNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 34"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 35", "YNNNYYNYYNYNYNNNNYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 35"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 36", "YNNYYNNYYNYNYYNNNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 36"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 37", "YYNYYNNNYNNNYYNNYYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 37"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 38", "NYYYYNYNNYNNNYYNYNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 38"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 39", "YYNNYNNYYNNYNYNNNNYYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 39"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 40", "NYYNYNYYNNNNNYNYNNNYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 40"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 41", "YNYNYYNYNNYNNNNYNYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 41"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 42", "YNYYYNNYNNYNNYNYNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 42"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 43", "YNNYYNYYNNYNYYYNNNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 43"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 44", "NNYNYYNYYNYNNNNNNNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 44"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 45", "NNYYYYNNYNYNNNNNYNYNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 45"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 46", "YYNNYNYYNNNNYYYNNNNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 46"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 47", "NYNNYYNNNYNNYNYNYYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 47"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 48", "NYNYYNNNNNNYNYNYYNYNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 48"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 49", "NNNYYNNYNYYNYYYNNYNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 49"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 50", "NNNNYYNYNNYYNNNYNNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 50"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 51", "NNNYYYNNNNYYNNNYYNYNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 51"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 52", "NYNNYNNYNYNNYYYNNYNYN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 52"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 53", "NNNNYYNYNNYNYNYNNNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 53"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 54", "NYNNYYNNNNNNYNYNYNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 54"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 55", "NYNNYNNYNNNNYYYNNNYYY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 55"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 56", "NNNYYYNNNNYNYNYNYNYNY", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 56"
-            )
-        )
-        createAlg(
-            db, SUBSET_OLL, "OLL 57", "YNYYYYYNYNYNNNNNYNNNN", AlgUtils.getDefaultAlgs(
-                SUBSET_OLL, "OLL 57"
-            )
-        )
-
-        // PLL
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "H",
-            "YYYYYYYYYOROGBGRORBGB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "H")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Ua",
-            "YYYYYYYYYOBOGOGRRRBGB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Ua")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Ub",
-            "YYYYYYYYYOGOGBGRRRBOB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Ub")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Z",
-            "YYYYYYYYYOBOGRGRGRBOB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Z")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Aa",
-            "YYYYYYYYYGOGRGBORRBBO",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Aa")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Ab",
-            "YYYYYYYYYOORBGOGRGRBB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Ab")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "E",
-            "YYYYYYYYYGOBOGRBRGRBO",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "E")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "F",
-            "YYYYYYYYYGOBOBGRRRBGO",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "F")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Ga",
-            "YYYYYYYYYRBOGGRBOBORG",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Ga")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Gb",
-            "YYYYYYYYYBROGGBOBGROR",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Gb")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Gc",
-            "YYYYYYYYYOGRBROGOGRBB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Gc")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Gd",
-            "YYYYYYYYYORGRORBGOGBB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Gd")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Ja",
-            "YYYYYYYYYBOOGGGRBBORR",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Ja")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Jb",
-            "YYYYYYYYYOOGRROGGRBBB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Jb")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Na",
-            "YYYYYYYYYOORBBGRROGGB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Na")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Nb",
-            "YYYYYYYYYROOGBBORRBGG",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Nb")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Ra",
-            "YYYYYYYYYOGOGORBRGRBB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Ra")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Rb",
-            "YYYYYYYYYGOBORGRGRBBO",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Rb")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "T",
-            "YYYYYYYYYOOGRBOGRRBGB",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "T")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "V",
-            "YYYYYYYYYRGOGOBORRBBG",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "V")
-        )
-        createAlg(
-            db,
-            SUBSET_PLL,
-            "Y",
-            "YYYYYYYYYRBOGGBORRBOG",
-            AlgUtils.getDefaultAlgs(SUBSET_PLL, "Y")
-        )
+        // Now handled by DatabaseInitializer
     }
 
     companion object {
@@ -1145,6 +465,8 @@ class DatabaseHandler :
         const val IDX_SCRAMBLE: Int = 5
         const val IDX_PENALTY: Int = 6
         const val IDX_COMMENT: Int = 7
+        const val IDX_HISTORY: Int = 8
+        const val IDX_MODE: Int = 9
 
         // Algs table
         const val TABLE_ALGS: String = "algs"
@@ -1162,27 +484,13 @@ class DatabaseHandler :
 
         // Database Name
         private const val DATABASE_NAME = "databaseManager"
-        private const val CREATE_TABLE_TIMES = ("CREATE TABLE " + TABLE_TIMES + "("
-                + KEY_ID + " INTEGER PRIMARY KEY,"
-                + KEY_TYPE + " TEXT,"
-                + KEY_SUBTYPE + " TEXT,"
-                + KEY_TIME + " INTEGER,"
-                + KEY_DATE + " INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),"
-                + KEY_SCRAMBLE + " TEXT,"
-                + KEY_PENALTY + " INTEGER,"
-                + KEY_COMMENT + " TEXT,"
-                + KEY_HISTORY + " BOOLEAN"
-                + ")")
-        private const val CREATE_TABLE_ALGS = ("CREATE TABLE " + TABLE_ALGS + "("
-                + KEY_ID + " INTEGER PRIMARY KEY,"
-                + KEY_SUBSET + " TEXT,"
-                + KEY_NAME + " TEXT,"
-                + KEY_STATE + " TEXT,"
-                + KEY_ALGS + " TEXT,"
-                + KEY_PROGRESS + " INTEGER"
-                + ")")
 
         const val DIR_DESC: String = "DESC"
         const val DIR_ASC: String = "ASC"
+
+        @JvmStatic
+        fun modeToInt(mode: String?): Int {
+            return if (mode == TimerFragment.TIMER_MODE_TRAINER) 1 else 0
+        }
     }
 }

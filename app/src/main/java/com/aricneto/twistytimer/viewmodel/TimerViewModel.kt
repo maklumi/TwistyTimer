@@ -16,13 +16,14 @@ class TimerViewModel : ViewModel() {
     data class SolveParams(
         val type: String? = null,
         val subtype: String? = null,
+        val mode: Int = 0,
         val history: Boolean = false,
         val search: String = "",
         val orderByKey: String = DatabaseHandler.KEY_DATE,
         val orderByDir: String = DatabaseHandler.DIR_DESC
     )
 
-    private val repository = SolveRepository(TwistyTimer.getDBHandler())
+    private val repository = TwistyTimer.getSolveRepository()
 
     private val _params = MutableStateFlow(SolveParams())
 
@@ -33,6 +34,7 @@ class TimerViewModel : ViewModel() {
                 repository.getSolves(
                     params.type,
                     params.subtype,
+                    params.mode,
                     params.history,
                     params.search,
                     params.orderByKey,
@@ -47,12 +49,13 @@ class TimerViewModel : ViewModel() {
     fun updateParams(
         type: String?,
         subtype: String?,
+        mode: Int,
         history: Boolean,
         search: String = "",
         key: String = DatabaseHandler.KEY_DATE,
         dir: String = DatabaseHandler.DIR_DESC
     ) {
-        _params.value = SolveParams(type, subtype, history, search, key, dir)
+        _params.value = SolveParams(type, subtype, mode, history, search, key, dir)
     }
 
     fun deleteSolves(ids: List<Long>) {

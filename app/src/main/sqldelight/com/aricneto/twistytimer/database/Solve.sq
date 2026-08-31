@@ -1,0 +1,114 @@
+CREATE TABLE IF NOT EXISTS times (
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT,
+    subtype TEXT,
+    time INTEGER,
+    date INTEGER NOT NULL DEFAULT 0,
+    scramble TEXT,
+    penalty INTEGER,
+    comment TEXT,
+    history INTEGER AS kotlin.Boolean DEFAULT 0,
+    mode INTEGER AS kotlin.Int NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM times;
+
+selectById:
+SELECT * FROM times WHERE _id = ?;
+
+selectSolvesBySession:
+SELECT * FROM times
+WHERE (COALESCE(type, '') = COALESCE(:type, ''))
+  AND (COALESCE(subtype, '') = COALESCE(:subtype, ''))
+  AND mode = :mode
+ORDER BY date DESC;
+
+selectSolves:
+SELECT * FROM times
+WHERE (COALESCE(type, '') = COALESCE(:type, ''))
+  AND (COALESCE(subtype, '') = COALESCE(:subtype, ''))
+  AND (history = :history OR (history IS NULL AND :history = 0))
+  AND (COALESCE(scramble, '') LIKE :search OR COALESCE(comment, '') LIKE :search)
+  AND mode = :mode
+ORDER BY
+    CASE WHEN :orderByKey = 'date' AND :orderByDir = 'ASC' THEN date END ASC,
+    CASE WHEN :orderByKey = 'date' AND :orderByDir = 'DESC' THEN date END DESC,
+    CASE WHEN :orderByKey = 'time' AND :orderByDir = 'ASC' THEN time END ASC,
+    CASE WHEN :orderByKey = 'time' AND :orderByDir = 'DESC' THEN time END DESC;
+
+insertSolve:
+INSERT INTO times(type, subtype, time, date, scramble, penalty, comment, history, mode)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+lastInsertId:
+SELECT last_insert_rowid();
+
+updateSolve:
+UPDATE times
+SET time = ?, date = ?, scramble = ?, penalty = ?, comment = ?, history = ?, mode = ?
+WHERE _id = ?;
+
+deleteSolve:
+DELETE FROM times WHERE _id = ?;
+
+deleteAllFromSession:
+DELETE FROM times WHERE type = ? AND subtype = ? AND mode = ?;
+
+deleteSubtype:
+DELETE FROM times WHERE type = ? AND subtype = ? AND mode = ?;
+
+renameSubtype:
+UPDATE times SET subtype = ? WHERE type = ? AND subtype = ? AND mode = ?;
+
+moveAllSolvesToHistory:
+UPDATE times SET history = 1 WHERE type = ? AND subtype = ? AND mode = ?;
+
+unarchiveSolves:
+UPDATE times SET history = 0
+WHERE _id IN (
+  SELECT _id FROM times
+  WHERE penalty != 10 AND history = 1 AND type = ? AND subtype = ? AND mode = ?
+  ORDER BY date DESC LIMIT ?
+);
+
+getNumArchivedSolves:
+SELECT count(*) FROM times WHERE type = ? AND subtype = ? AND mode = ? AND (history = 1);
+
+selectForStatistics:
+SELECT time, penalty FROM times
+WHERE type = ? AND subtype = ? AND mode = ? AND penalty != 10 AND (history = 0 OR history IS NULL)
+ORDER BY date ASC;
+
+selectForAllStatistics:
+SELECT time, penalty, history FROM times
+WHERE type = ? AND subtype = ? AND mode = ? AND penalty != 10
+ORDER BY date ASC;
+
+selectForStatisticsWithDate:
+SELECT time, penalty, date FROM times
+WHERE type = ? AND subtype = ? AND mode = ? AND penalty != 10 AND (history = 0 OR history IS NULL)
+ORDER BY date ASC;
+
+selectForAllStatisticsWithDate:
+SELECT time, penalty, date FROM times
+WHERE type = ? AND subtype = ? AND mode = ? AND penalty != 10
+ORDER BY date ASC;
+
+solveExists:
+SELECT count(*) FROM times
+WHERE (COALESCE(type, '') = COALESCE(:type, ''))
+  AND (COALESCE(subtype, '') = COALESCE(:subtype, ''))
+  AND time = :time
+  AND date = :date
+  AND (COALESCE(scramble, '') = COALESCE(:scramble, ''))
+  AND mode = :mode;
+
+getAllSubtypesFromType:
+SELECT DISTINCT subtype FROM times WHERE type = :type AND mode = :mode ORDER BY subtype ASC;
+
+countAll:
+SELECT count(*) FROM times;
+
+migrateTrainingMode:
+UPDATE times SET mode = 1 WHERE type IN ('OLL', 'PLL');

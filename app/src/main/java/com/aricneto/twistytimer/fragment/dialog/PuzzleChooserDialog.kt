@@ -71,6 +71,8 @@ class PuzzleChooserDialog : DialogFragment() {
 
     private var categoryAdapter: ArrayAdapter<String>? = null
 
+    private var mMode: Int = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, 0)
@@ -83,6 +85,7 @@ class PuzzleChooserDialog : DialogFragment() {
 
         @StringRes val buttonTextResID =
             if (arguments != null) requireArguments().getInt(ARG_BUTTON_TEXT_RES_ID, 0) else 0
+        mMode = if (arguments != null) requireArguments().getInt(ARG_MODE, 0) else 0
 
         if (buttonTextResID != 0) {
             // Override the default text.
@@ -147,14 +150,14 @@ class PuzzleChooserDialog : DialogFragment() {
 
     private fun updateCategoriesForType(puzzleType: String?) {
         val dbHandler = TwistyTimer.getDBHandler()
-        val subtypeList = dbHandler.getAllSubtypesFromType(puzzleType!!)
+        val subtypeList = dbHandler.getAllSubtypesFromType(puzzleType!!, mMode)
 
         if (subtypeList.isEmpty()) {
             subtypeList.add(CURRENT_CATEGORY)
             dbHandler.addSolve(
                 Solve(
                     1, puzzleType, CURRENT_CATEGORY,
-                    0L, "", PuzzleUtils.PENALTY_HIDETIME, "", true
+                    0L, "", PuzzleUtils.PENALTY_HIDETIME, "", true, mMode
                 )
             )
         }
@@ -193,29 +196,27 @@ class PuzzleChooserDialog : DialogFragment() {
          * this puzzle chooser.
          */
         private const val ARG_CONSUMER_TAG = "consumerTag"
+        private const val ARG_MODE = "mode"
 
         /**
          * Creates a new instance of this fragment.
          * 
          * @param buttonTextResID
-         * The string resource ID of the string to be displayed on the select button that closes
-         * this fragment and reports the selection. If zero, the default "OK" will be shown.
          * @param consumerTag
-         * The fragment tag that identifies the fragment that instantiated this puzzle chooser.
-         * This "consumer" fragment will be informed, via the parent activity, of the selected
-         * puzzle type and category before this chooser is dismissed.
+         * @param mode
          * 
          * @return
          * The new instance of this puzzle chooser.
          */
         fun newInstance(
-            @StringRes buttonTextResID: Int, consumerTag: String?
+            @StringRes buttonTextResID: Int, consumerTag: String?, mode: Int = 0
         ): PuzzleChooserDialog {
             val fragment = PuzzleChooserDialog()
             val args = Bundle()
 
             args.putInt(ARG_BUTTON_TEXT_RES_ID, buttonTextResID)
             args.putString(ARG_CONSUMER_TAG, consumerTag)
+            args.putInt(ARG_MODE, mode)
             fragment.setArguments(args)
 
             return fragment

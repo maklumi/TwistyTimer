@@ -29,6 +29,7 @@ import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimerMainBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.activity.MainActivity
+import com.aricneto.twistytimer.database.DatabaseHandler
 import com.aricneto.twistytimer.fragment.dialog.BottomSheetTrainerDialog
 import com.aricneto.twistytimer.fragment.dialog.CategorySelectDialog
 import com.aricneto.twistytimer.fragment.dialog.PuzzleSelectDialog
@@ -96,6 +97,8 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
     private var selectCount = 0
 
     private var categoryDialog: CategorySelectDialog? = null
+
+    private var currentModeInt: Int = 0
 
     private val clickListener: View.OnClickListener = View.OnClickListener { view ->
         when (view.id) {
@@ -306,7 +309,8 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
             currentPuzzle = requireArguments().getString(PUZZLE)
             currentPuzzleCategory = requireArguments().getString(PUZZLE_SUBTYPE)
             currentTimerMode = requireArguments().getString(TIMER_MODE)
-            currentPuzzleSubset = requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
+        currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
+        currentPuzzleSubset = requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
         }
 
         // Retrieve instance state
@@ -314,6 +318,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
             currentPuzzle = savedInstanceState.getString("puzzle")
             currentPuzzleCategory = savedInstanceState.getString("subtype")
             currentTimerMode = savedInstanceState.getString("mode", TimerFragment.TIMER_MODE_TIMER)
+            currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
             currentPuzzleSubset = savedInstanceState.getSerializable("subset") as TrainerSubset?
             history = savedInstanceState.getBoolean("history")
 
@@ -445,7 +450,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
                     if (DEBUG_ME) Log.d(TAG, "onCreateLoader: STATISTICS_LOADER_ID")
                     return StatisticsLoader(
                         requireContext(), Statistics.newAllTimeStatistics(),
-                        currentPuzzle, currentPuzzleCategory
+                        currentPuzzle, currentPuzzleCategory, currentModeInt
                     )
                 }
 
@@ -573,14 +578,14 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         val sharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext())
         val editor = sharedPreferences.edit()
-        val subtypeList = TwistyTimer.getDBHandler().getAllSubtypesFromType(currentPuzzle ?: "")
+        val subtypeList = TwistyTimer.getDBHandler().getAllSubtypesFromType(currentPuzzle ?: "", currentModeInt)
         if (subtypeList.isEmpty()) {
             currentPuzzleCategory = "Normal"
-            editor.putString(getString(R.string.pk_last_used_category) + currentPuzzle, "Normal")
+            editor.putString(getString(R.string.pk_last_used_category) + currentPuzzle + currentModeInt, "Normal")
             editor.apply()
         } else {
             currentPuzzleCategory = sharedPreferences.getString(
-                getString(R.string.pk_last_used_category) + currentPuzzle,
+                getString(R.string.pk_last_used_category) + currentPuzzle + currentModeInt,
                 "Normal"
             )
         }
@@ -604,7 +609,6 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         updatePuzzleSpinnerHeader()
     }
 
-    // A new puzzle has been selected
     override fun onUpdateDialog(text: String?) {
         currentPuzzle = text
         edit().putString(R.string.pk_last_used_puzzle, currentPuzzle).apply()
@@ -634,11 +638,11 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
                 )
 
                 LIST_PAGE -> fragment = TimerListFragment.newInstance(
-                    currentPuzzle, currentPuzzleCategory, history
+                    currentPuzzle, currentPuzzleCategory, currentModeInt, history
                 )
 
                 GRAPH_PAGE -> fragment = TimerGraphFragment.newInstance(
-                    currentPuzzle, currentPuzzleCategory, history
+                    currentPuzzle, currentPuzzleCategory, currentModeInt, history
                 )
 
                 else -> fragment = TimerFragment.newInstance(

@@ -41,6 +41,8 @@ import androidx.fragment.app.FragmentManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimerBinding
 import com.aricneto.twistytimer.TwistyTimer
+import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.database.TwistyDatabaseFactory
 import com.aricneto.twistytimer.fragment.dialog.AddTimeDialog
 import com.aricneto.twistytimer.fragment.dialog.BottomSheetDetailDialog
 import com.aricneto.twistytimer.items.Solve
@@ -264,6 +266,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
     private var scrambleDialog: BottomSheetDetailDialog? = null
     private var mFragManager: FragmentManager? = null
 
+    private var currentModeInt: Int = 0
+
     private val buttonClickListener: View.OnClickListener = View.OnClickListener { view ->
         val dbHandler = TwistyTimer.getDBHandler()
 
@@ -386,7 +390,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 val addTimeDialog = AddTimeDialog.newInstance(
                     currentPuzzle,
                     currentPuzzleCategory,
-                    realScramble
+                    realScramble,
+                    currentModeInt
                 )
                 parentFragmentManager.let { addTimeDialog.show(it, "dialog_add_time") }
             }
@@ -410,12 +415,15 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             currentPuzzleCategory = requireArguments().getString(PUZZLE_SUBTYPE)
             currentSubset = requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
             currentTimerMode = requireArguments().getString(TIMER_MODE)
+            currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
         }
 
         if (savedInstanceState != null) {
             if (savedInstanceState.getString(PUZZLE) == requireArguments().getString(PUZZLE)) {
                 realScramble = savedInstanceState.getString(SCRAMBLE)
             }
+            currentTimerMode = savedInstanceState.getString(TIMER_MODE)
+            currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
             //hasStoppedTimerOnce = savedInstanceState.getBoolean(HAS_STOPPED_TIMER_ONCE, false);
         }
 
@@ -952,7 +960,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         val solve = Solve(
             binding.chronometer.elapsedTime.toInt(),  // Includes any "+2" penalty. Is zero for "DNF".
             currentPuzzle ?: "", currentPuzzleCategory ?: "",
-            System.currentTimeMillis(), currentScramble ?: "", currentPenalty, "", false
+            System.currentTimeMillis(), currentScramble ?: "", currentPenalty, "", false,
+            currentModeInt
         )
         currentSolve = solve
 
@@ -1355,6 +1364,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         super.onSaveInstanceState(outState)
         outState.putString(SCRAMBLE, realScramble)
         outState.putString(PUZZLE, currentPuzzle)
+        outState.putString(TIMER_MODE, currentTimerMode)
         outState.putBoolean(HAS_STOPPED_TIMER_ONCE, hasStoppedTimerOnce)
     }
 

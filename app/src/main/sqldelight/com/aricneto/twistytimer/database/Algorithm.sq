@@ -1,0 +1,27 @@
+CREATE TABLE IF NOT EXISTS algs (
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subset TEXT,
+    name TEXT,
+    state TEXT,
+    algs TEXT,
+    progress INTEGER DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM algs;
+
+selectById:
+SELECT * FROM algs WHERE _id = ?;
+
+selectBySubset:
+SELECT * FROM algs WHERE subset = ?;
+
+updateAlg:
+UPDATE algs SET algs = ? WHERE _id = ?;
+
+updateProgress:
+UPDATE algs SET progress = ? WHERE _id = ?;
+
+insertAlg:
+INSERT INTO algs(subset, name, state, algs, progress)
+VALUES (?, ?, ?, ?, ?);

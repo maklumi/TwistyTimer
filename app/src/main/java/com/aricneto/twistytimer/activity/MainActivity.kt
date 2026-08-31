@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
 
     private var mExportPuzzleType: String = PuzzleUtils.TYPE_333
     private var mExportPuzzleCategory: String = PuzzleUtils.TYPE_333
+    private var mExportMode: Int = 0
 
     private val settingsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -640,13 +641,14 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         super.onSaveInstanceState(outState)
     }
 
-    override fun onImportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?) {
+    override fun onImportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?, mode: Int) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
         intent.addCategory(Intent.CATEGORY_OPENABLE)
         intent.type = "text/plain"
 
         mExportPuzzleType = puzzleType ?: ""
         mExportPuzzleCategory = puzzleCategory ?: ""
+        mExportMode = mode
 
         if (fileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
             importBackupLauncher.launch(intent)
@@ -655,7 +657,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         }
     }
 
-    override fun onExportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?) {
+    override fun onExportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?, mode: Int) {
         if (!isExternalStorageWritable()) {
             return
         }
@@ -674,6 +676,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
 
                 mExportPuzzleType = ""
                 mExportPuzzleCategory = ""
+                mExportMode = 0
 
                 exportBackupLauncher.launch(intent)
             }
@@ -694,6 +697,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
 
                 mExportPuzzleType = puzzleType
                 mExportPuzzleCategory = puzzleCategory
+                mExportMode = mode
 
                 exportExternalLauncher.launch(intent)
             }
@@ -764,7 +768,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                     when (fileFormat) {
                         ExportImportDialog.EXIM_FORMAT_BACKUP -> {
                             val csvHeader =
-                                "Puzzle,Category,Time(millis),Date(millis),Scramble,Penalty,Comment\n"
+                                "Puzzle,Category,Time(millis),Date(millis),Scramble,Penalty,Comment,Mode\n"
                             val cursor = handler.allSolves
 
                             try {
@@ -783,6 +787,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                                                 + "\";\"" + cursor.getString(DatabaseHandler.IDX_SCRAMBLE)
                                                 + "\";\"" + cursor.getInt(DatabaseHandler.IDX_PENALTY)
                                                 + "\";\"" + cursor.getString(DatabaseHandler.IDX_COMMENT)
+                                                + "\";\"" + cursor.getInt(DatabaseHandler.IDX_MODE)
                                                 + "\"\n")
                                     )
                                     exports++
@@ -798,7 +803,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                         }
 
                         ExportImportDialog.EXIM_FORMAT_EXTERNAL -> {
-                            val cursor = handler.getAllSolvesFrom(puzzleType, puzzleCategory)
+                            val cursor = handler.getAllSolvesFrom(puzzleType, puzzleCategory, mExportMode)
 
                             try {
                                 withContext(Dispatchers.Main) {
@@ -927,7 +932,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                                             nextLine[4] ?: "",
                                             nextLine[5]?.toIntOrNull() ?: 0,
                                             nextLine[6] ?: "",
-                                            true
+                                            true,
+                                            if (nextLine.size >= 8) nextLine[7]?.toIntOrNull() ?: 0 else 0
                                         )
                                     )
                                 } else {
@@ -968,7 +974,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                                     solveList.add(
                                         Solve(
                                             time, puzzleType, puzzleCategory,
-                                            date, scramble, penalty, "", true
+                                            date, scramble, penalty, "", true, mExportMode
                                         )
                                     )
                                 } catch (_: Exception) {

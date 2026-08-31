@@ -58,8 +58,10 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
          * The category (subtype) of the puzzle whose times will be imported. This is required
          * when `fileFormat` is `EXIM_FORMAT_EXTERNAL`. It may be `null` if
          * the format is `EXIM_FORMAT_BACKUP`, as it will not be used.
+         * @param mode
+         * The timer mode (TIMER or TRAINER).
          */
-        fun onImportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?)
+        fun onImportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?, mode: Int)
 
         /**
          * Instructs the listener to begin exporting solve times to a file. The export file name and
@@ -76,15 +78,19 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
          * The category (subtype) of the puzzle whose times will be exported. This is required
          * when `fileFormat` is `EXIM_FORMAT_EXTERNAL`. It may be `null` if
          * the format is `EXIM_FORMAT_BACKUP`, as it will not be used.
+         * @param mode
+         * The timer mode (TIMER or TRAINER).
          */
-        fun onExportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?)
+        fun onExportSolveTimes(fileFormat: Int, puzzleType: String?, puzzleCategory: String?, mode: Int)
     }
 
     private var mIsExport = false
+    private var mMode: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, 0)
+        mMode = arguments?.getInt(ARG_MODE, 0) ?: 0
     }
 
     private val clickListener: View.OnClickListener = View.OnClickListener { view ->
@@ -95,7 +101,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
                 // All puzzle types and categories are exported to a single back-up file.
                 // There is no need to identify the export file or the puzzle type/category.
                 // Just invoke the activity and dismiss this dialog.
-                (getExImActivity() as ExportImportCallbacks).onExportSolveTimes(EXIM_FORMAT_BACKUP, null, null)
+                (getExImActivity() as ExportImportCallbacks).onExportSolveTimes(EXIM_FORMAT_BACKUP, null, null, 0)
                 dismiss()
             }
 
@@ -108,13 +114,13 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
                 // activity that the chosen puzzle type/category should be relayed back to this
                 // dialog fragment.
                 PuzzleChooserDialog.newInstance(
-                    R.string.action_export, this@ExportImportDialog.getTag()
+                    R.string.action_export, this@ExportImportDialog.getTag(), mMode
                 )
                     .show(requireActivity().getSupportFragmentManager(), null)
             }
 
             R.id.import_backup -> {
-                (getExImActivity() as ExportImportCallbacks).onImportSolveTimes(EXIM_FORMAT_BACKUP, null, null)
+                (getExImActivity() as ExportImportCallbacks).onImportSolveTimes(EXIM_FORMAT_BACKUP, null, null, 0)
                 dismiss()
             }
 
@@ -123,7 +129,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
                 // Need to get the puzzle type and category before importing the data. There will
                 // be a call-back to "onPuzzleSelected" before returning to the activity.
                 PuzzleChooserDialog.newInstance(
-                    R.string.action_import, this@ExportImportDialog.getTag()
+                    R.string.action_import, this@ExportImportDialog.getTag(), mMode
                 )
                     .show(requireActivity().getSupportFragmentManager(), null)
             }
@@ -183,7 +189,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
         // chosen if this is an import operation. Now that the puzzle type and category are known,
         // hand control back to the activity.
         if (mIsExport) {
-            (getExImActivity() as ExportImportCallbacks).onExportSolveTimes(EXIM_FORMAT_EXTERNAL, puzzleType, puzzleCategory)
+            (getExImActivity() as ExportImportCallbacks).onExportSolveTimes(EXIM_FORMAT_EXTERNAL, puzzleType, puzzleCategory, mMode)
         } else {
             // Show a dialog that explains the required text format, then, when that is
             // closed, select the file to import. When the call-back from this file chooser
@@ -200,7 +206,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
                 ) { _: DialogInterface?, _: Int ->
                     activityMain.onImportSolveTimes(
                         EXIM_FORMAT_EXTERNAL, puzzleType,
-                        puzzleCategory
+                        puzzleCategory, mMode
                     )
                 }
                 .setNegativeButton(R.string.action_cancel, null)
@@ -221,8 +227,14 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
          */
         const val EXIM_FORMAT_BACKUP: Int = 2
 
-        fun newInstance(): ExportImportDialog {
-            return ExportImportDialog()
+        private const val ARG_MODE = "mode"
+
+        fun newInstance(mode: Int = 0): ExportImportDialog {
+            val fragment = ExportImportDialog()
+            val args = Bundle()
+            args.putInt(ARG_MODE, mode)
+            fragment.setArguments(args)
+            return fragment
         }
     }
 }

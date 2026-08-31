@@ -44,6 +44,7 @@ class AddTimeDialog : DialogFragment() {
     private var currentPuzzle: String? = null
     private var currentScramble: String? = null
     private var currentPuzzleSubtype: String? = null
+    private var currentModeInt: Int = 0
 
     private var mCurrentPenalty = PuzzleUtils.NO_PENALTY
     private var mCurrentComment = ""
@@ -63,7 +64,8 @@ class AddTimeDialog : DialogFragment() {
                     if (binding!!.checkScramble.isChecked) currentScramble ?: "" else "",
                     mCurrentPenalty,
                     mCurrentComment,
-                    false
+                    false,
+                    currentModeInt
                 )
 
                 TwistyTimer.getDBHandler().addSolve(solve)
@@ -141,6 +143,7 @@ class AddTimeDialog : DialogFragment() {
         currentPuzzle = requireArguments().getString("puzzle")
         currentPuzzleSubtype = requireArguments().getString("category")
         currentScramble = requireArguments().getString("scramble")
+        currentModeInt = requireArguments().getInt("mode", 0)
         mContext = context
     }
 
@@ -199,13 +202,15 @@ class AddTimeDialog : DialogFragment() {
         fun newInstance(
             currentPuzzle: String?,
             currentPuzzleSubtype: String?,
-            currentScramble: String?
+            currentScramble: String?,
+            mode: Int = 0
         ): AddTimeDialog {
             val timeDialog = AddTimeDialog()
             val args = Bundle()
             args.putString("puzzle", currentPuzzle)
             args.putString("category", currentPuzzleSubtype)
             args.putString("scramble", currentScramble)
+            args.putInt("mode", mode)
             timeDialog.setArguments(args)
             return timeDialog
         }

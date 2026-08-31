@@ -17,6 +17,7 @@ import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_ADDED
 import com.aricneto.twistytimer.utils.TTIntent.getSolve
 import com.aricneto.twistytimer.utils.Wrapper
 import com.aricneto.twistytimer.utils.Wrapper.Companion.wrap
+import kotlinx.coroutines.runBlocking
 import java.util.Objects
 
 /**
@@ -24,26 +25,12 @@ import java.util.Objects
  * 
  * A loader used to populate a [ChartStatistics] object from the database for use in the main
  * chart in the [com.aricneto.twistytimer.fragment.TimerGraphFragment].
- * 
- * 
- * 
- * See the class description for [StatisticsLoader] for more details, as that loader behaves
- * in the same way as this loader.
- * 
- * 
- * 
- * A different between this loader and the `StatisticsLoader`, is that this loader may return
- * a different object inside the `Wrapper`. When the selection changes to or from the history
- * of all solve times and the current session solve times, a full re-load is required and a new
- * `ChartStatistics` object will be created.
- * 
- * 
- * @author damo
  */
 class ChartStatisticsLoader(
     context: Context, chartStyle: ChartStyle,
     puzzleType: String?, puzzleSubtype: String?,
-    isForCurrentSessionOnly: Boolean
+    isForCurrentSessionOnly: Boolean,
+    mode: Int
 ) : AsyncTaskLoader<Wrapper<ChartStatistics?>?>(context) {
     /**
      * The chart style information that will be used to set the labels, colors and other styles on
@@ -75,6 +62,8 @@ class ChartStatisticsLoader(
      */
     private val mPuzzleSubtype: String?
 
+    private val mMode: Int
+
     /**
      * The broadcast receiver that is notified of changes to the solve time data.
      */
@@ -83,13 +72,7 @@ class ChartStatisticsLoader(
     /**
      * A broadcast receiver that is notified of changes to the solve time data.
      */
-    private class TimeDataChangedReceiver
-    /**
-     * Creates a new broadcast receiver that will notify a loader of changes to the solve
-     * time data.
-     * 
-     * @param loader The loader to be notified of changes to the solve times.
-     */(
+    private class TimeDataChangedReceiver(
         /**
          * The loader to be notified of changes to the solve time data.
          */
@@ -111,12 +94,6 @@ class ChartStatisticsLoader(
             // "loadInBackground", then "deliverResult") which will cause the "LoaderManager" to
             // call "onLoadFinished" on the owning Fragment or Activity ... if the delivered result
             // is not the same object as in the previous delivery (hence the Wrapper).
-            //
-            // NOTE: The default implementation of "onContentChanged" will only force a re-load if
-            // the loader is currently started (i.e., in use by a live fragment). If the loader is
-            // not started, a reload will not occur until the next time it is restarted (which
-            // might never happen). The test of "takeContentChanged()" in "onStartLoading" picks
-            // up on any such deferred reloading task.
             val finalIntent: Intent? = intent
 
             when (Objects.requireNonNull<String?>(intent.getAction())) {
@@ -160,39 +137,22 @@ class ChartStatisticsLoader(
     }
 
     /**
-     * Creates a new loader for the solve time chart statistics. The given chart statistics define
-     * the set of "average-of-N" calculations to be made. The statistics may relate to the current
-     * session only, or to all past and current sessions.
+     * Creates a new loader for the solve time chart statistics.
      * 
      * @param context
-     * The context for this loader. This may be an application context.
      * @param chartStyle
-     * The [ChartStyle] defining the styles to be applied to the data sets in the loaded
-     * chart statistics. Must not be `null`.
      * @param puzzleType
-     * The name of the puzzle type for which statistics are required. See the `TYPE_*`
-     * constants in [PuzzleUtils].
      * @param puzzleSubtype
-     * The name of the puzzle subtype.
      * @param isForCurrentSessionOnly
-     * `true` if the chart statistics should be compiled initially only for the solve
-     * times of the current session; or `false` if all times from all past and current
-     * sessions should be used. The loader will listen to messages broadcasting changes to this
-     * selection and will deliver updated statistics if any change is detected.
+     * @param mode
      */
     init {
         if (DEBUG_ME) Log.d(TAG, "Created new Loader for ChartStatistics!")
 
-        // NOTE: "ChartStyle" must be initialised from an "Activity" context, as it needs to access
-        // theme attributes. Therefore, it cannot be instantiated here, as the given context may be
-        // an "Application" context, which cannot access theme attributes. It is the responsibility
-        // of the Activity or Fragment that creates this loader to instantiate the ChartStyle with
-        // the necessary context before creating the loader. ChartStyle will not hold a reference
-        // to the context, so no memory leaks should occur. However, holding a reference to an
-        // Activity context from this Loader would be a really bad idea.
         mChartStyle = chartStyle
         mPuzzleType = puzzleType
         mPuzzleSubtype = puzzleSubtype
+        mMode = mode
 
         resetForSelection(isForCurrentSessionOnly)
     }
@@ -273,7 +233,7 @@ class ChartStatisticsLoader(
             // empty), so try a quick update.
             val solve = getSolve(intent)
 
-            if (solve != null) {
+            if (solve != null && solve.mode == mMode) {
                 if (solve.penalty == PuzzleUtils.PENALTY_DNF) {
                     mChartStats!!.addDNF(solve.date)
                 } else {
@@ -364,9 +324,11 @@ class ChartStatisticsLoader(
         // TODO: Add support for cancellation: add a call-back to "populateChartStatistics", so
         // it can poll the cancellation status as it iterates over the solves it reads from the
         // database.
-        TwistyTimer.getDBHandler().populateChartStatistics(
-            mPuzzleType!!, mPuzzleSubtype!!, mChartStats!!
-        )
+        runBlocking<Unit> {
+            TwistyTimer.getSolveRepository().populateChartStatistics(
+                mPuzzleType!!, mPuzzleSubtype!!, mMode, mChartStats!!
+            )
+        }
 
         if (DEBUG_ME) Log.d(
             TAG, String.format(
@@ -376,9 +338,7 @@ class ChartStatisticsLoader(
         )
 
         // If this is not the first time loading the data, a different object must be returned if
-        // the "LoaderManager" is to trigger "onLoadFinished" (go figure). As "mChartStats" is
-        // still the same object, a new wrapper around that object is created instead to trick
-        // "LoaderManager" into doing what is expected.
+        // the "LoaderManager" into doing what is expected.
         return wrap<ChartStatistics?>(mChartStats).also {
             mLoadedData = it
         } // Old content may have been null.

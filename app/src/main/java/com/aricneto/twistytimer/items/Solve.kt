@@ -19,6 +19,7 @@ data class Solve(
     var penalty: Int,
     var comment: String,
     var history: Boolean,
+    var mode: Int = 0,
 ) : Parcelable {
 
     constructor(
@@ -30,7 +31,8 @@ data class Solve(
         penalty: Int,
         comment: String = "",
         history: Boolean,
-    ) : this(0, time, puzzle, subtype, date, scramble, penalty, comment, history)
+        mode: Int = 0,
+    ) : this(0, time, puzzle, subtype, date, scramble, penalty, comment, history, mode)
 
     companion object {
         fun fromCursor(cursor: Cursor): Solve {
@@ -43,7 +45,8 @@ data class Solve(
                 scramble = cursor.getString(cursor.getColumnIndexOrThrow("scramble")) ?: "",
                 penalty = cursor.getInt(cursor.getColumnIndexOrThrow("penalty")),
                 comment = cursor.getString(cursor.getColumnIndexOrThrow("comment")) ?: "",
-                history = cursor.getInt(cursor.getColumnIndexOrThrow("history")) == 1
+                history = cursor.getInt(cursor.getColumnIndexOrThrow("history")) == 1,
+                mode = cursor.getInt(cursor.getColumnIndexOrThrow("mode"))
             )
         }
     }

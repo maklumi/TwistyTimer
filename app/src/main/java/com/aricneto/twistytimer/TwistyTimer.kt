@@ -3,8 +3,15 @@ package com.aricneto.twistytimer
 import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import com.aricneto.twistytimer.database.AlgRepository
 import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.database.DatabaseInitializer
+import com.aricneto.twistytimer.database.SolveRepository
+import com.aricneto.twistytimer.database.TwistyDatabaseFactory
 import com.aricneto.twistytimer.utils.LocaleUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.security.NoSuchAlgorithmException
 import java.security.Provider
 import java.security.SecureRandom
@@ -74,6 +81,13 @@ class TwistyTimer : Application() {
         // database (particularly for the first time) can take some time.
         sDBHandler = DatabaseHandler()
 
+        sAlgRepository = AlgRepository(TwistyDatabaseFactory.getDatabase().algorithmQueries)
+        sSolveRepository = SolveRepository(TwistyDatabaseFactory.getDatabase().solveQueries)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            DatabaseInitializer.initialize(sAlgRepository!!, sSolveRepository!!)
+        }
+
         LocaleUtils.updateLocale(getAppContext())
     }
 
@@ -82,6 +96,9 @@ class TwistyTimer : Application() {
          * The singleton instance of the database access handler.
          */
         private var sDBHandler: DatabaseHandler? = null
+
+        private var sAlgRepository: AlgRepository? = null
+        private var sSolveRepository: SolveRepository? = null
 
         /**
          * The cached reference to the application context.
@@ -97,6 +114,16 @@ class TwistyTimer : Application() {
         @JvmStatic
         fun getDBHandler(): DatabaseHandler {
             return sDBHandler!!
+        }
+
+        @JvmStatic
+        fun getAlgRepository(): AlgRepository {
+            return sAlgRepository!!
+        }
+
+        @JvmStatic
+        fun getSolveRepository(): SolveRepository {
+            return sSolveRepository!!
         }
 
         /**

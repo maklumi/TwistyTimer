@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.*
 
 class AlgViewModel : ViewModel() {
 
-    private val repository = AlgRepository(TwistyTimer.getDBHandler())
+    private val repository = TwistyTimer.getAlgRepository()
 
     private val _subset = MutableStateFlow<String?>(null)
 

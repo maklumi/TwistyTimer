@@ -49,6 +49,8 @@ class CategorySelectDialog : DialogFragment() {
     private val mOnClickListener: View.OnClickListener? = null
     private var mContext: Context? = null
 
+    private var currentModeInt: Int = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, 0)
@@ -75,13 +77,14 @@ class CategorySelectDialog : DialogFragment() {
         currentSubtype = requireArguments().getString("subtype")
         currentTimerMode = requireArguments().getString("mode")
         currentSubset = requireArguments().getSerializable("subset") as TrainerSubset?
+        currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
 
         val dbHandler = TwistyTimer.getDBHandler()
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val editor = sharedPreferences.edit()
 
         // get a list of all subtypes
-        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!)
+        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
 
         if (subtypeList!!.isEmpty()) {
             // if subtype list is empty, create a new entry
@@ -94,7 +97,8 @@ class CategorySelectDialog : DialogFragment() {
                     "",
                     PuzzleUtils.PENALTY_HIDETIME,
                     "",
-                    true
+                    true,
+                    currentModeInt
                 )
             )
         } else if (subtypeList!!.size == 1) {
@@ -127,7 +131,8 @@ class CategorySelectDialog : DialogFragment() {
                             "",
                             PuzzleUtils.PENALTY_HIDETIME,
                             "",
-                            true
+                            true,
+                            currentModeInt
                         )
                     )
                     currentSubtype = input
@@ -189,7 +194,8 @@ class CategorySelectDialog : DialogFragment() {
                                             dbHandler.renameSubtype(
                                                 currentPuzzle!!,
                                                 currentEditSubtype!!,
-                                                input
+                                                input,
+                                                currentModeInt
                                             )
                                             currentSubtype = input
                                             updateList(dbHandler)
@@ -224,11 +230,11 @@ class CategorySelectDialog : DialogFragment() {
                                 .setPositiveButton(
                                     R.string.action_remove,
                                     DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                                        dbHandler.deleteSubtype(currentPuzzle!!, currentEditSubtype!!)
+                                        dbHandler.deleteSubtype(currentPuzzle!!, currentEditSubtype!!, currentModeInt)
                                         // After removing, change current subtype to first of list, if none exist, create "Normal" subtype
                                         if (subtypeList!!.size > 1) {
                                             currentSubtype =
-                                                dbHandler.getAllSubtypesFromType(currentPuzzle!!)
+                                                dbHandler.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
                                                     .get(0)
                                         } else {
                                             currentSubtype = "Normal"
@@ -300,7 +306,8 @@ class CategorySelectDialog : DialogFragment() {
                                                 dbHandler.renameSubtype(
                                                     currentPuzzle!!,
                                                     currentEditSubtype!!,
-                                                    input
+                                                    input,
+                                                    currentModeInt
                                                 )
                                                 currentSubtype = input
                                                 updateList(dbHandler)
@@ -371,7 +378,7 @@ class CategorySelectDialog : DialogFragment() {
     }
 
     private fun updateList(dbHandler: DatabaseHandler) {
-        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!)
+        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
         val icons = intArrayOf()
         mAdapter =
             BottomSheetSpinnerAdapter(requireContext(), subtypeList!!.toTypedArray<String?>(), icons)
