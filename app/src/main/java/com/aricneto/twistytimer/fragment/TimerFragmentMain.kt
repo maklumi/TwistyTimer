@@ -4,9 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.PorterDuff
+import android.os.Build
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
 import android.util.SparseArray
 import android.view.ActionMode
@@ -18,18 +17,21 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.LinearLayout
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.BlendModeColorFilterCompat
+import androidx.core.graphics.BlendModeCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.Loader
+import androidx.preference.PreferenceManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimerMainBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.activity.MainActivity
-import com.aricneto.twistytimer.database.DatabaseHandler
 import com.aricneto.twistytimer.fragment.dialog.BottomSheetTrainerDialog
 import com.aricneto.twistytimer.fragment.dialog.CategorySelectDialog
 import com.aricneto.twistytimer.fragment.dialog.PuzzleSelectDialog
@@ -71,10 +73,12 @@ import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
 import com.aricneto.twistytimer.utils.Wrapper
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.coroutines.launch
 import java.util.Locale
 import androidx.core.util.size
 
-open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, DialogListenerMessage {
+open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
+    DialogListenerMessage {
     private var binding: FragmentTimerMainBinding? = null
 
     var actionMode: ActionMode? = null
@@ -139,7 +143,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         // Called when the action mode is created; startActionMode() was called
         override fun onCreateActionMode(mode: ActionMode, menu: Menu?): Boolean {
             // Inflate a menu resource providing context menu items
-            val inflater = mode.getMenuInflater()
+            val inflater = mode.menuInflater
             inflater.inflate(R.menu.menu_list_callback, menu)
 
             return true
@@ -223,7 +227,8 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
 
                     ACTION_SELECTION_MODE_ON -> {
                         selectCount = 0
-                        actionMode = binding?.actionbar?.toolbar?.startActionMode(actionModeCallback)
+                        actionMode =
+                            binding?.actionbar?.toolbar?.startActionMode(actionModeCallback)
                     }
 
                     ACTION_SELECTION_MODE_OFF -> {
@@ -276,7 +281,8 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         history = false
         updateHistorySwitchItem()
         binding?.let { b ->
-            b.actionbar.puzzleCategory.text = currentPuzzleCategory?.lowercase(Locale.getDefault()) ?: ""
+            b.actionbar.puzzleCategory.text =
+                currentPuzzleCategory?.lowercase(Locale.getDefault()) ?: ""
             if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) {
                 b.actionbar.puzzleName.text = getString(
                     R.string.title_trainer, currentPuzzleSubset?.name ?: ""
@@ -309,8 +315,13 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
             currentPuzzle = requireArguments().getString(PUZZLE)
             currentPuzzleCategory = requireArguments().getString(PUZZLE_SUBTYPE)
             currentTimerMode = requireArguments().getString(TIMER_MODE)
-        currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
-        currentPuzzleSubset = requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
+            currentModeInt = TimerFragment.modeToInt(currentTimerMode)
+            currentPuzzleSubset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireArguments().getSerializable(TRAINER_SUBSET, TrainerSubset::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
+            }
         }
 
         // Retrieve instance state
@@ -318,8 +329,13 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
             currentPuzzle = savedInstanceState.getString("puzzle")
             currentPuzzleCategory = savedInstanceState.getString("subtype")
             currentTimerMode = savedInstanceState.getString("mode", TimerFragment.TIMER_MODE_TIMER)
-            currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
-            currentPuzzleSubset = savedInstanceState.getSerializable("subset") as TrainerSubset?
+            currentModeInt = TimerFragment.modeToInt(currentTimerMode)
+            currentPuzzleSubset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState.getSerializable("subset", TrainerSubset::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                savedInstanceState.getSerializable("subset") as TrainerSubset?
+            }
             history = savedInstanceState.getBoolean("history")
 
             // Set the dialog listeners again, in case the dialogs are open.
@@ -353,7 +369,8 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         super.onViewCreated(view, savedInstanceState)
         val binding = binding ?: return
         // setup background gradient
-        binding.root.background = ThemeUtils.fetchBackgroundGradient(requireContext(), preferredTheme)
+        binding.root.background =
+            ThemeUtils.fetchBackgroundGradient(requireContext(), preferredTheme)
 
         binding.actionbar.navButtonCategory.setOnClickListener(clickListener)
         binding.actionbar.navButtonHistory.setOnClickListener(clickListener)
@@ -400,10 +417,11 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
             )
         tabStrip = (binding.mainTabs.getChildAt(0) as? LinearLayout)
 
-        binding.mainTabs.background.setColorFilter(
-            ThemeUtils.fetchAttrColor(requireContext(), R.attr.colorTabBar),
-            PorterDuff.Mode.SRC_IN
-        )
+        binding.mainTabs.background.colorFilter =
+            BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
+                ThemeUtils.fetchAttrColor(requireContext(), R.attr.colorTabBar),
+                BlendModeCompat.SRC_IN
+            )
 
         // Handle spinner AFTER reading from savedInstanceState, so we can correctly
         // fill the category field in the spinner
@@ -422,10 +440,6 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
 
         // Register a receiver to update if something has changed
         registerReceiver(mUIInteractionReceiver)
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
 
         handleStatisticsLoader()
     }
@@ -484,7 +498,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
     override fun onResume() {
         if (DEBUG_ME) Log.d(TAG, "onResume() : currentPage=$currentPage")
         // Sets up the toolbar with the icons appropriate to the current page.
-        binding!!.actionbar.toolbar.post(Runnable { setupPage(currentPage) })
+        binding!!.actionbar.toolbar.post { setupPage(currentPage) }
         super.onResume()
     }
 
@@ -578,22 +592,29 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         val sharedPreferences =
             PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext())
         val editor = sharedPreferences.edit()
-        val subtypeList = TwistyTimer.getDBHandler().getAllSubtypesFromType(currentPuzzle ?: "", currentModeInt)
-        if (subtypeList.isEmpty()) {
-            currentPuzzleCategory = "Normal"
-            editor.putString(getString(R.string.pk_last_used_category) + currentPuzzle + currentModeInt, "Normal")
-            editor.apply()
-        } else {
-            currentPuzzleCategory = sharedPreferences.getString(
-                getString(R.string.pk_last_used_category) + currentPuzzle + currentModeInt,
-                "Normal"
-            )
+        lifecycleScope.launch {
+            val subtypeList = TwistyTimer.getSolveRepository()
+                .getAllSubtypesFromType(currentPuzzle ?: "", currentModeInt)
+            if (subtypeList.isEmpty()) {
+                currentPuzzleCategory = "Normal"
+                editor.putString(
+                    getString(R.string.pk_last_used_category) + currentPuzzle + currentModeInt,
+                    "Normal"
+                )
+                editor.apply()
+            } else {
+                currentPuzzleCategory = sharedPreferences.getString(
+                    getString(R.string.pk_last_used_category) + currentPuzzle + currentModeInt,
+                    "Normal"
+                )
+            }
+            updatePuzzleSpinnerHeader()
         }
     }
 
     private fun handleHeaderSpinner() {
         // Setup action bar click listener
-        binding?.actionbar?.puzzleSpinner?.setOnClickListener { v: View? ->
+        binding?.actionbar?.puzzleSpinner?.setOnClickListener {
             if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) {
                 val bottomSheetTrainerDialog =
                     BottomSheetTrainerDialog.newInstance(currentPuzzleSubset, currentPuzzleCategory)
@@ -694,7 +715,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener, 
         /**
          * A "tag" to identify this class in log messages.
          */
-        private val TAG: String = TimerFragmentMain::class.java.getSimpleName()
+        private val TAG: String = TimerFragmentMain::class.java.simpleName
 
         /**
          * The zero-based position of the timer fragment/tab/page.

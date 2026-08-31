@@ -25,7 +25,7 @@ import androidx.core.graphics.drawable.toDrawable
  * times, a file must be chosen. If the user chooses to use the "external" format, this dialog hands
  * over to [PuzzleChooserDialog] to allow the user to select the puzzle type and category.
  * The puzzle chooser fragments report their choices back to this fragment via the common parent
- * activity. Once this dialog has assembled all of the necessary details for the operation, it calls
+ * activity. Once this dialog has assembled all the necessary details for the operation, it calls
  * back to the activity to initiate the import or export operation.
  * 
  * 
@@ -114,9 +114,9 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
                 // activity that the chosen puzzle type/category should be relayed back to this
                 // dialog fragment.
                 PuzzleChooserDialog.newInstance(
-                    R.string.action_export, this@ExportImportDialog.getTag(), mMode
+                    R.string.action_export, this@ExportImportDialog.tag, mMode
                 )
-                    .show(requireActivity().getSupportFragmentManager(), null)
+                    .show(requireActivity().supportFragmentManager, null)
             }
 
             R.id.import_backup -> {
@@ -129,9 +129,9 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
                 // Need to get the puzzle type and category before importing the data. There will
                 // be a call-back to "onPuzzleSelected" before returning to the activity.
                 PuzzleChooserDialog.newInstance(
-                    R.string.action_import, this@ExportImportDialog.getTag(), mMode
+                    R.string.action_import, this@ExportImportDialog.tag, mMode
                 )
-                    .show(requireActivity().getSupportFragmentManager(), null)
+                    .show(requireActivity().supportFragmentManager, null)
             }
 
             R.id.export_button -> toggleContentVisibility(
@@ -177,6 +177,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
      * 
      * @return The attached activity, or `null` if no activity is attached.
      */
+    @Suppress("UNCHECKED_CAST")
      private fun <A>
             getExImActivity(): A where A : AppCompatActivity, A : ExportImportCallbacks {
         return activity as A
@@ -223,7 +224,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
         const val EXIM_FORMAT_EXTERNAL: Int = 1
 
         /**
-         * The file format for full text import/export of all solve times used to back-up the database.
+         * The file format for full text import/export of all solve times used to back up the database.
          */
         const val EXIM_FORMAT_BACKUP: Int = 2
 

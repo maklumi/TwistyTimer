@@ -1,24 +1,21 @@
 package com.aricneto.twistytimer.fragment.dialog
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Drawable
-import android.os.AsyncTask
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.view.menu.MenuBuilder
-import androidx.appcompat.view.menu.MenuPopupHelper
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogTimeDetailsBinding
 import com.aricneto.twistytimer.TwistyTimer
@@ -32,9 +29,11 @@ import com.aricneto.twistytimer.utils.TTIntent
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.joda.time.DateTime
-import androidx.core.graphics.drawable.toDrawable
-import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
+import android.util.Log
 
 /**
  * Shows the timeList dialog
@@ -46,127 +45,176 @@ class TimeDialog : DialogFragment() {
     private var solve: Solve? = null
     private var dialogListener: DialogListener? = null
 
-    @SuppressLint("RestrictedApi")
-    private val clickListener: View.OnClickListener = object : View.OnClickListener {
-        override fun onClick(view: View) {
-            val dbHandler = TwistyTimer.getDBHandler()
+    private val clickListener = View.OnClickListener { view ->
+        val solveRepository = TwistyTimer.getSolveRepository()
 
-            when (view.id) {
-                R.id.overflowButton -> {
-                    val popupMenu = PopupMenu(requireActivity(), binding!!.overflowButton)
-                    if (solve?.history ?: false) popupMenu.menuInflater
-                        .inflate(R.menu.menu_list_detail_history, popupMenu.menu)
-                    else popupMenu.menuInflater
-                        .inflate(R.menu.menu_list_detail, popupMenu.menu)
+        when (view.id) {
+            R.id.overflowButton -> {
+                val popupMenu = PopupMenu(requireActivity(), binding!!.overflowButton)
+                if (solve?.history ?: false) popupMenu.menuInflater
+                    .inflate(R.menu.menu_list_detail_history, popupMenu.menu)
+                else popupMenu.menuInflater
+                    .inflate(R.menu.menu_list_detail, popupMenu.menu)
 
-                    val popupHelper = MenuPopupHelper(
-                        mContext!!,
-                        popupMenu.menu as MenuBuilder,
-                        binding!!.overflowButton
-                    )
-                    popupHelper.setForceShowIcon(true)
-
-                    popupMenu.setOnMenuItemClickListener { item ->
-                        when (item.getItemId()) {
-                            R.id.share -> {
-                                val shareIntent = Intent()
-                                shareIntent.action = Intent.ACTION_SEND
-                                shareIntent.putExtra(
-                                    Intent.EXTRA_TEXT,
-                                    convertTimeToString(
-                                        solve!!.time.toLong(),
-                                        PuzzleUtils.FORMAT_DEFAULT
-                                    ) + "s.\n" + solve!!.comment + "\n" + solve!!.scramble
-                                )
-                                shareIntent.type = "text/plain"
-                                requireContext().startActivity(shareIntent)
-                            }
-
-                            R.id.remove -> {
-                                dbHandler.deleteSolveByID(mId)
-                                updateList()
-                            }
-
-                            R.id.history_to -> {
-                                solve!!.history = true
-                                Toast.makeText(
-                                    context,
-                                    getString(R.string.sent_to_history),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                dbHandler.updateSolve(solve!!)
-                                updateList()
-                                dismiss()
-                            }
-
-                            R.id.history_from -> {
-                                solve!!.history = false
-                                Toast.makeText(
-                                    context,
-                                    getString(R.string.sent_to_session),
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                dbHandler.updateSolve(solve!!)
-                                updateList()
-                                dismiss()
-                            }
-                        }
-                        true
-                    }
-                    popupHelper.show()
+                try {
+                    val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+                    fieldPopup.isAccessible = true
+                    val menuPopupHelper = fieldPopup.get(popupMenu)
+                    val setForceIcons = menuPopupHelper.javaClass
+                        .getDeclaredMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
+                    setForceIcons.invoke(menuPopupHelper, true)
+                } catch (e: Exception) {
+                    Log.e("TimeDialog", "Error forcing icons in PopupMenu: $e")
                 }
 
-                R.id.editButton -> MaterialAlertDialogBuilder(mContext!!)
-                    .setTitle(R.string.select_penalty)
-                    .setSingleChoiceItems(
-                        R.array.array_penalties,
-                        solve!!.penalty
-                    ) { dialog: DialogInterface?, which: Int ->
-                        when (which) {
-                            0 -> solve =
-                                PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.NO_PENALTY)
-
-                            1 -> solve =
-                                PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_PLUSTWO)
-
-                            2 -> solve =
-                                PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_DNF)
+                popupMenu.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        R.id.share -> {
+                            val shareIntent = Intent()
+                            shareIntent.action = Intent.ACTION_SEND
+                            shareIntent.putExtra(
+                                Intent.EXTRA_TEXT,
+                                convertTimeToString(
+                                    solve!!.time.toLong(),
+                                    PuzzleUtils.FORMAT_DEFAULT
+                                ) + "s.\n" + solve!!.comment + "\n" + solve!!.scramble
+                            )
+                            shareIntent.type = "text/plain"
+                            requireContext().startActivity(shareIntent)
                         }
-                        dbHandler.updateSolve(solve!!)
+
+                        R.id.remove -> {
+                            lifecycleScope.launch {
+                                solveRepository.deleteSolve(mId)
+                                updateList()
+                            }
+                        }
+
+                        R.id.history_to -> {
+                            solve!!.history = true
+                            Toast.makeText(
+                                context,
+                                getString(R.string.sent_to_history),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            lifecycleScope.launch {
+                                solveRepository.updateSolve(
+                                    id = solve!!.id,
+                                    time = solve!!.time.toLong(),
+                                    date = solve!!.date,
+                                    scramble = solve!!.scramble,
+                                    penalty = solve!!.penalty.toLong(),
+                                    comment = solve!!.comment,
+                                    history = solve!!.history,
+                                    mode = solve!!.mode
+                                )
+                                updateList()
+                            }
+                        }
+
+                        R.id.history_from -> {
+                            solve!!.history = false
+                            Toast.makeText(
+                                context,
+                                getString(R.string.sent_to_session),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            lifecycleScope.launch {
+                                solveRepository.updateSolve(
+                                    id = solve!!.id,
+                                    time = solve!!.time.toLong(),
+                                    date = solve!!.date,
+                                    scramble = solve!!.scramble,
+                                    penalty = solve!!.penalty.toLong(),
+                                    comment = solve!!.comment,
+                                    history = solve!!.history,
+                                    mode = solve!!.mode
+                                )
+                                updateList()
+                            }
+                        }
+                    }
+                    true
+                }
+                popupMenu.show()
+            }
+
+            R.id.editButton -> MaterialAlertDialogBuilder(mContext!!)
+                .setTitle(R.string.select_penalty)
+                .setSingleChoiceItems(
+                    R.array.array_penalties,
+                    solve!!.penalty
+                ) { dialog: DialogInterface?, which: Int ->
+                    when (which) {
+                        0 -> solve =
+                            PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.NO_PENALTY)
+
+                        1 -> solve =
+                            PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_PLUSTWO)
+
+                        2 -> solve =
+                            PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_DNF)
+                    }
+                    lifecycleScope.launch {
+                        solveRepository.updateSolve(
+                            id = solve!!.id,
+                            time = solve!!.time.toLong(),
+                            date = solve!!.date,
+                            scramble = solve!!.scramble,
+                            penalty = solve!!.penalty.toLong(),
+                            comment = solve!!.comment,
+                            history = solve!!.history,
+                            mode = solve!!.mode
+                        )
                         updateList()
                         dialog!!.dismiss()
                     }
-                    .setNegativeButton(R.string.action_cancel, null)
-                    .show()
+                }
+                .setNegativeButton(R.string.action_cancel, null)
+                .show()
 
-                R.id.commentButton -> {
-                    val commentView =
-                        LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null)
-                    val commentEditText =
-                        commentView.findViewById<TextInputEditText>(R.id.edit_text)
-                    commentEditText.setText(solve!!.comment)
+            R.id.commentButton -> {
+                val commentView =
+                    layoutInflater.inflate(
+                        R.layout.dialog_input,
+                        requireView() as? ViewGroup,
+                        false
+                    )
+                val commentEditText =
+                    commentView.findViewById<TextInputEditText>(R.id.edit_text)
+                commentEditText.setText(solve!!.comment)
 
-                    MaterialAlertDialogBuilder(mContext!!)
-                        .setTitle(R.string.edit_comment)
-                        .setView(commentView)
-                        .setPositiveButton(
-                            R.string.action_done
-                        ) { _: DialogInterface?, _: Int ->
-                            solve!!.comment = commentEditText.getText().toString()
-                            dbHandler.updateSolve(solve!!)
+                MaterialAlertDialogBuilder(mContext!!)
+                    .setTitle(R.string.edit_comment)
+                    .setView(commentView)
+                    .setPositiveButton(
+                        R.string.action_done
+                    ) { _: DialogInterface?, _: Int ->
+                        solve!!.comment = commentEditText.text.toString()
+                        lifecycleScope.launch {
+                            solveRepository.updateSolve(
+                                id = solve!!.id,
+                                time = solve!!.time.toLong(),
+                                date = solve!!.date,
+                                scramble = solve!!.scramble,
+                                penalty = solve!!.penalty.toLong(),
+                                comment = solve!!.comment,
+                                history = solve!!.history,
+                                mode = solve!!.mode
+                            )
                             Toast.makeText(
-                                getContext(),
+                                context,
                                 getString(R.string.added_comment),
                                 Toast.LENGTH_SHORT
                             ).show()
                             updateList()
                         }
-                        .setNegativeButton(R.string.action_cancel, null)
-                        .show()
-                }
-
-                R.id.scrambleText -> toggleContentVisibility(binding!!.scrambleImage)
+                    }
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
             }
+
+            R.id.scrambleText -> toggleContentVisibility(binding!!.scrambleImage)
         }
     }
     private var mContext: Context? = null
@@ -190,48 +238,57 @@ class TimeDialog : DialogFragment() {
         //Log.d("TIME DIALOG", "mId: " + mId + "\nexists: " + handler.idExists(mId));
         dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
-        //getDialog().getWindow().setWindowAnimations(R.style.DialogAnimationScale);
-        val matchedSolve = TwistyTimer.getDBHandler().getSolve(mId)
+        lifecycleScope.launch {
+            //getDialog().getWindow().setWindowAnimations(R.style.DialogAnimationScale);
+            val matchedSolve = TwistyTimer.getSolveRepository().getSolve(mId)
 
-        if (matchedSolve != null) {
-            solve = matchedSolve
+            if (matchedSolve != null) {
+                solve = matchedSolve
 
-            binding!!.timeText.text = Html.fromHtml(
-                convertTimeToString(
-                    solve!!.time.toLong(),
-                    PuzzleUtils.FORMAT_SMALL_MILLI
-                ), FROM_HTML_MODE_LEGACY
-            )
-            binding!!.dateText.text = DateTime(solve!!.date).toString("d MMM y'\n'H':'mm")
+                binding!!.timeText.text = Html.fromHtml(
+                    convertTimeToString(
+                        solve!!.time.toLong(),
+                        PuzzleUtils.FORMAT_SMALL_MILLI
+                    ), FROM_HTML_MODE_LEGACY
+                )
+                binding!!.dateText.text = DateTime(solve!!.date).toString("d MMM y'\n'H':'mm")
 
-            binding!!.scrambleText.text = solve!!.scramble
+                binding!!.scrambleText.text = solve!!.scramble
 
-            when (solve!!.penalty) {
-                PuzzleUtils.PENALTY_DNF -> binding!!.puzzlePenaltyText.text = "DNF"
-                PuzzleUtils.PENALTY_PLUSTWO -> binding!!.puzzlePenaltyText.text =
-                    "+2"
-                else -> binding!!.puzzlePenaltyText.visibility = View.GONE
+                when (solve!!.penalty) {
+                    PuzzleUtils.PENALTY_DNF -> binding!!.puzzlePenaltyText.text =
+                        getString(R.string.do_not_finished)
+                    PuzzleUtils.PENALTY_PLUSTWO -> binding!!.puzzlePenaltyText.text =
+                        "+2"
+
+                    else -> binding!!.puzzlePenaltyText.visibility = View.GONE
+                }
+
+                if (solve!!.comment != "") {
+                    binding!!.commentText.text = solve!!.comment
+                    binding!!.commentText.visibility = View.VISIBLE
+                }
+
+                if (solve!!.scramble == "") binding!!.scrambleText.visibility = View.GONE
+
+                binding!!.scrambleText.setOnClickListener(clickListener)
+                binding!!.overflowButton.setOnClickListener(clickListener)
+                binding!!.editButton.setOnClickListener(clickListener)
+                binding!!.commentButton.setOnClickListener(clickListener)
+
+                // Generate scramble image
+                val generator = ScrambleGenerator(solve!!.puzzle)
+                val drawable = withContext(Dispatchers.IO) {
+                    generator.generateImageFromScramble(
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()),
+                        solve!!.scramble
+                    )
+                }
+                binding!!.scrambleImage.setImageDrawable(drawable)
             }
-
-            if (solve!!.comment != "") {
-                binding!!.commentText.text = solve!!.comment
-                binding!!.commentText.visibility = View.VISIBLE
-            }
-
-            if (solve!!.scramble == "") binding!!.scrambleText.visibility = View.GONE
-
-            binding!!.scrambleText.setOnClickListener(clickListener)
-            binding!!.overflowButton.setOnClickListener(clickListener)
-            binding!!.editButton.setOnClickListener(clickListener)
-            binding!!.commentButton.setOnClickListener(clickListener)
         }
 
         return binding!!.getRoot()
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-       this@TimeDialog.GenerateScrambleImage().execute()
     }
 
     fun setDialogListener(listener: DialogListener?) {
@@ -251,23 +308,6 @@ class TimeDialog : DialogFragment() {
         binding = null
         if (dialogListener != null) dialogListener!!.onDismissDialog()
         super.onDestroyView()
-    }
-
-    private inner class GenerateScrambleImage : AsyncTask<Void?, Void?, Drawable?>() {
-        override fun doInBackground(vararg voids: Void?): Drawable? {
-            val generator = ScrambleGenerator(solve!!.puzzle)
-            return generator.generateImageFromScramble(
-                PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext()),
-                solve!!.scramble
-            )
-        }
-
-        override fun onPostExecute(drawable: Drawable?) {
-            super.onPostExecute(drawable)
-            if (binding != null && binding!!.scrambleImage != null) binding!!.scrambleImage.setImageDrawable(
-                drawable
-            )
-        }
     }
 
     companion object {

@@ -4,13 +4,11 @@ import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
-import android.content.DialogInterface.OnShowListener
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.FrameLayout
@@ -95,14 +93,6 @@ class BottomSheetSpinnerDialog : BottomSheetDialogFragment() {
     fun setTitle(title: String?, @DrawableRes iconRes: Int) {
         titleText = title
         titleIcon = iconRes
-    }
-
-    fun setListAdapter(adapter: BottomSheetSpinnerAdapter?) {
-        mAdapter = adapter
-    }
-
-    fun setListClickListener(clickListener: OnItemClickListener?) {
-        mClickListener = clickListener
     }
 
     override fun onDestroyView() {

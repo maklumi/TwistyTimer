@@ -424,5 +424,6 @@
     <string name="list_sort_ascending">Ascending</string>
     <string name="list_sort_descending">Descending</string>
     <string name="item_scramble_box_tv_scramble">F\' U2 F2 D2 U2 L2 B R2 U2 B L B\' U\' L\'F\' U2 F2 D2 U2 L2 B</string>
+    <string name="do_not_finished">DNF</string>
 
 </resources>

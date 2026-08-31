@@ -2,9 +2,7 @@ package com.aricneto.twistytimer
 
 import android.app.Application
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import com.aricneto.twistytimer.database.AlgRepository
-import com.aricneto.twistytimer.database.DatabaseHandler
 import com.aricneto.twistytimer.database.DatabaseInitializer
 import com.aricneto.twistytimer.database.SolveRepository
 import com.aricneto.twistytimer.database.TwistyDatabaseFactory
@@ -67,20 +65,6 @@ class TwistyTimer : Application() {
 
         sAppContext = applicationContext
 
-        // Create a singleton instance of the "DatabaseHandler" using the application context. This
-        // avoids memory leaks elsewhere and is more convenient. There is ABSOLUTELY NO NEED to
-        // close the database EVER. Closing it in an ad hoc fashion (as was done in fragments and
-        // activities) leads to all sorts of concurrency problems, race conditions, etc. SQLite
-        // handles all the concurrency itself, so there is no problem there. Android/Linux will
-        // ensure that the database is closed if the application process exits.
-        //
-        // Note that the database is not opened here; it will not be opened until the first call to
-        // "getReadableDatabase" or "getWritableDatabase" and then the open database instance will
-        // be cached (by "SQLiteOpenHelper", which is the base class of "DatabaseHandler"). Those
-        // two methods should really only be called from a background task, though, as opening the
-        // database (particularly for the first time) can take some time.
-        sDBHandler = DatabaseHandler()
-
         sAlgRepository = AlgRepository(TwistyDatabaseFactory.getDatabase().algorithmQueries)
         sSolveRepository = SolveRepository(TwistyDatabaseFactory.getDatabase().solveQueries)
 
@@ -92,11 +76,6 @@ class TwistyTimer : Application() {
     }
 
     companion object {
-        /**
-         * The singleton instance of the database access handler.
-         */
-        private var sDBHandler: DatabaseHandler? = null
-
         private var sAlgRepository: AlgRepository? = null
         private var sSolveRepository: SolveRepository? = null
 
@@ -104,17 +83,6 @@ class TwistyTimer : Application() {
          * The cached reference to the application context.
          */
         private var sAppContext: Context? = null
-
-        /**
-         * Gets the singleton instance of the database access handler. Do not close any database after
-         * use!
-         *
-         * @return The database handler.
-         */
-        @JvmStatic
-        fun getDBHandler(): DatabaseHandler {
-            return sDBHandler!!
-        }
 
         @JvmStatic
         fun getAlgRepository(): AlgRepository {
@@ -124,17 +92,6 @@ class TwistyTimer : Application() {
         @JvmStatic
         fun getSolveRepository(): SolveRepository {
             return sSolveRepository!!
-        }
-
-        /**
-         * Gets a read-only database handle. Do <i>not</i> close the database when it is no longer
-         * needed.
-         *
-         * @return A handle on a readable database.
-         */
-        @JvmStatic
-        fun getReadableDB(): SQLiteDatabase {
-            return getDBHandler().readableDatabase
         }
 
         /**

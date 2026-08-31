@@ -3,13 +3,14 @@ package com.aricneto.twistytimer.fragment.dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatSeekBar
+import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogAlgDetailsBinding
 import com.aricneto.twistytimer.TwistyTimer
@@ -20,7 +21,7 @@ import com.aricneto.twistytimer.utils.TTIntent
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import androidx.core.graphics.drawable.toDrawable
+import kotlinx.coroutines.launch
 
 /**
  * Shows the algList dialog
@@ -34,12 +35,16 @@ class AlgDialog : DialogFragment() {
     private var dialogListener: DialogListener? = null
 
     private val clickListener: View.OnClickListener = View.OnClickListener { view ->
-        val dbHandler = TwistyTimer.getDBHandler()
+        val algRepository = TwistyTimer.getAlgRepository()
 
         when (view.id) {
             R.id.editButton -> {
                 val editView =
-                    layoutInflater.inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
+                    layoutInflater.inflate(
+                        R.layout.dialog_input,
+                        requireView().parent as ViewGroup,
+                        false
+                    )
                 val editEditText = editView.findViewById<TextInputEditText>(R.id.edit_text)
                 editEditText.setText(algorithm!!.algs)
 
@@ -51,16 +56,22 @@ class AlgDialog : DialogFragment() {
                     ) { _: DialogInterface?, _: Int ->
                         val input = editEditText.getText().toString()
                         algorithm!!.algs = input
-                        dbHandler.updateAlgorithmAlg(mId, input)
-                        binding!!.algText.text = input
-                        updateList()
+                        lifecycleScope.launch {
+                            algRepository.updateAlgorithmAlg(mId, input)
+                            binding!!.algText.text = input
+                            updateList()
+                        }
                     }
                     .setNegativeButton(R.string.action_cancel, null)
                     .show()
             }
 
             R.id.progressButton -> {
-                val seekBar = layoutInflater.inflate(R.layout.dialog_progress, null) as AppCompatSeekBar
+                val seekBar = layoutInflater.inflate(
+                    R.layout.dialog_progress,
+                    requireView().parent as ViewGroup,
+                    false
+                ) as AppCompatSeekBar
                 seekBar.progress = algorithm!!.progress
                 MaterialAlertDialogBuilder(mContext!!)
                     .setTitle(R.string.dialog_set_progress)
@@ -70,9 +81,11 @@ class AlgDialog : DialogFragment() {
                     ) { _: DialogInterface?, _: Int ->
                         val seekProgress = seekBar.progress
                         algorithm!!.progress = seekProgress
-                        dbHandler.updateAlgorithmProgress(mId, seekProgress)
-                        binding!!.progressBar.progress = seekProgress
-                        updateList()
+                        lifecycleScope.launch {
+                            algRepository.updateAlgorithmProgress(mId, seekProgress.toLong())
+                            binding!!.progressBar.progress = seekProgress
+                            updateList()
+                        }
                     }
                     .setNegativeButton(R.string.action_cancel, null)
                     .show()
@@ -86,8 +99,10 @@ class AlgDialog : DialogFragment() {
                 ) { _: DialogInterface?, _: Int ->
                     algorithm!!.algs =
                         AlgUtils.getDefaultAlgs(algorithm!!.subset, algorithm!!.name)
-                    dbHandler.updateAlgorithmAlg(mId, algorithm!!.algs)
-                    binding!!.algText.text = algorithm!!.algs
+                    lifecycleScope.launch {
+                        algRepository.updateAlgorithmAlg(mId, algorithm!!.algs)
+                        binding!!.algText.text = algorithm!!.algs
+                    }
                 }
                 .setNegativeButton(R.string.action_cancel, null)
                 .show()
@@ -111,31 +126,33 @@ class AlgDialog : DialogFragment() {
 
         dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
-        val matchedAlgorithm = TwistyTimer.getDBHandler().getAlgorithm(mId)
+        lifecycleScope.launch {
+            val matchedAlgorithm = TwistyTimer.getAlgRepository().getAlgorithmById(mId)
 
-        if (matchedAlgorithm != null) {
-            algorithm = matchedAlgorithm
-            binding!!.algText.text = algorithm!!.algs
-            binding!!.nameText.text = algorithm!!.name
+            if (matchedAlgorithm != null) {
+                algorithm = matchedAlgorithm
+                binding!!.algText.text = algorithm!!.algs
+                binding!!.nameText.text = algorithm!!.name
 
-            binding!!.cube.cubeState =
-                AlgUtils.getCaseState(requireContext(), algorithm!!.subset, algorithm!!.name)
+                binding!!.cube.cubeState =
+                    AlgUtils.getCaseState(requireContext(), algorithm!!.subset, algorithm!!.name)
 
-            binding!!.progressBar.progress = algorithm!!.progress
+                binding!!.progressBar.progress = algorithm!!.progress
 
-            binding!!.revertButton.setOnClickListener(clickListener)
-            binding!!.progressButton.setOnClickListener(clickListener)
-            binding!!.editButton.setOnClickListener(clickListener)
+                binding!!.revertButton.setOnClickListener(clickListener)
+                binding!!.progressButton.setOnClickListener(clickListener)
+                binding!!.editButton.setOnClickListener(clickListener)
 
-            // If the subset is PLL, it'll need to show the pll arrows.
-            if (algorithm!!.subset == "PLL") {
-                binding!!.pllArrows.setImageDrawable(
-                    AlgUtils.getPllArrow(
-                        requireContext(),
-                        algorithm!!.name!!
+                // If the subset is PLL, it'll need to show the pll arrows.
+                if (algorithm!!.subset == "PLL") {
+                    binding!!.pllArrows.setImageDrawable(
+                        AlgUtils.getPllArrow(
+                            requireContext(),
+                            algorithm!!.name
+                        )
                     )
-                )
-                binding!!.pllArrows.visibility = View.VISIBLE
+                    binding!!.pllArrows.visibility = View.VISIBLE
+                }
             }
         }
 

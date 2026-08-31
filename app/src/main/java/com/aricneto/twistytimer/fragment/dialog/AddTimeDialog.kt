@@ -1,6 +1,5 @@
 package com.aricneto.twistytimer.fragment.dialog
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Color
@@ -11,16 +10,14 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import androidx.appcompat.view.menu.MenuBuilder
-import androidx.appcompat.view.menu.MenuPopupHelper
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogAddTimeBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.items.Solve
-import com.aricneto.twistytimer.listener.DialogListener
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.aricneto.twistytimer.utils.PuzzleUtils.parseAddedTime
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE
@@ -31,6 +28,7 @@ import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.aricneto.twistytimer.watcher.SolveTimeNumberTextWatcher
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 import org.joda.time.DateTime
 
 /**
@@ -38,8 +36,6 @@ import org.joda.time.DateTime
  */
 class AddTimeDialog : DialogFragment() {
     private var binding: DialogAddTimeBinding? = null
-
-    private var dialogListener: DialogListener? = null
 
     private var currentPuzzle: String? = null
     private var currentScramble: String? = null
@@ -51,11 +47,10 @@ class AddTimeDialog : DialogFragment() {
 
     private var mContext: Context? = null
 
-    @SuppressLint("RestrictedApi")
     private val clickListener: View.OnClickListener = View.OnClickListener { view ->
-        when (view.getId()) {
-            R.id.button_save -> if (binding!!.editTextTime.getText().toString().isNotEmpty()) {
-                val time = parseAddedTime(binding!!.editTextTime.getText().toString()).toInt()
+        when (view.id) {
+            R.id.button_save -> if (binding!!.editTextTime.text.toString().isNotEmpty()) {
+                val time = parseAddedTime(binding!!.editTextTime.text.toString()).toInt()
                 val solve = Solve(
                     if (mCurrentPenalty == PuzzleUtils.PENALTY_PLUSTWO) time + 2000 else time,
                     currentPuzzle!!,
@@ -68,17 +63,30 @@ class AddTimeDialog : DialogFragment() {
                     currentModeInt
                 )
 
-                TwistyTimer.getDBHandler().addSolve(solve)
-                // The receiver might be able to use the new solve and avoid
-                // accessing the database.
-                BroadcastBuilder(CATEGORY_UI_INTERACTIONS, ACTION_TIME_ADDED_MANUALLY)
-                    .solve(solve)
-                    .broadcast()
+                lifecycleScope.launch {
+                    TwistyTimer.getSolveRepository().insertSolve(
+                        type = solve.puzzle,
+                        subtype = solve.subtype,
+                        time = solve.time.toLong(),
+                        date = solve.date,
+                        scramble = solve.scramble,
+                        penalty = solve.penalty.toLong(),
+                        comment = solve.comment,
+                        history = solve.history,
+                        mode = solve.mode
+                    )
 
-                // Generate new scramble
-                broadcast(CATEGORY_UI_INTERACTIONS, ACTION_GENERATE_SCRAMBLE)
+                    // The receiver might be able to use the new solve and avoid
+                    // accessing the database.
+                    BroadcastBuilder(CATEGORY_UI_INTERACTIONS, ACTION_TIME_ADDED_MANUALLY)
+                        .solve(solve)
+                        .broadcast()
 
-                dismiss()
+                    // Generate new scramble
+                    broadcast(CATEGORY_UI_INTERACTIONS, ACTION_GENERATE_SCRAMBLE)
+
+                    dismiss()
+                }
             } else {
                 dismiss()
             }
@@ -126,13 +134,18 @@ class AddTimeDialog : DialogFragment() {
                     true
                 }
 
-                val popupHelper = MenuPopupHelper(
-                    mContext!!,
-                    popupMenu.menu as MenuBuilder,
-                    binding!!.buttonMore
-                )
-                popupHelper.setForceShowIcon(true)
-                popupHelper.show()
+                try {
+                    val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
+                    fieldPopup.isAccessible = true
+                    val menuPopupHelper = fieldPopup.get(popupMenu)
+                    val setForceIcons = menuPopupHelper.javaClass
+                        .getDeclaredMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
+                    setForceIcons.invoke(menuPopupHelper, true)
+                } catch (e: Exception) {
+                    Log.e("AddTimeDialog", "Error forcing icons in PopupMenu: $e")
+                }
+
+                popupMenu.show()
             }
         }
     }
@@ -166,17 +179,13 @@ class AddTimeDialog : DialogFragment() {
         try {
             binding!!.editTextTime.postDelayed({
                 (mContext!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-                    .showSoftInput(binding!!.editTextTime, InputMethodManager.SHOW_IMPLICIT)
+                    .showSoftInput(binding!!.editTextTime, 0)
             }, 400)
         } catch (e: Exception) {
             Log.e("AddTimeDialog", "Error showing keyboard: $e")
         }
 
         return binding!!.getRoot()
-    }
-
-    fun setDialogListener(listener: DialogListener?) {
-        dialogListener = listener
     }
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -189,8 +198,6 @@ class AddTimeDialog : DialogFragment() {
         } catch (e: Exception) {
             Log.e("AddTimeDialog", "Error hiding keyboard: $e")
         }
-
-        if (dialogListener != null) dialogListener!!.onDismissDialog()
     }
 
     override fun onDestroyView() {

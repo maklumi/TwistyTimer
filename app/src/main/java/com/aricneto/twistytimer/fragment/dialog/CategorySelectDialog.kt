@@ -3,8 +3,8 @@ package com.aricneto.twistytimer.fragment.dialog
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,21 +12,22 @@ import android.widget.AdapterView
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.AdapterView.OnItemLongClickListener
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogCategorySelectBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.adapter.BottomSheetSpinnerAdapter
-import com.aricneto.twistytimer.database.DatabaseHandler
 import com.aricneto.twistytimer.fragment.TimerFragment
-import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.listener.DialogListenerMessage
 import com.aricneto.twistytimer.puzzle.TrainerScrambler
 import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import androidx.core.graphics.drawable.toDrawable
+import kotlinx.coroutines.launch
 
 class CategorySelectDialog : DialogFragment() {
     private var binding: DialogCategorySelectBinding? = null
@@ -44,9 +45,6 @@ class CategorySelectDialog : DialogFragment() {
     private var dialogListenerMessage: DialogListenerMessage? = null
 
     private var mAdapter: BottomSheetSpinnerAdapter? = null
-    private val mItemClickListener: OnItemClickListener? = null
-    private val mItemLongClickListener: OnItemLongClickListener? = null
-    private val mOnClickListener: View.OnClickListener? = null
     private var mContext: Context? = null
 
     private var currentModeInt: Int = 0
@@ -60,11 +58,11 @@ class CategorySelectDialog : DialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = DialogCategorySelectBinding.inflate(inflater, container, false)
         mContext = context
 
-        return binding!!.getRoot()
+        return binding!!.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -76,36 +74,46 @@ class CategorySelectDialog : DialogFragment() {
         currentPuzzle = requireArguments().getString("puzzle")
         currentSubtype = requireArguments().getString("subtype")
         currentTimerMode = requireArguments().getString("mode")
-        currentSubset = requireArguments().getSerializable("subset") as TrainerSubset?
-        currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
+        currentSubset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireArguments().getSerializable("subset", TrainerSubset::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            requireArguments().getSerializable("subset") as TrainerSubset?
+        }
+        currentModeInt = TimerFragment.modeToInt(currentTimerMode)
 
-        val dbHandler = TwistyTimer.getDBHandler()
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+        val solveRepository = TwistyTimer.getSolveRepository()
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val editor = sharedPreferences.edit()
 
-        // get a list of all subtypes
-        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
+        lifecycleScope.launch {
+            // get a list of all subtypes
+            subtypeList = solveRepository.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
+                .toMutableList()
 
-        if (subtypeList!!.isEmpty()) {
-            // if subtype list is empty, create a new entry
-            dbHandler.addSolve(
-                Solve(
-                    1,
-                    currentPuzzle!!,
-                    "Normal",
-                    0L,
-                    "",
-                    PuzzleUtils.PENALTY_HIDETIME,
-                    "",
-                    true,
-                    currentModeInt
+            if (subtypeList!!.isEmpty()) {
+                // if subtype list is empty, create a new entry
+                solveRepository.insertSolve(
+                    type = currentPuzzle!!,
+                    subtype = "Normal",
+                    time = 1L,
+                    date = 0L,
+                    scramble = "",
+                    penalty = PuzzleUtils.PENALTY_HIDETIME.toLong(),
+                    comment = "",
+                    history = true,
+                    mode = currentModeInt
                 )
-            )
-        } else if (subtypeList!!.size == 1) {
-            currentSubtype = subtypeList!![0]
-        }
+                subtypeList =
+                    solveRepository.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
+                        .toMutableList()
+            }
+            if (subtypeList!!.size == 1) {
+                currentSubtype = subtypeList!![0]
+            }
 
-        updateList(dbHandler)
+            updateList()
+        }
 
         // Create subtype
         val createSubtypeView = layoutInflater.inflate(R.layout.dialog_input, null)
@@ -119,38 +127,35 @@ class CategorySelectDialog : DialogFragment() {
             .setPositiveButton(
                 R.string.action_done
             ) { _: DialogInterface?, _: Int ->
-                val input = createSubtypeEditText.getText().toString()
+                val input = createSubtypeEditText.text.toString()
                 if (input.length in 2..32) {
-                    // add a single hidden solve with that category name to save it
-                    dbHandler.addSolve(
-                        Solve(
-                            1,
-                            currentPuzzle!!,
-                            input,
-                            0L,
-                            "",
-                            PuzzleUtils.PENALTY_HIDETIME,
-                            "",
-                            true,
-                            currentModeInt
+                    lifecycleScope.launch {
+                        // add a single hidden solve with that category name to save it
+                        solveRepository.insertSolve(
+                            type = currentPuzzle!!,
+                            subtype = input,
+                            time = 1L,
+                            date = 0L,
+                            scramble = "",
+                            penalty = PuzzleUtils.PENALTY_HIDETIME.toLong(),
+                            comment = "",
+                            history = true,
+                            mode = currentModeInt
                         )
-                    )
-                    currentSubtype = input
-                    updateList(dbHandler)
+                        currentSubtype = input
+                        updateList()
 
-                    editor.putString(KEY_SAVED_SUBTYPE + currentPuzzle, currentSubtype)
-                    editor.apply()
-                    if (dialogListenerMessage != null) dialogListenerMessage!!.onUpdateDialog(
-                        currentSubtype
-                    )
+                        editor.putString(KEY_SAVED_SUBTYPE + currentPuzzle, currentSubtype)
+                        editor.apply()
+                        if (dialogListenerMessage != null) dialogListenerMessage!!.onUpdateDialog(
+                            currentSubtype
+                        )
+                    }
                 }
             }
             .setNegativeButton(R.string.action_cancel, null)
             .create()
 
-        val context = getContext()
-
-        // click listeners
         // select a subtype
         binding!!.list.onItemClickListener =
             OnItemClickListener { _: AdapterView<*>?, _: View?, position: Int, _: Long ->
@@ -175,10 +180,10 @@ class CategorySelectDialog : DialogFragment() {
                 popup.setOnMenuItemClickListener { item ->
                     when (item.itemId) {
                         R.id.rename -> {
-                            currentEditSubtype = subtypeList!!.get(position)
+                            currentEditSubtype = subtypeList!![position]
                             //Rename subtype
                             val renameView =
-                                LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null)
+                                layoutInflater.inflate(R.layout.dialog_input, null)
                             val renameEditText =
                                 renameView.findViewById<TextInputEditText>(R.id.edit_text)
                             renameEditText.setText(currentEditSubtype)
@@ -187,18 +192,19 @@ class CategorySelectDialog : DialogFragment() {
                                 .setTitle(R.string.enter_new_name_dialog)
                                 .setView(renameView)
                                 .setPositiveButton(
-                                    R.string.action_done,
-                                    DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                                        val input = renameEditText.getText().toString()
-                                        if (input.length >= 2 && input.length <= 32) {
-                                            dbHandler.renameSubtype(
+                                    R.string.action_done
+                                ) { _: DialogInterface?, _: Int ->
+                                    val input = renameEditText.text.toString()
+                                    if (input.length in 2..32) {
+                                        lifecycleScope.launch {
+                                            solveRepository.renameSubtype(
+                                                input,
                                                 currentPuzzle!!,
                                                 currentEditSubtype!!,
-                                                input,
                                                 currentModeInt
                                             )
                                             currentSubtype = input
-                                            updateList(dbHandler)
+                                            updateList()
 
                                             editor.putString(
                                                 KEY_SAVED_SUBTYPE + currentPuzzle,
@@ -212,13 +218,15 @@ class CategorySelectDialog : DialogFragment() {
                                             editor.apply()
                                             dialogListenerMessage!!.onUpdateDialog(currentSubtype)
                                         }
-                                    })
+                                    }
+                                }
                                 .setNegativeButton(R.string.action_cancel, null)
                                 .show()
                             true
                         }
+
                         R.id.remove -> {
-                            currentEditSubtype = subtypeList!!.get(position)
+                            currentEditSubtype = subtypeList!![position]
                             // Remove Subtype dialog
                             MaterialAlertDialogBuilder(mContext!!)
                                 .setTitle(R.string.remove_subtype_confirmation)
@@ -228,18 +236,26 @@ class CategorySelectDialog : DialogFragment() {
                                     )
                                 )
                                 .setPositiveButton(
-                                    R.string.action_remove,
-                                    DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                                        dbHandler.deleteSubtype(currentPuzzle!!, currentEditSubtype!!, currentModeInt)
+                                    R.string.action_remove
+                                ) { _: DialogInterface?, _: Int ->
+                                    lifecycleScope.launch {
+                                        solveRepository.deleteSubtype(
+                                            currentPuzzle!!,
+                                            currentEditSubtype!!,
+                                            currentModeInt
+                                        )
                                         // After removing, change current subtype to first of list, if none exist, create "Normal" subtype
-                                        if (subtypeList!!.size > 1) {
-                                            currentSubtype =
-                                                dbHandler.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
-                                                    .get(0)
+                                        val currentSubtypes =
+                                            solveRepository.getAllSubtypesFromType(
+                                                currentPuzzle!!,
+                                                currentModeInt
+                                            )
+                                        currentSubtype = if (currentSubtypes.isNotEmpty()) {
+                                            currentSubtypes[0]
                                         } else {
-                                            currentSubtype = "Normal"
+                                            "Normal"
                                         }
-                                        updateList(dbHandler)
+                                        updateList()
 
                                         editor.putString(
                                             KEY_SAVED_SUBTYPE + currentPuzzle,
@@ -247,11 +263,13 @@ class CategorySelectDialog : DialogFragment() {
                                         )
                                         editor.apply()
                                         dialogListenerMessage!!.onUpdateDialog(currentSubtype)
-                                    })
+                                    }
+                                }
                                 .setNegativeButton(R.string.action_cancel, null)
                                 .show()
                             true
                         }
+
                         else -> false
                     }
                 }
@@ -272,117 +290,22 @@ class CategorySelectDialog : DialogFragment() {
                 true
             }
 
-        /*
-        binding!!.list.onItemLongClickListener =
-            OnItemLongClickListener { _: AdapterView<*>?, view12: View?, position: Int, _: Long ->
-                // Create a popup menu for each entry
-                val menuBuilder = MenuBuilder(context)
-                val inflater = MenuInflater(context)
-
-                inflater.inflate(R.menu.menu_category_options, menuBuilder)
-                val popupHelper = MenuPopupHelper(context!!, menuBuilder, view12!!)
-                popupHelper.setForceShowIcon(true)
-
-                menuBuilder.setCallback(object : MenuBuilder.Callback {
-                    override fun onMenuItemSelected(menu: MenuBuilder, item: MenuItem): Boolean {
-                        when (item.getItemId()) {
-                            R.id.rename -> {
-                                currentEditSubtype = subtypeList!!.get(position)
-                                //Rename subtype
-                                val renameView =
-                                    LayoutInflater.from(mContext).inflate(R.layout.dialog_input, null)
-                                val renameEditText =
-                                    renameView.findViewById<TextInputEditText>(R.id.edit_text)
-                                renameEditText.setText(currentEditSubtype)
-
-                                MaterialAlertDialogBuilder(mContext!!)
-                                    .setTitle(R.string.enter_new_name_dialog)
-                                    .setView(renameView)
-                                    .setPositiveButton(
-                                        R.string.action_done,
-                                        DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                                            val input = renameEditText.getText().toString()
-                                            if (input.length >= 2 && input.length <= 32) {
-                                                dbHandler.renameSubtype(
-                                                    currentPuzzle!!,
-                                                    currentEditSubtype!!,
-                                                    input,
-                                                    currentModeInt
-                                                )
-                                                currentSubtype = input
-                                                updateList(dbHandler)
-
-                                                editor.putString(
-                                                    KEY_SAVEDSUBTYPE + currentPuzzle,
-                                                    currentSubtype
-                                                )
-                                                if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) TrainerScrambler.renameCategory(
-                                                    currentSubset!!,
-                                                    currentEditSubtype,
-                                                    currentSubtype
-                                                )
-                                                editor.apply()
-                                                dialogListenerMessage!!.onUpdateDialog(currentSubtype)
-                                            }
-                                        })
-                                    .setNegativeButton(R.string.action_cancel, null)
-                                    .show()
-                            }
-
-                            R.id.remove -> {
-                                currentEditSubtype = subtypeList!!.get(position)
-                                // Remove Subtype dialog
-                                MaterialAlertDialogBuilder(mContext!!)
-                                    .setTitle(R.string.remove_subtype_confirmation)
-                                    .setMessage(
-                                        getString(R.string.remove_subtype_confirmation_content) + " \"" + currentEditSubtype + "\"?\n" + getString(
-                                            R.string.remove_subtype_confirmation_content_continuation
-                                        )
-                                    )
-                                    .setPositiveButton(
-                                        R.string.action_remove,
-                                        DialogInterface.OnClickListener { dialog: DialogInterface?, which: Int ->
-                                            dbHandler.deleteSubtype(currentPuzzle!!, currentEditSubtype!!)
-                                            // After removing, change current subtype to first of list, if none exist, create "Normal" subtype
-                                            if (subtypeList!!.size > 1) {
-                                                currentSubtype =
-                                                    dbHandler.getAllSubtypesFromType(currentPuzzle!!)
-                                                        .get(0)
-                                            } else {
-                                                currentSubtype = "Normal"
-                                            }
-                                            updateList(dbHandler)
-
-                                            editor.putString(
-                                                KEY_SAVEDSUBTYPE + currentPuzzle,
-                                                currentSubtype
-                                            )
-                                            editor.apply()
-                                            dialogListenerMessage!!.onUpdateDialog(currentSubtype)
-                                        })
-                                    .setNegativeButton(R.string.action_cancel, null)
-                                    .show()
-                            }
-                        }
-                        return false
-                    }
-
-                    override fun onMenuModeChange(menu: MenuBuilder) {
-                    }
-                })
-
-                popupHelper.show()
-                true
-            }*/
         binding!!.addCategory.setOnClickListener { _: View? -> createSubtypeDialog.show() }
     }
 
-    private fun updateList(dbHandler: DatabaseHandler) {
-        subtypeList = dbHandler.getAllSubtypesFromType(currentPuzzle!!, currentModeInt)
-        val icons = intArrayOf()
-        mAdapter =
-            BottomSheetSpinnerAdapter(requireContext(), subtypeList!!.toTypedArray<String?>(), icons)
-        binding!!.list.adapter = mAdapter
+    private fun updateList() {
+        lifecycleScope.launch {
+            subtypeList = TwistyTimer.getSolveRepository()
+                .getAllSubtypesFromType(currentPuzzle!!, currentModeInt).toMutableList()
+            val icons = intArrayOf()
+            mAdapter =
+                BottomSheetSpinnerAdapter(
+                    requireContext(),
+                    subtypeList!!.toTypedArray<String?>(),
+                    icons
+                )
+            binding!!.list.adapter = mAdapter
+        }
     }
 
     fun setDialogListener(dialogListener: DialogListenerMessage?) {

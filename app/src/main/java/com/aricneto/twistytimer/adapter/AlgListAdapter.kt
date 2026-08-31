@@ -8,7 +8,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.ItemAlgListBinding
 import com.aricneto.twistytimer.fragment.dialog.AlgDialog
 import com.aricneto.twistytimer.items.Algorithm
@@ -16,6 +15,11 @@ import com.aricneto.twistytimer.listener.DialogListener
 import com.aricneto.twistytimer.utils.AlgUtils.getCaseState
 import com.aricneto.twistytimer.utils.AlgUtils.getPllArrow
 
+/**
+ * A base adapter for displaying lists of algorithms (like OLL or PLL cases).
+ * It manages the display of the algorithm name, user progress, and a rendered image of
+ * the cube state. It also handles opening a detail dialog when an algorithm is clicked.
+ */
 open class AlgListAdapter(
     private val mContext: Context,
     private val mFragmentManager: FragmentManager
@@ -26,7 +30,6 @@ open class AlgListAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlgHolder {
         val binding = ItemAlgListBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-//        val binding = LayoutInflater.from(parent.context).inflate(R.layout.item_alg_list, parent, false)
         return AlgHolder(binding)
     }
 

@@ -15,6 +15,11 @@ import com.aricneto.twistytimer.utils.ThemeUtils.createSquareDrawable
 import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
 import java.util.Locale
 
+/**
+ * Extends [AlgListAdapter] specifically for the Trainer mode. It adds multi-selection logic,
+ * allowing users to pick exactly which cases they want to practice. It automatically saves
+ * these selections to preferences.
+ */
 class TrainerListAdapter(
     context: Context,
     private val fragmentManager: FragmentManager,
@@ -52,12 +57,6 @@ class TrainerListAdapter(
         return selectedItems.contains(name)
     }
 
-    fun unselectAll() {
-        selectedItems.clear()
-        saveSelectedItems(currentSubset, currentPuzzleCategory, selectedItems)
-        notifyDataSetChanged()
-    }
-
     fun selectAll() {
         val size = selectedItems.size
         selectedItems.clear()
@@ -67,13 +66,36 @@ class TrainerListAdapter(
                     selectedItems.add("OLL " + String.format(Locale.US, "%02d", i))
                 }
             }
+
             TrainerSubset.PLL -> if (size != 21) {
-                val pllCases = arrayOf("H", "Ua", "Ub", "Z", "Aa", "Ab", "E", "F", "Ga", "Gb", "Gc", "Gd", "Ja", "Jb", "Na", "Nb", "Ra", "Rb", "T", "V", "Y")
+                val pllCases = arrayOf(
+                    "H",
+                    "Ua",
+                    "Ub",
+                    "Z",
+                    "Aa",
+                    "Ab",
+                    "E",
+                    "F",
+                    "Ga",
+                    "Gb",
+                    "Gc",
+                    "Gd",
+                    "Ja",
+                    "Jb",
+                    "Na",
+                    "Nb",
+                    "Ra",
+                    "Rb",
+                    "T",
+                    "V",
+                    "Y"
+                )
                 selectedItems.addAll(pllCases)
             }
         }
         saveSelectedItems(currentSubset, currentPuzzleCategory, selectedItems)
-        notifyDataSetChanged()
+        notifyItemRangeChanged(0, itemCount)
     }
 
     private fun toggleSelection(name: String, card: CardView) {

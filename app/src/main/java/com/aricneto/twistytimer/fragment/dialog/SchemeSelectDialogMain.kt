@@ -4,19 +4,20 @@ import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.PorterDuff
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
 import androidx.fragment.app.DialogFragment
+import androidx.preference.PreferenceManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogSchemeSelectMainBinding
-import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.activity.MainActivity
 import com.aricneto.twistytimer.spans.ChromaDialogFixed
 import com.aricneto.twistytimer.spans.ChromaDialogFixed.ColorMode
@@ -24,8 +25,6 @@ import com.aricneto.twistytimer.spans.ChromaDialogFixed.IndicatorMode
 import com.aricneto.twistytimer.spans.ChromaDialogFixed.OnColorSelectedListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.util.Locale
-import androidx.core.graphics.toColorInt
-import androidx.core.content.edit
 
 /**
  * Created by Ari on 09/02/2016.
@@ -39,8 +38,8 @@ class SchemeSelectDialogMain : DialogFragment() {
         setStyle(STYLE_NO_TITLE, 0)
     }
 
-    private val clickListener: View.OnClickListener = View.OnClickListener { view ->
-        val sp = PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext())
+    private val clickListener = View.OnClickListener { view ->
+        val sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val editor = sp.edit()
         var currentHex = "FFFFFF"
         when (view.id) {
@@ -107,9 +106,9 @@ class SchemeSelectDialogMain : DialogFragment() {
 
         mContext = context
 
-        dialog!!.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext())
+        val sp = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         setColor(binding!!.top, ("#" + sp.getString("cubeTop", "FFFFFF")).toColorInt())
         setColor(binding!!.left, ("#" + sp.getString("cubeLeft", "FF8B24")).toColorInt())
@@ -157,7 +156,7 @@ class SchemeSelectDialogMain : DialogFragment() {
             dismiss()
         }
 
-        return binding!!.getRoot()
+        return binding!!.root
     }
 
     private fun setColor(view: View, color: Int) {

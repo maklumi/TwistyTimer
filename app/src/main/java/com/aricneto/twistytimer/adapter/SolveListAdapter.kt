@@ -32,6 +32,11 @@ import com.aricneto.twistytimer.utils.ThemeUtils.createSquareDrawable
 import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
 import org.joda.time.DateTime
 
+/**
+ * Manages the list of timed solves. It formats the time strings, handles
+ * penalties (DNF/+2), displays comment icons, and implements a multi-select mode
+ * for bulk deleting or archiving solves.
+ */
 class SolveListAdapter(
     private val mContext: Context,
     private val mFragmentManager: FragmentManager
@@ -65,7 +70,7 @@ class SolveListAdapter(
     }
 
     inner class SolveViewHolder(val binding: ItemTimeListBinding) :
-        RecyclerView.ViewHolder(binding.getRoot()) {
+        RecyclerView.ViewHolder(binding.root) {
         fun bind(solve: Solve) {
             binding.date.text = DateTime(solve.date).toString(mDateFormatSpec)
 
@@ -77,7 +82,7 @@ class SolveListAdapter(
 
             binding.itemLayout.setOnClickListener {
                 if (isInSelectionMode) {
-                    toggleSelection(solve.id)
+                    toggleSelection(solve.id, bindingAdapterPosition)
                 } else if (!isLocked) {
                     isLocked = true
                     val timeDialog = TimeDialog.newInstance(solve.id)
@@ -90,7 +95,7 @@ class SolveListAdapter(
                 if (!isInSelectionMode) {
                     isInSelectionMode = true
                     broadcast(CATEGORY_UI_INTERACTIONS, ACTION_SELECTION_MODE_ON)
-                    toggleSelection(solve.id)
+                    toggleSelection(solve.id, bindingAdapterPosition)
                 }
                 true
             }
@@ -103,7 +108,7 @@ class SolveListAdapter(
 
             when (solve.penalty) {
                 PuzzleUtils.PENALTY_DNF -> {
-                    binding.timeText.text = "DNF"
+                    binding.timeText.text = mContext.getString(R.string.do_not_finished)
                     binding.penaltyText.visibility = View.GONE
                 }
 
@@ -120,7 +125,7 @@ class SolveListAdapter(
         }
     }
 
-    private fun toggleSelection(id: Long) {
+    private fun toggleSelection(id: Long, position: Int) {
         if (selectedItems.contains(id)) {
             selectedItems.remove(id)
             broadcast(CATEGORY_UI_INTERACTIONS, ACTION_TIME_UNSELECTED)
@@ -129,19 +134,14 @@ class SolveListAdapter(
             broadcast(CATEGORY_UI_INTERACTIONS, ACTION_TIME_SELECTED)
         }
 
-        notifyDataSetChanged()
+        if (position != RecyclerView.NO_POSITION) {
+            notifyItemChanged(position)
+        }
 
         if (selectedItems.isEmpty()) {
             isInSelectionMode = false
             broadcast(CATEGORY_UI_INTERACTIONS, ACTION_SELECTION_MODE_OFF)
         }
-    }
-
-    fun unselectAll() {
-        selectedItems.clear()
-        isInSelectionMode = false
-        broadcast(CATEGORY_UI_INTERACTIONS, ACTION_SELECTION_MODE_OFF)
-        notifyDataSetChanged()
     }
 
     fun getSelectedIds(): List<Long> = selectedItems.toList()

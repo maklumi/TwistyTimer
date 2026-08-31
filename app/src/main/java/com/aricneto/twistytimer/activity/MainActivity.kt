@@ -34,7 +34,8 @@ import com.aricneto.twistify.BuildConfig
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.ActivityMainBinding
 import com.aricneto.twistytimer.TwistyTimer
-import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.database.AlgRepository
+import com.aricneto.twistytimer.database.SolveRepository
 import com.aricneto.twistytimer.fragment.AlgListFragment.Companion.newInstance
 import com.aricneto.twistytimer.fragment.TimerFragment
 import com.aricneto.twistytimer.fragment.TimerFragmentMain.Companion.newInstance
@@ -502,7 +503,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                             .beginTransaction()
                             .replace(
                                 R.id.main_activity_container,
-                                newInstance(DatabaseHandler.SUBSET_OLL),
+                                newInstance(AlgRepository.SUBSET_OLL),
                                 "fragment_algs_oll"
                             )
                             .commit()
@@ -513,7 +514,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                             .beginTransaction()
                             .replace(
                                 R.id.main_activity_container,
-                                newInstance(DatabaseHandler.SUBSET_PLL),
+                                newInstance(AlgRepository.SUBSET_PLL),
                                 "fragment_algs_pll"
                             )
                             .commit()
@@ -543,22 +544,23 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
 
                     DEBUG_ID -> if (BuildConfig.DEBUG) {
                         val rand = Random()
-                        val dbHandler = TwistyTimer.getDBHandler()
-                        var i = 0
-                        while (i < 10000) {
-                            dbHandler.addSolve(
-                                Solve(
-                                    30000 + rand.nextInt(6000),
-                                    "333",
-                                    "|<<# DEBUG #>>|",
-                                    165165L + (i * 10),
-                                    "",
-                                    0,
-                                    "",
-                                    rand.nextBoolean()
+                        val solveRepository = TwistyTimer.getSolveRepository()
+                        lifecycleScope.launch {
+                            var i = 0
+                            while (i < 10000) {
+                                solveRepository.insertSolve(
+                                    type = "333",
+                                    subtype = "|<<# DEBUG #>>|",
+                                    time = (30000 + rand.nextInt(6000)).toLong(),
+                                    date = 165165L + (i * 10),
+                                    scramble = "",
+                                    penalty = 0,
+                                    comment = "",
+                                    history = rand.nextBoolean(),
+                                    mode = 0
                                 )
-                            )
-                            i++
+                                i++
+                            }
                         }
                     }
 
@@ -761,81 +763,73 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                 var exports = 0
 
                 try {
-                    val handler = TwistyTimer.getDBHandler()
-                    val os = contentResolver.openOutputStream(uri)
+                    val solveRepository = TwistyTimer.getSolveRepository()
+                    val os = contentResolver.openOutputStream(uri) ?: throw Exception("Failed to open output stream")
                     val out = OutputStreamWriter(os)
 
                     when (fileFormat) {
                         ExportImportDialog.EXIM_FORMAT_BACKUP -> {
                             val csvHeader =
                                 "Puzzle,Category,Time(millis),Date(millis),Scramble,Penalty,Comment,Mode\n"
-                            val cursor = handler.allSolves
+                            val solves = solveRepository.getAllSolves()
 
-                            try {
-                                withContext(Dispatchers.Main) {
-                                    progressBar.max = max(cursor.count, 1)
-                                    progressBar.progress = 0
-                                }
-                                out.write(csvHeader)
-
-                                while (cursor.moveToNext()) {
-                                    out.write(
-                                        ("\"" + cursor.getString(DatabaseHandler.IDX_TYPE)
-                                                + "\";\"" + cursor.getString(DatabaseHandler.IDX_SUBTYPE)
-                                                + "\";\"" + cursor.getInt(DatabaseHandler.IDX_TIME)
-                                                + "\";\"" + cursor.getLong(DatabaseHandler.IDX_DATE)
-                                                + "\";\"" + cursor.getString(DatabaseHandler.IDX_SCRAMBLE)
-                                                + "\";\"" + cursor.getInt(DatabaseHandler.IDX_PENALTY)
-                                                + "\";\"" + cursor.getString(DatabaseHandler.IDX_COMMENT)
-                                                + "\";\"" + cursor.getInt(DatabaseHandler.IDX_MODE)
-                                                + "\"\n")
-                                    )
-                                    exports++
-                                    withContext(Dispatchers.Main) {
-                                        progressBar.progress = exports
-                                    }
-                                }
-                            } finally {
-                                cursor.close()
-                                out.close()
+                            withContext(Dispatchers.Main) {
+                                progressBar.max = max(solves.size, 1)
+                                progressBar.progress = 0
                             }
+                            out.write(csvHeader)
+
+                            for (solve in solves) {
+                                out.write(
+                                    ("\"" + solve.puzzle
+                                            + "\";\"" + solve.subtype
+                                            + "\";\"" + solve.time
+                                            + "\";\"" + solve.date
+                                            + "\";\"" + solve.scramble
+                                            + "\";\"" + solve.penalty
+                                            + "\";\"" + solve.comment
+                                            + "\";\"" + solve.mode
+                                            + "\"\n")
+                                )
+                                exports++
+                                withContext(Dispatchers.Main) {
+                                    progressBar.progress = exports
+                                }
+                            }
+                            out.close()
                             returnCode = true
                         }
 
                         ExportImportDialog.EXIM_FORMAT_EXTERNAL -> {
-                            val cursor = handler.getAllSolvesFrom(puzzleType, puzzleCategory, mExportMode)
+                            val solves = solveRepository.getSolvesForExport(puzzleType, puzzleCategory, mExportMode)
 
-                            try {
-                                withContext(Dispatchers.Main) {
-                                    progressBar.max = max(cursor.count, 1)
-                                    progressBar.progress = 0
-                                }
-
-                                while (cursor.moveToNext()) {
-                                    var csvValues = ("\"" + convertTimeToString(
-                                        cursor.getInt(DatabaseHandler.IDX_TIME).toLong(),
-                                        PuzzleUtils.FORMAT_DEFAULT
-                                    )
-                                            + "\";\"" + cursor.getString(DatabaseHandler.IDX_SCRAMBLE)
-                                            + "\";\"" + DateTime(cursor.getLong(DatabaseHandler.IDX_DATE))
-                                            + "\"")
-
-                                    if (cursor.getInt(DatabaseHandler.IDX_PENALTY) == PuzzleUtils.PENALTY_DNF) {
-                                        csvValues += ";\"DNF\""
-                                    }
-
-                                    csvValues += '\n'
-
-                                    out.write(csvValues)
-                                    exports++
-                                    withContext(Dispatchers.Main) {
-                                        progressBar.progress = exports
-                                    }
-                                }
-                            } finally {
-                                cursor.close()
-                                out.close()
+                            withContext(Dispatchers.Main) {
+                                progressBar.max = max(solves.size, 1)
+                                progressBar.progress = 0
                             }
+
+                            for (solve in solves) {
+                                var csvValues = ("\"" + convertTimeToString(
+                                    solve.time.toLong(),
+                                    PuzzleUtils.FORMAT_DEFAULT
+                                )
+                                        + "\";\"" + solve.scramble
+                                        + "\";\"" + DateTime(solve.date)
+                                        + "\"")
+
+                                if (solve.penalty == PuzzleUtils.PENALTY_DNF) {
+                                    csvValues += ";\"DNF\""
+                                }
+
+                                csvValues += '\n'
+
+                                out.write(csvValues)
+                                exports++
+                                withContext(Dispatchers.Main) {
+                                    progressBar.progress = exports
+                                }
+                            }
+                            out.close()
                             returnCode = true
                         }
 
@@ -844,9 +838,9 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                             returnCode = false
                         }
                     }
-                } catch (e: IOException) {
+                } catch (e: Exception) {
                     returnCode = false
-                    Log.d("ERROR", "IOException: " + e.message)
+                    Log.d("ERROR", "Export error: " + e.message)
                 }
                 returnCode
             }
@@ -986,15 +980,14 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                         }
                     }
 
-                    val handler = TwistyTimer.getDBHandler()
-                    successes = handler.addSolves(
-                        fileFormat,
+                    successes = TwistyTimer.getSolveRepository().addSolves(
                         solveList,
-                        object : DatabaseHandler.ProgressListener {
-                            override fun onProgress(numCompleted: Int, total: Int) {
+                        fileFormat,
+                        object : SolveRepository.ProgressListener {
+                            override fun onProgress(count: Int, total: Int) {
                                 lifecycleScope.launch(Dispatchers.Main) {
                                     progressBar.max = max(total, 1)
-                                    progressBar.progress = numCompleted
+                                    progressBar.progress = count
                                 }
                             }
                         })

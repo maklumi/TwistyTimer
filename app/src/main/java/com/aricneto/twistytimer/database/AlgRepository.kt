@@ -70,4 +70,9 @@ class AlgRepository(private val queries: AlgorithmQueries) {
             )
         }
     }
+
+    companion object {
+        const val SUBSET_OLL: String = "OLL"
+        const val SUBSET_PLL: String = "PLL"
+    }
 }

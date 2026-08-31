@@ -10,39 +10,33 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Point
 import android.graphics.Rect
-import android.graphics.drawable.Drawable
 import android.media.ToneGenerator
-import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
-import android.os.Process
-import android.preference.PreferenceManager
-import android.text.Html
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MotionEvent
-import android.view.Surface
 import android.view.View
 import android.view.View.OnTouchListener
 import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
-import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
+import androidx.core.text.HtmlCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimerBinding
 import com.aricneto.twistytimer.TwistyTimer
-import com.aricneto.twistytimer.database.DatabaseHandler
-import com.aricneto.twistytimer.database.TwistyDatabaseFactory
 import com.aricneto.twistytimer.fragment.dialog.AddTimeDialog
 import com.aricneto.twistytimer.fragment.dialog.BottomSheetDetailDialog
 import com.aricneto.twistytimer.items.Solve
@@ -90,9 +84,12 @@ import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
 import com.aricneto.twistytimer.utils.ThemeUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.sqrt
-import androidx.core.view.isVisible
 
 
 class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, StatisticsObserver {
@@ -147,8 +144,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
 
     private var generator: ScrambleGenerator? = null
 
-    private var scrambleGeneratorAsync: GenerateScrambleSequence? = null
-    private var optimalCrossAsync: GetOptimalCross? = null
+    private var scrambleJob: Job? = null
+    private var optimalCrossJob: Job? = null
 
     private var currentPenalty: Int = NO_PENALTY
 
@@ -220,11 +217,11 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                         currentSolve = getSolve(intent)
                         val solve = currentSolve
                         if (solve != null) {
-                            binding.chronometer.text = Html.fromHtml(
+                            binding.chronometer.text = HtmlCompat.fromHtml(
                                 convertTimeToString(
                                     solve.time.toLong(),
                                     PuzzleUtils.FORMAT_SMALL_MILLI
-                                )
+                                ), HtmlCompat.FROM_HTML_MODE_LEGACY
                             )
                             hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
                             broadcastNewSolve()
@@ -269,7 +266,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
     private var currentModeInt: Int = 0
 
     private val buttonClickListener: View.OnClickListener = View.OnClickListener { view ->
-        val dbHandler = TwistyTimer.getDBHandler()
+        val solveRepository = TwistyTimer.getSolveRepository()
 
         // On most of these changes to the current solve, the Statistics and ChartStatistics
         // need to be updated to reflect the change. It would probably be too complicated to
@@ -283,11 +280,13 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                     R.string.delete_dialog_confirmation_button
                 ) { _: DialogInterface?, _: Int ->
                     currentSolve?.let { solve ->
-                        dbHandler.deleteSolve(solve)
-                        if (!isRunning) binding?.chronometer?.reset() // Reset to "0.00".
+                        lifecycleScope.launch {
+                            solveRepository.deleteSolve(solve.id)
+                            if (!isRunning) binding?.chronometer?.reset() // Reset to "0.00".
 
-                        binding?.congratsText?.visibility = View.GONE
-                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                            binding?.congratsText?.visibility = View.GONE
+                            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                        }
                     }
                     hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
                 }
@@ -298,9 +297,20 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 currentSolve?.let { solve ->
                     currentSolve = PuzzleUtils.applyPenalty(solve, PENALTY_DNF)
                     binding?.chronometer?.setPenalty(PENALTY_DNF)
-                    dbHandler.updateSolve(currentSolve!!)
-                    hideButtons(hideQuickActionButtons = true, hideUndoButton = false)
-                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    lifecycleScope.launch {
+                        solveRepository.updateSolve(
+                            id = currentSolve!!.id,
+                            time = currentSolve!!.time.toLong(),
+                            date = currentSolve!!.date,
+                            scramble = currentSolve!!.scramble,
+                            penalty = currentSolve!!.penalty.toLong(),
+                            comment = currentSolve!!.comment,
+                            history = currentSolve!!.history,
+                            mode = currentSolve!!.mode
+                        )
+                        hideButtons(hideQuickActionButtons = true, hideUndoButton = false)
+                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    }
                 }
             }
 
@@ -309,8 +319,19 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                     currentSolve?.let { solve ->
                         currentSolve = PuzzleUtils.applyPenalty(solve, PENALTY_PLUSTWO)
                         binding?.chronometer?.setPenalty(PENALTY_PLUSTWO)
-                        dbHandler.updateSolve(currentSolve!!)
-                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                        lifecycleScope.launch {
+                            solveRepository.updateSolve(
+                                id = currentSolve!!.id,
+                                time = currentSolve!!.time.toLong(),
+                                date = currentSolve!!.date,
+                                scramble = currentSolve!!.scramble,
+                                penalty = currentSolve!!.penalty.toLong(),
+                                comment = currentSolve!!.comment,
+                                history = currentSolve!!.history,
+                                mode = currentSolve!!.mode
+                            )
+                            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                        }
                     }
                 }
                 hideButtons(hideQuickActionButtons = true, hideUndoButton = false)
@@ -318,7 +339,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
 
             R.id.qa_comment -> {
                 val commentView =
-                    LayoutInflater.from(requireContext()).inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
+                    LayoutInflater.from(requireContext())
+                        .inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
                 val commentEditText =
                     commentView.findViewById<TextInputEditText>(R.id.edit_text)
                 commentEditText.setText(currentSolve?.comment)
@@ -331,14 +353,25 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                     ) { _: DialogInterface?, _: Int ->
                         currentSolve?.let { solve ->
                             solve.comment = commentEditText.text.toString()
-                            dbHandler.updateSolve(solve)
+                            lifecycleScope.launch {
+                                solveRepository.updateSolve(
+                                    id = solve.id,
+                                    time = solve.time.toLong(),
+                                    date = solve.date,
+                                    scramble = solve.scramble,
+                                    penalty = solve.penalty.toLong(),
+                                    comment = solve.comment,
+                                    history = solve.history,
+                                    mode = solve.mode
+                                )
 
-                            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_COMMENT_ADDED)
-                            Toast.makeText(
-                                requireContext(),
-                                getString(R.string.added_comment),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                                broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_COMMENT_ADDED)
+                                Toast.makeText(
+                                    requireContext(),
+                                    getString(R.string.added_comment),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                         hideButtons(hideQuickActionButtons = false, hideUndoButton = true)
                     }
@@ -351,9 +384,20 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 currentSolve?.let { solve ->
                     currentSolve = PuzzleUtils.applyPenalty(solve, NO_PENALTY)
                     binding?.chronometer?.setPenalty(NO_PENALTY)
-                    dbHandler.updateSolve(currentSolve!!)
-                    hideButtons(hideQuickActionButtons = false, hideUndoButton = true)
-                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    lifecycleScope.launch {
+                        solveRepository.updateSolve(
+                            id = currentSolve!!.id,
+                            time = currentSolve!!.time.toLong(),
+                            date = currentSolve!!.date,
+                            scramble = currentSolve!!.scramble,
+                            penalty = currentSolve!!.penalty.toLong(),
+                            comment = currentSolve!!.comment,
+                            history = currentSolve!!.history,
+                            mode = currentSolve!!.mode
+                        )
+                        hideButtons(hideQuickActionButtons = false, hideUndoButton = true)
+                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    }
                 }
             }
 
@@ -364,7 +408,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
 
             R.id.scramble_button_edit -> {
                 val editScrambleView =
-                    LayoutInflater.from(requireContext()).inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
+                    LayoutInflater.from(requireContext())
+                        .inflate(R.layout.dialog_input, requireView().parent as ViewGroup, false)
                 val editScrambleEditText =
                     editScrambleView.findViewById<TextInputEditText>(R.id.edit_text)
                 editScrambleEditText.setText(realScramble)
@@ -402,7 +447,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
      * Hides (or shows) the delete/dnf/plus-two quick action buttons and the undo button.
      */
     private fun hideButtons(hideQuickActionButtons: Boolean, hideUndoButton: Boolean) {
-        binding?.qaButtons?.qaLayout?.visibility = if (hideQuickActionButtons) View.GONE else View.VISIBLE
+        binding?.qaButtons?.qaLayout?.visibility =
+            if (hideQuickActionButtons) View.GONE else View.VISIBLE
         binding?.qaUndo?.visibility = if (hideUndoButton) View.GONE else View.VISIBLE
     }
 
@@ -413,9 +459,14 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         if (arguments != null) {
             currentPuzzle = requireArguments().getString(PUZZLE)
             currentPuzzleCategory = requireArguments().getString(PUZZLE_SUBTYPE)
-            currentSubset = requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
+            currentSubset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireArguments().getSerializable(TRAINER_SUBSET, TrainerSubset::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                requireArguments().getSerializable(TRAINER_SUBSET) as TrainerSubset?
+            }
             currentTimerMode = requireArguments().getString(TIMER_MODE)
-            currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
+            currentModeInt = modeToInt(currentTimerMode)
         }
 
         if (savedInstanceState != null) {
@@ -423,13 +474,11 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 realScramble = savedInstanceState.getString(SCRAMBLE)
             }
             currentTimerMode = savedInstanceState.getString(TIMER_MODE)
-            currentModeInt = DatabaseHandler.modeToInt(currentTimerMode)
+            currentModeInt = modeToInt(currentTimerMode)
             //hasStoppedTimerOnce = savedInstanceState.getBoolean(HAS_STOPPED_TIMER_ONCE, false);
         }
 
         detailTextNamesArray = resources.getStringArray(R.array.timer_detail_stats)
-
-        scrambleGeneratorAsync = GenerateScrambleSequence()
 
         this.newOptimalCross
 
@@ -563,15 +612,21 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 R.string.pk_inspection_alert_type,
                 getString(R.string.pk_inspection_alert_vibration)
             )
-            if (inspectionAlertType == vibrationAlert) {
-                inspectionVibrationAlertEnabled = true
-                inspectionSoundAlertEnabled = false
-            } else if (inspectionAlertType == soundAlert) {
-                inspectionVibrationAlertEnabled = false
-                inspectionSoundAlertEnabled = true
-            } else {
-                inspectionVibrationAlertEnabled = true
-                inspectionSoundAlertEnabled = true
+            when (inspectionAlertType) {
+                vibrationAlert -> {
+                    inspectionVibrationAlertEnabled = true
+                    inspectionSoundAlertEnabled = false
+                }
+
+                soundAlert -> {
+                    inspectionVibrationAlertEnabled = false
+                    inspectionSoundAlertEnabled = true
+                }
+
+                else -> {
+                    inspectionVibrationAlertEnabled = true
+                    inspectionSoundAlertEnabled = true
+                }
             }
         }
 
@@ -673,11 +728,12 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             }
             countdown = object : CountDownTimer((inspectionTime * 1000).toLong(), 500) {
                 override fun onTick(l: Long) {
-                    binding.chronometer.text = ((l / 1000) + 1).toString()
+                    val counter = (l / 1000) + 1
+                    binding.chronometer.text = counter.toString()
                 }
 
                 override fun onFinish() {
-                    binding?.chronometer?.let {
+                    binding.chronometer.let {
                         it.text = "+2"
                         // "+2" penalty is applied to "chronometer" when timer is eventually stopped.
                         currentPenalty = PENALTY_PLUSTWO
@@ -694,7 +750,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 override fun onFinish() {
                     // After counting down the inspection period, a "+2" penalty was counted down
                     // before the solve started, so this is a DNF. If the timer starts before this
-                    // countdown ends, then "plusTwoCountdown" is cancelled before this happens.
+                    // countdown ends, then "plusTwoCountdown" is canceled before this happens.
                     countingDown = false
                     isReady = false
                     holdingDNF = true
@@ -712,11 +768,11 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         // If hold-for-start is enabled, use the "isReady" flag to indicate if the hold was long
         // enough (0.5s) to trigger the starting of the timer.
         if (holdEnabled) {
-            holdHandler = Handler()
+            holdHandler = Handler(Looper.getMainLooper())
             holdRunnable = Runnable {
                 isReady = true
                 // Indicate to the user that the hold was long enough.
-                binding.chronometer?.setHighlighted(true)
+                binding.chronometer.setHighlighted(true)
                 if (!inspectionEnabled) {
                     // If inspection is enabled, the toolbar is already hidden.
                     hideToolbar()
@@ -757,7 +813,10 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             // will still continue in the meantime.
                             if (holdEnabled) {
                                 isReady = false
-                                holdHandler?.postDelayed(holdRunnable ?: return false, HOLD_FOR_START_DELAY)
+                                holdHandler?.postDelayed(
+                                    holdRunnable ?: return false,
+                                    HOLD_FOR_START_DELAY
+                                )
                             } else if (startCueEnabled) {
                                 binding.chronometer.setHighlighted(true)
                             }
@@ -792,7 +851,10 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             if (!inspectionEnabled) {
                                 if (holdEnabled) {
                                     isReady = false
-                                    holdHandler?.postDelayed(holdRunnable ?: return false, HOLD_FOR_START_DELAY)
+                                    holdHandler?.postDelayed(
+                                        holdRunnable ?: return false,
+                                        HOLD_FOR_START_DELAY
+                                    )
                                 } else if (startCueEnabled) {
                                     binding.chronometer.setHighlighted(true)
                                 }
@@ -819,7 +881,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             } else {
                                 // Inspection disabled. Hold-for-start disabled, or hold-for-start
                                 // enabled, but the hold time was long enough. In the latter case,
-                                // the tool-bar will already have been hidden. Start timing!
+                                // the toolbar will already have been hidden. Start timing!
                                 if (!holdEnabled) {
                                     hideToolbar()
                                 }
@@ -847,15 +909,6 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 return false
             }
         })
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        // If the statistics are already loaded, the update notification will have been missed,
-        // so fire that notification now. If the statistics are non-null, they will be displayed.
-        // If they are null (i.e., not yet loaded), nothing will be displayed until this fragment,
-        // as a registered observer, is notified when loading is complete. Post the firing of the
-        // event, so that it is received after "onCreateView" returns.
         onStatisticsUpdated(StatisticsCache.instance.statistics)
         StatisticsCache.instance.registerObserver(this) // Unregistered in "onDestroyView".
     }
@@ -969,8 +1022,21 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             declareRecordTimes(solve)
         }
 
-        solve.id = TwistyTimer.getDBHandler().addSolve(solve)
-        currentPenalty = NO_PENALTY
+        lifecycleScope.launch {
+            val id = TwistyTimer.getSolveRepository().insertSolve(
+                type = solve.puzzle,
+                subtype = solve.subtype,
+                time = solve.time.toLong(),
+                date = solve.date,
+                scramble = solve.scramble,
+                penalty = solve.penalty.toLong(),
+                comment = solve.comment,
+                history = solve.history,
+                mode = solve.mode
+            )
+            solve.id = id
+            currentPenalty = NO_PENALTY
+        }
     }
 
     private fun broadcastNewSolve() {
@@ -993,7 +1059,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         // NOTE: The old approach did not check for PB/record solves until at least 4 previous
         // solves had been recorded for the *current session*. This seemed a bit arbitrary. Perhaps
         // it had to do with waiting for the best and worst times to be loaded. If a user records
-        // their *first* solve for the current session and it beats the best time from *any* past
+        // their *first* solve for the current session, and it beats the best time from *any* past
         // session, it should be reported *immediately*, not ignored just because the session has
         // only started. However, the limit should perhaps have been 4 previous solves in the full
         // history of all past and current sessions. If this is the first ever session, then it
@@ -1024,7 +1090,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 )
                 binding?.congratsText?.visibility = View.VISIBLE
 
-                Handler().postDelayed({
+                Handler(Looper.getMainLooper()).postDelayed({
                     binding?.rippleBackground?.stopRippleAnimation()
                 }, 2900)
             }
@@ -1039,7 +1105,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             )
             // If "previousWorstTime" is a DNF or UNKNOWN, it will be less than zero. Therefore,
             // make sure it is at least greater than zero before testing against the new time.
-            if (previousWorstTime > 0 && newTime > previousWorstTime) {
+            if (previousWorstTime in 1..<newTime) {
                 binding?.congratsText?.text = getString(
                     R.string.personal_worst_message,
                     convertTimeToString(newTime - previousWorstTime, FORMAT_DEFAULT)
@@ -1090,15 +1156,23 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         val allTimeBestAvg = LongArray(4)
         val sessionCurrentAvg = LongArray(4)
 
-        allTimeBestAvg[0] = tr(stats.getAverageOf(5, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
-        allTimeBestAvg[1] = tr(stats.getAverageOf(12, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
-        allTimeBestAvg[2] = tr(stats.getAverageOf(50, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
-        allTimeBestAvg[3] = tr(stats.getAverageOf(100, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[0] =
+            tr(stats.getAverageOf(5, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[1] =
+            tr(stats.getAverageOf(12, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[2] =
+            tr(stats.getAverageOf(50, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
+        allTimeBestAvg[3] =
+            tr(stats.getAverageOf(100, false)?.bestAverage ?: AverageCalculator.UNKNOWN)
 
-        sessionCurrentAvg[0] = tr(stats.getAverageOf(5, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
-        sessionCurrentAvg[1] = tr(stats.getAverageOf(12, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
-        sessionCurrentAvg[2] = tr(stats.getAverageOf(50, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
-        sessionCurrentAvg[3] = tr(stats.getAverageOf(100, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[0] =
+            tr(stats.getAverageOf(5, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[1] =
+            tr(stats.getAverageOf(12, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[2] =
+            tr(stats.getAverageOf(50, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
+        sessionCurrentAvg[3] =
+            tr(stats.getAverageOf(100, true)?.currentAverage ?: AverageCalculator.UNKNOWN)
 
         // detailTextNamesArray should be in the same order as shown in the timer
         // (keep R.arrays.timer_detail_stats in sync with the order!)
@@ -1125,13 +1199,13 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         val stringDetailAvg = StringBuilder()
 
         // Iterate through averages and set respective TextViews
-        val avgNums = arrayOf<String?>("5", "12", "50", "100")
+        val avgNumbers = arrayOf<String?>("5", "12", "50", "100")
         for (i in 0..3) {
             if (sessionStatsEnabled && averageRecordsEnabled && hasStoppedTimerOnce && sessionCurrentAvg[i] > 0 && sessionCurrentAvg[i] <= allTimeBestAvg[i]) {
                 // Create string.
                 detailTextNamesArray.let { names ->
                     stringDetailAvg.append("<u><b>").append(names[i])
-                        .append(avgNums[i]).append(": ")
+                        .append(avgNumbers[i]).append(": ")
                         .append(convertTimeToString(sessionCurrentAvg[i], FORMAT_DEFAULT))
                         .append("</b></u>")
                 }
@@ -1148,8 +1222,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                     hasShownRecordMessage = true
                 }
             } else if (sessionStatsEnabled) {
-                detailTextNamesArray?.let { names ->
-                    stringDetailAvg.append(names[i]).append(avgNums[i]).append(": ")
+                detailTextNamesArray.let { names ->
+                    stringDetailAvg.append(names[i]).append(avgNumbers[i]).append(": ")
                         .append(convertTimeToString(sessionCurrentAvg[i], FORMAT_DEFAULT))
                 }
             }
@@ -1160,16 +1234,31 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         }
 
         binding?.sessionDetailTextAverage?.text =
-            Html.fromHtml(
+            HtmlCompat.fromHtml(
                 stringDetailAvg.toString(),
-                Html.FROM_HTML_MODE_LEGACY
+                HtmlCompat.FROM_HTML_MODE_LEGACY
             )
 
         if (!isRunning && !countingDown) showDetailStats()
     }
 
     private fun generateScrambleImage() {
-       this.GenerateScrambleImage().execute()
+        lifecycleScope.launch {
+            val drawable = withContext(Dispatchers.IO) {
+                generator?.generateImageFromScramble(
+                    PreferenceManager.getDefaultSharedPreferences(requireContext()),
+                    realScramble
+                )
+            }
+            if (!isRunning) {
+                if (binding?.scrambleImg != null) showImage()
+            }
+            binding?.let {
+                it.progressSpinner.visibility = View.INVISIBLE
+                it.scrambleImg.setImageDrawable(drawable)
+                it.expandedImage.setImageDrawable(drawable)
+            }
+        }
     }
 
     private fun showToolbar() {
@@ -1373,12 +1462,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         super.onDetach()
         // To fix memory leaks
         unregisterReceiver(mUIInteractionReceiver)
-        scrambleGeneratorAsync!!.cancel(true)
-    }
-
-    override fun onDestroy() {
-        if (DEBUG_ME) Log.d(TAG, "onDestroy()")
-        super.onDestroy()
+        scrambleJob?.cancel()
+        optimalCrossJob?.cancel()
     }
 
     override fun onDestroyView() {
@@ -1392,18 +1477,28 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
     val newOptimalCross: Unit
         get() {
             if (showHintsEnabled) {
-                optimalCrossAsync?.cancel(true)
+                optimalCrossJob?.cancel()
                 val scramble = realScramble ?: return
                 val cross = optimalCross ?: return
-                val xcross = optimalXCross ?: return
-                optimalCrossAsync = GetOptimalCross(
-                    scramble,
-                    cross, xcross,
-                    showHintsXCrossEnabled,
-                    isRunning,
-                    scrambleDialog
-                )
-                optimalCrossAsync?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+                val cross2 = optimalXCross ?: return
+                optimalCrossJob = lifecycleScope.launch {
+                    val text = withContext(Dispatchers.Default) {
+                        var t = ""
+                        t += cross.getTip(scramble)
+                        if (showHintsXCrossEnabled) {
+                            t += "\n\n"
+                            t += cross2.getTip(scramble)
+                        }
+                        t
+                    }
+                    if (!isRunning) {
+                        // Set the hint text
+                        if (scrambleDialog != null) {
+                            scrambleDialog!!.setHintText(text)
+                            scrambleDialog!!.setHintVisibility(View.VISIBLE)
+                        }
+                    }
+                }
             }
         }
 
@@ -1412,9 +1507,39 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
      */
     private fun generateNewScramble() {
         if (scrambleEnabled && currentTimerMode == TIMER_MODE_TIMER) {
-            scrambleGeneratorAsync?.cancel(true)
-            scrambleGeneratorAsync = GenerateScrambleSequence()
-            scrambleGeneratorAsync?.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
+            scrambleJob?.cancel()
+            scrambleJob = lifecycleScope.launch {
+                if (showHintsEnabled && currentPuzzle == TYPE_333 && scrambleEnabled && scrambleDialog != null) {
+                    scrambleDialog?.setHintVisibility(View.GONE)
+                    scrambleDialog?.dismiss()
+                }
+                canShowHint = false
+                binding?.let {
+                    it.scrambleBox.scrambleText.setText(R.string.generating_scramble)
+                    it.scrambleBox.scrambleText.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+                    it.scrambleBox.scrambleText.isClickable = false
+
+                    it.scrambleBox.scrambleButtonHint.visibility = View.GONE
+                    it.scrambleBox.scrambleButtonEdit.visibility = View.GONE
+                    it.scrambleBox.scrambleButtonReset.visibility = View.GONE
+                    it.scrambleBox.scrambleButtonManualEntry.visibility = View.GONE
+                    it.scrambleBox.scrambleProgress.visibility = View.VISIBLE
+                }
+
+                hideImage()
+                if (!isRunning) binding?.progressSpinner?.visibility = View.VISIBLE
+                isLocked = true
+
+                val scramble = withContext(Dispatchers.Default) {
+                    try {
+                        generator?.puzzle?.generateScramble()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Invalid puzzle for generator: $e")
+                        "An error has occurred"
+                    }
+                }
+                setScramble(scramble)
+            }
         } else if (currentTimerMode == TIMER_MODE_TRAINER) {
             setScramble(
                 TrainerScrambler.generateTrainerCase(
@@ -1424,86 +1549,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 )
             )
             canShowHint = false
-            hideButtons(true, true)
-        }
-    }
-
-
-    private class GetOptimalCross(
-        private val scramble: String,
-        private val optimalCross: RubiksCubeOptimalCross,
-        private val optimalXCross: RubiksCubeOptimalXCross,
-        private val showHintsXCrossEnabled: Boolean,
-        private val isRunning: Boolean,
-        private val scrambleDialog: BottomSheetDetailDialog?
-    ) : AsyncTask<Void?, Void?, String?>() {
-        override fun onPreExecute() {
-            Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE)
-            Log.d("OptimalCross onPre:", System.currentTimeMillis().toString() + "")
-            super.onPreExecute()
-        }
-
-        override fun doInBackground(vararg voids: Void?): String {
-            var text = ""
-            text += optimalCross.getTip(scramble)
-            if (showHintsXCrossEnabled) {
-                text += "\n\n"
-                text += optimalXCross.getTip(scramble)
-            }
-            return text
-        }
-
-        override fun onPostExecute(text: String?) {
-            super.onPostExecute(text)
-            if (!isRunning) {
-                // Set the hint text
-                if (scrambleDialog != null) {
-                    scrambleDialog.setHintText(text)
-                    scrambleDialog.setHintVisibility(View.VISIBLE)
-                }
-            }
-        }
-    }
-
-    private inner class GenerateScrambleSequence : AsyncTask<String?, Void?, String?>() {
-        override fun onPreExecute() {
-            Process.setThreadPriority(Process.THREAD_PRIORITY_MORE_FAVORABLE)
-            if (showHintsEnabled && currentPuzzle == TYPE_333 && scrambleEnabled && scrambleDialog != null) {
-                scrambleDialog?.setHintVisibility(View.GONE)
-                scrambleDialog?.dismiss()
-            }
-            canShowHint = false
-            binding?.let {
-                it.scrambleBox.scrambleText.setText(R.string.generating_scramble)
-                it.scrambleBox.scrambleText.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
-                it.scrambleBox.scrambleText.isClickable = false
-
-                it.scrambleBox.scrambleButtonHint.visibility = View.GONE
-                it.scrambleBox.scrambleButtonEdit.visibility = View.GONE
-                it.scrambleBox.scrambleButtonReset.visibility = View.GONE
-                it.scrambleBox.scrambleButtonManualEntry.visibility = View.GONE
-                it.scrambleBox.scrambleProgress.visibility = View.VISIBLE
-            }
-
-            hideImage()
-            if (!isRunning) binding?.progressSpinner?.visibility = View.VISIBLE
-            isLocked = true
-        }
-
-        override fun doInBackground(vararg params: String?): String? {
-            try {
-                return generator?.puzzle?.generateScramble()
-            } catch (e: Exception) {
-                Log.e(TAG, "Invalid puzzle for generator")
-            }
-            return "An error has ocurred"
-        }
-
-        override fun onProgressUpdate(vararg values: Void?) {
-        }
-
-        override fun onPostExecute(scramble: String?) {
-            setScramble(scramble)
+            hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
         }
     }
 
@@ -1527,7 +1573,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                         binding.scrambleBox.root.bottom
                     )
                     // The top line calculation is a bit tricky
-                    // We first get the top of the bounding box (which isn't necessarily
+                    // We first get the top of the bounding box which isn't necessarily
                     // the top of the actual, visible text. To that, we add the baseline,
                     // which is the measure from the top of the box to the actual baseline
                     // of the text. Then, we add the text size, which gets us to the visible
@@ -1554,7 +1600,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             congratsRect
                         ))
                     ) {
-                        binding.scrambleBox.scrambleText.text = "[ " + getString(R.string.scramble_text_tap_hint) + " ]"
+                        val hintText = "[ " + getString(R.string.scramble_text_tap_hint) + " ]"
+                        binding.scrambleBox.scrambleText.text = hintText
                         binding.scrambleBox.root.isClickable = true
                         binding.scrambleBox.root.setOnClickListener(scrambleDetailClickListener)
                     } else {
@@ -1571,7 +1618,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
 
         if (showHintsEnabled && currentPuzzle == TYPE_333) binding.scrambleBox.scrambleButtonHint.visibility =
             View.VISIBLE
-        if (manualEntryEnabled) binding.scrambleBox.scrambleButtonManualEntry.visibility = View.VISIBLE
+        if (manualEntryEnabled) binding.scrambleBox.scrambleButtonManualEntry.visibility =
+            View.VISIBLE
         binding.scrambleBox.scrambleProgress.visibility = View.GONE
         binding.scrambleBox.scrambleButtonEdit.visibility = View.VISIBLE
         binding.scrambleBox.scrambleButtonReset.visibility = View.VISIBLE
@@ -1600,27 +1648,6 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             mFragManager!!,
             "fragment_dialog_scramble_detail"
         )
-    }
-
-    private inner class GenerateScrambleImage : AsyncTask<Void?, Void?, Drawable?>() {
-        override fun doInBackground(vararg voids: Void?): Drawable? {
-            return generator?.generateImageFromScramble(
-                PreferenceManager.getDefaultSharedPreferences(TwistyTimer.getAppContext()),
-                realScramble
-            )
-        }
-
-        override fun onPostExecute(drawable: Drawable?) {
-            super.onPostExecute(drawable)
-            if (!isRunning) {
-                if (binding?.scrambleImg != null) showImage()
-            }
-            binding?.let {
-                it.progressSpinner.visibility = View.INVISIBLE
-                it.scrambleImg.setImageDrawable(drawable)
-                it.expandedImage.setImageDrawable(drawable)
-            }
-        }
     }
 
     private fun zoomImageFromThumb(thumbView: View) {
@@ -1727,7 +1754,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         // to the original bounds and show the thumbnail instead of
         // the expanded image.
         val startScaleFinal = startScale
-        binding.expandedImage.setOnClickListener { view: View? ->
+        binding.expandedImage.setOnClickListener { _: View? ->
             mCurrentAnimator?.cancel()
             // Animate the four positioning/sizing properties in parallel,
             // back to their original values.
@@ -1831,6 +1858,11 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
 
         private fun unlockOrientation(activity: Activity) {
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+
+        @JvmStatic
+        fun modeToInt(mode: String?): Int {
+            return if (mode == TIMER_MODE_TRAINER) 1 else 0
         }
     }
 }

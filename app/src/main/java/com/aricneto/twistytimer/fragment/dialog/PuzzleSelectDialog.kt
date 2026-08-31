@@ -42,26 +42,28 @@ class PuzzleSelectDialog : DialogFragment() {
         binding!!.list.setHasFixedSize(true)
 
         val layoutManager = GridLayoutManager(mContext, 3, RecyclerView.VERTICAL, false)
-        binding!!.list.setLayoutManager(layoutManager)
+        binding!!.list.layoutManager = layoutManager
 
         val puzzleAdapter = PuzzleSelectAdapter(
             dialogListener,
-            Pair.create<String, Int>(getString(R.string.cube_222), R.drawable.ic_2x2),
-            Pair.create<String, Int>(getString(R.string.cube_333), R.drawable.ic_3x3),
-            Pair.create<String, Int>(getString(R.string.cube_444), R.drawable.ic_4x4),
-            Pair.create<String, Int>(getString(R.string.cube_555), R.drawable.ic_5x5),
-            Pair.create<String, Int>(getString(R.string.cube_666), R.drawable.ic_6x6),
-            Pair.create<String, Int>(getString(R.string.cube_777), R.drawable.ic_7x7),
-            Pair.create<String, Int>(getString(R.string.cube_skewb), R.drawable.ic_skewb),
-            Pair.create<String, Int>(getString(R.string.cube_mega), R.drawable.ic_mega),
-            Pair.create<String, Int>(getString(R.string.cube_pyra), R.drawable.ic_pyra),
-            Pair.create<String, Int>(getString(R.string.cube_sq1), R.drawable.ic_sq1),
-            Pair.create<String, Int>(getString(R.string.cube_clock), R.drawable.ic_clock)
+            arrayOf(
+                Pair.create<String, Int>(getString(R.string.cube_222), R.drawable.ic_2x2),
+                Pair.create<String, Int>(getString(R.string.cube_333), R.drawable.ic_3x3),
+                Pair.create<String, Int>(getString(R.string.cube_444), R.drawable.ic_4x4),
+                Pair.create<String, Int>(getString(R.string.cube_555), R.drawable.ic_5x5),
+                Pair.create<String, Int>(getString(R.string.cube_666), R.drawable.ic_6x6),
+                Pair.create<String, Int>(getString(R.string.cube_777), R.drawable.ic_7x7),
+                Pair.create<String, Int>(getString(R.string.cube_skewb), R.drawable.ic_skewb),
+                Pair.create<String, Int>(getString(R.string.cube_mega), R.drawable.ic_mega),
+                Pair.create<String, Int>(getString(R.string.cube_pyra), R.drawable.ic_pyra),
+                Pair.create<String, Int>(getString(R.string.cube_sq1), R.drawable.ic_sq1),
+                Pair.create<String, Int>(getString(R.string.cube_clock), R.drawable.ic_clock)
+            )
         )
 
-        binding!!.list.setAdapter(puzzleAdapter)
+        binding!!.list.adapter = puzzleAdapter
 
-        return binding!!.getRoot()
+        return binding!!.root
     }
 
     fun setDialogListener(listener: DialogListenerMessage?) {
@@ -83,9 +85,8 @@ class PuzzleSelectDialog : DialogFragment() {
 
 internal class PuzzleSelectAdapter(
     var dialogListener: DialogListenerMessage?,
-    vararg puzzles: Pair<String, Int>?
-) : RecyclerView.Adapter<PuzzleSelectAdapter.CardViewHolder?>() {
-    var puzzles: Array<Pair<String, Int>> = puzzles as Array<Pair<String, Int>>
+    private val puzzles: Array<Pair<String, Int>>
+) : RecyclerView.Adapter<PuzzleSelectAdapter.CardViewHolder>() {
 
     internal class CardViewHolder(var view: View) : RecyclerView.ViewHolder(view) {
         var title: TextView = view.findViewById(R.id.title)

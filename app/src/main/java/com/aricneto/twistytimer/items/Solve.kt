@@ -1,6 +1,5 @@
 package com.aricneto.twistytimer.items
 
-import android.database.Cursor
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
@@ -34,20 +33,4 @@ data class Solve(
         mode: Int = 0,
     ) : this(0, time, puzzle, subtype, date, scramble, penalty, comment, history, mode)
 
-    companion object {
-        fun fromCursor(cursor: Cursor): Solve {
-            return Solve(
-                id = cursor.getLong(cursor.getColumnIndexOrThrow("_id")),
-                time = cursor.getInt(cursor.getColumnIndexOrThrow("time")),
-                puzzle = cursor.getString(cursor.getColumnIndexOrThrow("type")) ?: "",
-                subtype = cursor.getString(cursor.getColumnIndexOrThrow("subtype")) ?: "",
-                date = cursor.getLong(cursor.getColumnIndexOrThrow("date")),
-                scramble = cursor.getString(cursor.getColumnIndexOrThrow("scramble")) ?: "",
-                penalty = cursor.getInt(cursor.getColumnIndexOrThrow("penalty")),
-                comment = cursor.getString(cursor.getColumnIndexOrThrow("comment")) ?: "",
-                history = cursor.getInt(cursor.getColumnIndexOrThrow("history")) == 1,
-                mode = cursor.getInt(cursor.getColumnIndexOrThrow("mode"))
-            )
-        }
-    }
 }

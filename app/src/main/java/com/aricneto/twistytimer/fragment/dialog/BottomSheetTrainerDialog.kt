@@ -5,11 +5,11 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -17,7 +17,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogBottomsheetRecyclerBinding
-import com.aricneto.twistytimer.activity.MainActivity
 import com.aricneto.twistytimer.adapter.TrainerListAdapter
 import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_ALGS_MODIFIED
@@ -68,7 +67,12 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (arguments != null) {
-            currentSubset = requireArguments().getSerializable(KEY_SUBSET) as TrainerSubset?
+            currentSubset = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                requireArguments().getSerializable(KEY_SUBSET, TrainerSubset::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                requireArguments().getSerializable("subset") as TrainerSubset?
+            }
             currentCategory = requireArguments().getString(KEY_CATEGORY)!!
         }
     }
@@ -84,7 +88,7 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
         binding!!.title.setText(R.string.trainer_spinner_title)
         val icon = ThemeUtils.tintDrawable(
             requireContext(), R.drawable.ic_outline_control_camera_24px,
-        com.google.android.material.R.attr.colorOnSurface
+            com.google.android.material.R.attr.colorOnSurface
 //            ContextCompat.getColor(requireContext(), R.color.md_blue_A700)
         )
         binding!!.title.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
@@ -99,7 +103,7 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
         }
 
         setupRecyclerView()
-        
+
         viewModel.setSubset(currentSubset?.name)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -136,7 +140,12 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
         val parentActivity: Activity? = activity
 
         trainerListAdapter =
-            TrainerListAdapter(requireActivity(), getParentFragmentManager(), currentSubset!!, currentCategory)
+            TrainerListAdapter(
+                requireActivity(),
+                getParentFragmentManager(),
+                currentSubset!!,
+                currentCategory
+            )
 
         // Set different managers to support different orientations
         val gridLayoutManagerHorizontal =

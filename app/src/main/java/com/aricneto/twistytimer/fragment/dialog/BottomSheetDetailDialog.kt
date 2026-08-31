@@ -2,7 +2,6 @@ package com.aricneto.twistytimer.fragment.dialog
 
 import android.app.Dialog
 import android.content.DialogInterface
-import android.content.DialogInterface.OnShowListener
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -87,21 +86,25 @@ class BottomSheetDetailDialog : BottomSheetDialogFragment() {
 
     fun setHintVisibility(visibility: Int) {
         if (binding != null) {
-            if (visibility == View.VISIBLE) {
-                binding!!.hintText.visibility = View.VISIBLE
-                binding!!.hintProgress.visibility = View.GONE
-                binding!!.hintTitle.visibility = View.VISIBLE
-                binding!!.hintDivider.visibility = View.VISIBLE
-            } else if (visibility == View.GONE) {
-                binding!!.hintText.visibility = View.GONE
-                binding!!.hintProgress.visibility = View.VISIBLE
-                binding!!.hintTitle.visibility = View.VISIBLE
-                binding!!.hintDivider.visibility = View.VISIBLE
-            } else {
-                binding!!.hintProgress.visibility = View.GONE
-                binding!!.hintText.visibility = View.GONE
-                binding!!.hintTitle.visibility = View.GONE
-                binding!!.hintDivider.visibility = View.GONE
+            when (visibility) {
+                View.VISIBLE -> {
+                    binding!!.hintText.visibility = View.VISIBLE
+                    binding!!.hintProgress.visibility = View.GONE
+                    binding!!.hintTitle.visibility = View.VISIBLE
+                    binding!!.hintDivider.visibility = View.VISIBLE
+                }
+                View.GONE -> {
+                    binding!!.hintText.visibility = View.GONE
+                    binding!!.hintProgress.visibility = View.VISIBLE
+                    binding!!.hintTitle.visibility = View.VISIBLE
+                    binding!!.hintDivider.visibility = View.VISIBLE
+                }
+                else -> {
+                    binding!!.hintProgress.visibility = View.GONE
+                    binding!!.hintText.visibility = View.GONE
+                    binding!!.hintTitle.visibility = View.GONE
+                    binding!!.hintDivider.visibility = View.GONE
+                }
             }
         }
     }

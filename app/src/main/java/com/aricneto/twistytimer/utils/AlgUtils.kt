@@ -48,20 +48,21 @@ object AlgUtils {
 
     /**
      * Returns an array containing all color states for the given alg subset.
-     * The subset name is stored in the database [com.aricneto.twistytimer.database.DatabaseHandler]
+     * The subset name is stored in the database [com.aricneto.twistytimer.database.AlgRepository]
      * @return
      */
     fun getCaseColorStates(context: Context, subset: String): Array<String> {
         if (colorStates.isEmpty() || subset != EMPTYSUBSET) {
             try {
-                val res = context.resources
-                val resId = res.getIdentifier(
-                    "alg_reference_$subset",
-                    "array",
-                    context.packageName
-                )
+                val resId = when (subset) {
+                    "OLL" -> R.array.alg_reference_OLL
+                    "PLL" -> R.array.alg_reference_PLL
+                    else -> 0
+                }
 
-                colorStates = res.getStringArray(resId)
+                if (resId != 0) {
+                    colorStates = context.resources.getStringArray(resId)
+                }
             } catch (e: Exception) {
                 Log.e("ALGUTILS", "Error retrieving subset: $e")
             }

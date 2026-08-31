@@ -1,7 +1,6 @@
 package com.aricneto.twistytimer.fragment.dialog
 
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,14 +8,15 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.annotation.StringRes
+import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogPuzzleChooserDialogBinding
 import com.aricneto.twistytimer.TwistyTimer
-import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.aricneto.twistytimer.utils.PuzzleUtils.getPuzzleInPosition
-import androidx.core.graphics.drawable.toDrawable
+import kotlinx.coroutines.launch
 
 /**
  * 
@@ -80,7 +80,7 @@ class PuzzleChooserDialog : DialogFragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = DialogPuzzleChooserDialogBinding.inflate(inflater, container, false)
 
         @StringRes val buttonTextResID =
@@ -149,22 +149,29 @@ class PuzzleChooserDialog : DialogFragment() {
     }
 
     private fun updateCategoriesForType(puzzleType: String?) {
-        val dbHandler = TwistyTimer.getDBHandler()
-        val subtypeList = dbHandler.getAllSubtypesFromType(puzzleType!!, mMode)
+        val solveRepository = TwistyTimer.getSolveRepository()
+        lifecycleScope.launch {
+            val subtypeList = solveRepository.getAllSubtypesFromType(puzzleType!!, mMode).toMutableList()
 
-        if (subtypeList.isEmpty()) {
-            subtypeList.add(CURRENT_CATEGORY)
-            dbHandler.addSolve(
-                Solve(
-                    1, puzzleType, CURRENT_CATEGORY,
-                    0L, "", PuzzleUtils.PENALTY_HIDETIME, "", true, mMode
+            if (subtypeList.isEmpty()) {
+                subtypeList.add(CURRENT_CATEGORY)
+                solveRepository.insertSolve(
+                    type = puzzleType,
+                    subtype = CURRENT_CATEGORY,
+                    time = 1,
+                    date = 0L,
+                    scramble = "",
+                    penalty = PuzzleUtils.PENALTY_HIDETIME.toLong(),
+                    comment = "",
+                    history = true,
+                    mode = mMode
                 )
+            }
+            categoryAdapter = ArrayAdapter<String>(
+                requireContext(), android.R.layout.simple_spinner_dropdown_item, subtypeList
             )
+            binding!!.categorySpinner.adapter = categoryAdapter
         }
-        categoryAdapter = ArrayAdapter<String>(
-            requireContext(), android.R.layout.simple_spinner_dropdown_item, subtypeList
-        )
-        binding!!.categorySpinner.adapter = categoryAdapter
     }
 
     override fun onDestroyView() {
@@ -178,6 +185,7 @@ class PuzzleChooserDialog : DialogFragment() {
      * 
      * @return The attached activity, or `null` if no activity is attached.
      */
+    @Suppress("UNCHECKED_CAST")
     private fun <A : PuzzleCallback?> getRelayActivity(): A? {
         return activity as A?
     }

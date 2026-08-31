@@ -3,12 +3,16 @@ package com.aricneto.twistytimer.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aricneto.twistytimer.TwistyTimer
-import com.aricneto.twistytimer.database.DatabaseHandler
 import com.aricneto.twistytimer.database.SolveRepository
 import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.utils.TTIntent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TimerViewModel : ViewModel() {
@@ -19,8 +23,8 @@ class TimerViewModel : ViewModel() {
         val mode: Int = 0,
         val history: Boolean = false,
         val search: String = "",
-        val orderByKey: String = DatabaseHandler.KEY_DATE,
-        val orderByDir: String = DatabaseHandler.DIR_DESC
+        val orderByKey: String = SolveRepository.KEY_DATE,
+        val orderByDir: String = SolveRepository.DIR_DESC
     )
 
     private val repository = TwistyTimer.getSolveRepository()
@@ -52,15 +56,15 @@ class TimerViewModel : ViewModel() {
         mode: Int,
         history: Boolean,
         search: String = "",
-        key: String = DatabaseHandler.KEY_DATE,
-        dir: String = DatabaseHandler.DIR_DESC
+        key: String = SolveRepository.KEY_DATE,
+        dir: String = SolveRepository.DIR_DESC
     ) {
         _params.value = SolveParams(type, subtype, mode, history, search, key, dir)
     }
 
     fun deleteSolves(ids: List<Long>) {
         viewModelScope.launch {
-            TwistyTimer.getDBHandler().deleteSolvesByID(ids.toMutableList(), null)
+            repository.deleteSolvesByID(ids, null)
             TTIntent.broadcast(TTIntent.CATEGORY_TIME_DATA_CHANGES, TTIntent.ACTION_TIMES_MODIFIED)
         }
     }

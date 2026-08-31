@@ -31,7 +31,7 @@ import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimeListBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.adapter.SolveListAdapter
-import com.aricneto.twistytimer.database.DatabaseHandler
+import com.aricneto.twistytimer.database.SolveRepository
 import com.aricneto.twistytimer.fragment.dialog.AddTimeDialog
 import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener
@@ -81,8 +81,8 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
     private var currentPuzzleCategory: String? = null
     private var currentScramble: String? = null
 
-    private var orderByKey = DatabaseHandler.KEY_DATE
-    private var orderByDir = DatabaseHandler.DIR_DESC
+    private var orderByKey = SolveRepository.KEY_DATE
+    private var orderByDir = SolveRepository.DIR_DESC
 
     // Stores the current comment search query
     private var searchComment = ""
@@ -123,10 +123,12 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     .setPositiveButton(
                         R.string.action_move
                     ) { _: DialogInterface?, _: Int ->
-                        TwistyTimer.getDBHandler().moveAllSolvesToHistory(
-                            currentPuzzle!!, currentPuzzleCategory!!, mode
-                        )
-                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MOVED_TO_HISTORY)
+                        lifecycleScope.launch {
+                            TwistyTimer.getSolveRepository().moveAllSolvesToHistory(
+                                currentPuzzle!!, currentPuzzleCategory!!, mode
+                            )
+                            broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MOVED_TO_HISTORY)
+                        }
                     }
                     .setNegativeButton(R.string.action_cancel, null)
                     .show()
@@ -138,10 +140,12 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                 .setPositiveButton(
                     R.string.action_remove
                 ) { _: DialogInterface?, _: Int ->
-                    TwistyTimer.getDBHandler().deleteAllFromSession(
-                        currentPuzzle!!, currentPuzzleCategory!!, mode
-                    )
-                    broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    lifecycleScope.launch {
+                        TwistyTimer.getSolveRepository().deleteAllFromSession(
+                            currentPuzzle!!, currentPuzzleCategory!!, mode
+                        )
+                        broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)
+                    }
                 }
                 .setNegativeButton(R.string.action_cancel, null)
                 .show()
@@ -154,50 +158,56 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                 popupMenu.setOnMenuItemClickListener { item: MenuItem ->
                     when (item.itemId) {
                         R.id.unarchive -> {
-                            val unarchiveView = LayoutInflater.from(mContext)
-                                .inflate(
-                                    R.layout.dialog_input,
-                                    requireView().parent as ViewGroup,
-                                    false
-                                )
-                            val unarchiveEditText =
-                                unarchiveView.findViewById<TextInputEditText>(R.id.edit_text)
-                            unarchiveEditText.inputType = InputType.TYPE_CLASS_NUMBER
-
-                            MaterialAlertDialogBuilder(mContext!!)
-                                .setTitle(R.string.list_options_item_from_history)
-                                .setMessage(
-                                    getString(
-                                        R.string.unarchive_dialog_summary,
-                                        TwistyTimer.getDBHandler()
-                                            .getNumArchivedSolves(
-                                                currentPuzzle!!,
-                                                currentPuzzleCategory!!,
-                                                mode
-                                            )
+                            lifecycleScope.launch {
+                                val unarchiveView = LayoutInflater.from(mContext)
+                                    .inflate(
+                                        R.layout.dialog_input,
+                                        requireView().parent as ViewGroup,
+                                        false
                                     )
-                                )
-                                .setView(unarchiveView)
-                                .setPositiveButton(
-                                    R.string.list_options_item_from_history
-                                ) { _: DialogInterface?, _: Int ->
-                                    try {
-                                        TwistyTimer.getDBHandler().unarchiveSolves(
-                                            currentPuzzle!!,
-                                            currentPuzzleCategory!!,
-                                            mode,
-                                            unarchiveEditText.getText().toString().toInt()
+                                val unarchiveEditText =
+                                    unarchiveView.findViewById<TextInputEditText>(R.id.edit_text)
+                                unarchiveEditText.inputType = InputType.TYPE_CLASS_NUMBER
+
+                                val numArchived =
+                                    TwistyTimer.getSolveRepository().getNumArchivedSolves(
+                                        currentPuzzle!!,
+                                        currentPuzzleCategory!!,
+                                        mode
+                                    )
+
+                                MaterialAlertDialogBuilder(mContext!!)
+                                    .setTitle(R.string.list_options_item_from_history)
+                                    .setMessage(
+                                        getString(
+                                            R.string.unarchive_dialog_summary,
+                                            numArchived
                                         )
-                                        broadcast(
-                                            CATEGORY_TIME_DATA_CHANGES,
-                                            ACTION_TIME_ADDED
-                                        )
-                                    } catch (_: NumberFormatException) {
-                                        // ignore
+                                    )
+                                    .setView(unarchiveView)
+                                    .setPositiveButton(
+                                        R.string.list_options_item_from_history
+                                    ) { _: DialogInterface?, _: Int ->
+                                        lifecycleScope.launch {
+                                            try {
+                                                TwistyTimer.getSolveRepository().unarchiveSolves(
+                                                    currentPuzzle!!,
+                                                    currentPuzzleCategory!!,
+                                                    mode,
+                                                    unarchiveEditText.getText().toString().toLong()
+                                                )
+                                                broadcast(
+                                                    CATEGORY_TIME_DATA_CHANGES,
+                                                    ACTION_TIME_ADDED
+                                                )
+                                            } catch (_: NumberFormatException) {
+                                                // ignore
+                                            }
+                                        }
                                     }
-                                }
-                                .setNegativeButton(R.string.action_cancel, null)
-                                .show()
+                                    .setNegativeButton(R.string.action_cancel, null)
+                                    .show()
+                            }
                         }
 
                         R.id.share_ao5 -> PuzzleUtils.shareAverageOf(
@@ -220,15 +230,15 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                             requireActivity()
                         )
 
-                        R.id.sort_time -> orderByKey = DatabaseHandler.KEY_TIME
-                        R.id.sort_date -> orderByKey = DatabaseHandler.KEY_DATE
+                        R.id.sort_time -> orderByKey = SolveRepository.KEY_TIME
+                        R.id.sort_date -> orderByKey = SolveRepository.KEY_DATE
                         R.id.sort_ascd, R.id.sort_asc -> {
-                            orderByDir = DatabaseHandler.DIR_ASC
+                            orderByDir = SolveRepository.DIR_ASC
                             reloadList()
                         }
 
                         R.id.sort_descd, R.id.sort_desc -> {
-                            orderByDir = DatabaseHandler.DIR_DESC
+                            orderByDir = SolveRepository.DIR_DESC
                             reloadList()
                         }
 
@@ -236,15 +246,6 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     }
                     true
                 }
-
-//                val popupHelper = MenuPopupHelper(
-//                    requireActivity(),
-//                    popupMenu.getMenu() as MenuBuilder,
-//                    binding!!.moreButton
-//                )
-//                popupHelper.setForceShowIcon(true)
-//
-//                popupHelper.show()
 
                 try {
                     val fieldPopup = PopupMenu::class.java.getDeclaredField("mPopup")
@@ -406,14 +407,8 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
     override fun onDestroyView() {
         if (DEBUG_ME) Log.d(TAG, "onDestroyView()")
         super.onDestroyView()
-        //binding = null
         StatisticsCache.instance.unregisterObserver(this)
         mRecentStatistics = null
-    }
-
-    override fun setUserVisibleHint(isVisibleToUser: Boolean) {
-        if (DEBUG_ME) Log.d(TAG, "setUserVisibleHint(isVisibleToUser=$isVisibleToUser)")
-        super.setUserVisibleHint(isVisibleToUser)
     }
 
     /**
@@ -537,7 +532,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                 "I CAN'T BELIEVE YOU GOT THAT PB, JUST AS MY SD CARD RUNS OUT",
                 "I once used my Pyraminx as a fork. True story.",
                 "Do you stop the timer with your feet too? Yuck.",
-                "In the abscence of a rock, a Megaminx makes a great substitute.\n\nOr so I've heard.",
+                "In the absence of a rock, a Megaminx makes a great substitute.\n\nOr so I've heard.",
                 "It is the year 2049. You have been cubing non-stop for over 30 years now.\n\nDon't you think it's time to take a break?"
             )
 
@@ -572,7 +567,12 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
         private const val MODE = "mode"
 
         // We have to put a boolean history here because it resets when we change puzzles.
-        fun newInstance(puzzle: String?, puzzleType: String?, mode: Int, history: Boolean): TimerListFragment {
+        fun newInstance(
+            puzzle: String?,
+            puzzleType: String?,
+            mode: Int,
+            history: Boolean
+        ): TimerListFragment {
             val fragment = TimerListFragment()
             val args = Bundle()
             args.putString(PUZZLE, puzzle)

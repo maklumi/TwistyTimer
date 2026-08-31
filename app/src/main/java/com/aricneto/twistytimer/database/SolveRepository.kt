@@ -13,6 +13,21 @@ import app.cash.sqldelight.coroutines.mapToList
 
 class SolveRepository(private val queries: SolveQueries) {
 
+    /**
+     * An interface for notification of the progress of bulk database operations.
+     */
+    interface ProgressListener {
+        /**
+         * Notifies the listener of the progress of a bulk operation. This may be called many
+         * times during a single operation.
+         *
+         * @param count The number of records processed so far.
+         * @param total The total number of records to be processed.
+         */
+        fun onProgress(count: Int, total: Int)
+    }
+
+
     suspend fun populateStatistics(
         puzzleType: String,
         puzzleSubtype: String,
@@ -106,6 +121,23 @@ class SolveRepository(private val queries: SolveQueries) {
                     )
                 }
             }
+    }
+
+    suspend fun getSolve(id: Long) = withContext(Dispatchers.IO) {
+        queries.selectById(id).executeAsOneOrNull()?.let { sqSolve ->
+            DomainSolve(
+                id = sqSolve._id,
+                time = (sqSolve.time ?: 0).toInt(),
+                puzzle = sqSolve.type ?: "",
+                subtype = sqSolve.subtype ?: "",
+                date = sqSolve.date,
+                scramble = sqSolve.scramble ?: "",
+                penalty = (sqSolve.penalty ?: 0).toInt(),
+                comment = sqSolve.comment ?: "",
+                history = sqSolve.history ?: false,
+                mode = sqSolve.mode
+            )
+        }
     }
 
     suspend fun getAllSolves() = withContext(Dispatchers.IO) {
@@ -230,6 +262,91 @@ class SolveRepository(private val queries: SolveQueries) {
         }
     }
 
+    suspend fun getSolvesForExport(type: String, subtype: String, mode: Int) = withContext(Dispatchers.IO) {
+        queries.selectSolves(
+            type = type,
+            subtype = subtype,
+            history = false,
+            search = "%%",
+            mode = mode,
+            orderByKey = "date",
+            orderByDir = "DESC"
+        ).executeAsList().map { sqSolve ->
+            DomainSolve(
+                id = sqSolve._id,
+                time = (sqSolve.time ?: 0).toInt(),
+                puzzle = sqSolve.type ?: "",
+                subtype = sqSolve.subtype ?: "",
+                date = sqSolve.date,
+                scramble = sqSolve.scramble ?: "",
+                penalty = (sqSolve.penalty ?: 0).toInt(),
+                comment = sqSolve.comment ?: "",
+                history = sqSolve.history ?: false,
+                mode = sqSolve.mode
+            )
+        }
+    }
+
+    suspend fun getAllSubtypesFromType(type: String, mode: Int) = withContext(Dispatchers.IO) {
+        queries.getAllSubtypesFromType(type, mode).executeAsList().map { it.subtype ?: "" }
+    }
+
+    suspend fun addSolves(
+        solves: Collection<DomainSolve>,
+        fileFormat: Int,
+        listener: ProgressListener?
+    ) = withContext(Dispatchers.IO) {
+        val total = solves.size
+        var numProcessed = 0
+        var numInserted = 0
+
+        listener?.onProgress(numProcessed, total)
+
+        if (total > 0) {
+            queries.transaction {
+                for (solve in solves) {
+                    // Do not check for duplicates if importing from external
+                    val isExternal = fileFormat == 1 // ExportImportDialog.EXIM_FORMAT_EXTERNAL
+                    if (isExternal || !queries.solveExists(solve.puzzle, solve.subtype, solve.time.toLong(), solve.date, solve.scramble, solve.mode).executeAsOne().let { it > 0 }) {
+                        queries.insertSolve(
+                            solve.puzzle, solve.subtype, solve.time.toLong(), solve.date,
+                            solve.scramble, solve.penalty.toLong(), solve.comment, solve.history, solve.mode
+                        )
+                        numInserted++
+                    }
+                    listener?.onProgress(++numProcessed, total)
+                }
+            }
+        }
+        numInserted
+    }
+
+    suspend fun deleteSolvesByID(
+        solveIDs: Collection<Long>,
+        listener: ProgressListener?
+    ) = withContext(Dispatchers.IO) {
+        val total = solveIDs.size
+        var numProcessed = 0
+        var numDeleted = 0
+
+        listener?.onProgress(numProcessed, total)
+
+        if (total > 0) {
+            queries.transaction {
+                for (id in solveIDs) {
+                    queries.deleteSolve(id)
+                    numDeleted++
+                    listener?.onProgress(++numProcessed, total)
+                }
+            }
+        }
+        numDeleted
+    }
+
+    suspend fun deleteSubtype(type: String, subtype: String, mode: Int) = withContext(Dispatchers.IO) {
+        queries.deleteSubtype(type, subtype, mode)
+    }
+
     suspend fun solveExists(
         type: String,
         subtype: String,
@@ -243,5 +360,13 @@ class SolveRepository(private val queries: SolveQueries) {
 
     suspend fun migrateTrainingMode() = withContext(Dispatchers.IO) {
         queries.migrateTrainingMode()
+    }
+
+    companion object {
+        const val DIR_DESC: String = "DESC"
+        const val DIR_ASC: String = "ASC"
+
+        const val KEY_TIME: String = "time"
+        const val KEY_DATE: String = "date"
     }
 }

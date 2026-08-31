@@ -1,5 +1,6 @@
 package com.aricneto.twistytimer.activity
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Typeface
@@ -9,7 +10,6 @@ import android.os.Looper
 import android.text.InputType
 import android.util.Log
 import android.util.TypedValue
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.SeekBar
@@ -41,6 +41,7 @@ import com.aricneto.twistytimer.utils.Prefs.getInt
 import com.aricneto.twistytimer.utils.Prefs.keyToResourceID
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import java.util.Locale
 import kotlin.math.ceil
 
 class SettingsActivity : AppCompatActivity() {
@@ -57,9 +58,9 @@ class SettingsActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
-        setContentView(binding!!.getRoot())
+        setContentView(binding!!.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding!!.getRoot()) { v: View, insets: WindowInsetsCompat ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding!!.root) { v: View, insets: WindowInsetsCompat ->
             v.setPadding(
                 insets.getInsets(WindowInsetsCompat.Type.systemBars()).left,
                 insets.getInsets(WindowInsetsCompat.Type.systemBars()).top,
@@ -216,16 +217,14 @@ class SettingsActivity : AppCompatActivity() {
                     }
 
                     R.string.pk_timer_animation_duration -> createSeekDialog(
-                        R.string.pk_timer_animation_duration,
-                        0, 1000,
-                        R.integer.defaultAnimationDuration,
-                        "%d ms"
+                        prefKeyResID = R.string.pk_timer_animation_duration,
+                        defaultValueRes = R.integer.defaultAnimationDuration
                     )
 
                     R.string.pk_stat_trim_size -> {
                         // This would be a lot cleaner with high-order functions, but I couldn't find a way to get it working for API < 24
-                        val trimDialogView = LayoutInflater.from(activity)
-                            .inflate(R.layout.dialog_settings_progress, null)
+                        @SuppressLint("InflateParams")
+                        val trimDialogView = layoutInflater.inflate(R.layout.dialog_settings_progress, null)
                         val trimSeekBar =
                             trimDialogView.findViewById<AppCompatSeekBar>(R.id.seekbar)
                         val trimText = trimDialogView.findViewById<TextView>(R.id.text)
@@ -273,6 +272,7 @@ class SettingsActivity : AppCompatActivity() {
                                     ao100 = getTrim(100, progress)
                                     ao1000 = getTrim(1000, progress)
                                     trimText.text = String.format(
+                                        Locale.getDefault(),
                                         getString(
                                             R.string.pref_dialog_trim_size,
                                             progress
@@ -388,7 +388,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun createNumberDialog(@StringRes title: Int, prefKeyResID: Int) {
-            val view = LayoutInflater.from(mContext!!).inflate(R.layout.dialog_input, null)
+            @SuppressLint("InflateParams")
+            val view = layoutInflater.inflate(R.layout.dialog_input, null)
             val editText = view.findViewById<TextInputEditText>(R.id.edit_text)
             editText.inputType = InputType.TYPE_CLASS_NUMBER
             editText.setText(getInt(prefKeyResID, 15).toString())
@@ -400,7 +401,7 @@ class SettingsActivity : AppCompatActivity() {
                     R.string.action_done
                 ) { _: DialogInterface?, _: Int ->
                     try {
-                        val time = editText.getText().toString().toInt()
+                        val time = editText.text.toString().toInt()
                         edit().putInt(prefKeyResID, time).apply()
                     } catch (_: NumberFormatException) {
                         Toast.makeText(activity, R.string.invalid_time, Toast.LENGTH_SHORT)
@@ -420,11 +421,11 @@ class SettingsActivity : AppCompatActivity() {
 
         private fun createSeekDialog(
             @StringRes prefKeyResID: Int,
-            minValue: Int, maxValue: Int, @IntegerRes defaultValueRes: Int,
-            formatText: String
+            minValue: Int = 0, maxValue: Int = 1000, @IntegerRes defaultValueRes: Int,
+            formatText: String = "%d ms"
         ) {
-            val dialogView =
-                LayoutInflater.from(activity).inflate(R.layout.dialog_settings_progress, null)
+            @SuppressLint("InflateParams")
+            val dialogView = layoutInflater.inflate(R.layout.dialog_settings_progress, null)
             val seekBar = dialogView.findViewById<AppCompatSeekBar>(R.id.seekbar)
             val text = dialogView.findViewById<TextView>(R.id.text)
 
@@ -433,11 +434,11 @@ class SettingsActivity : AppCompatActivity() {
             seekBar.max = maxValue
             seekBar.progress = getInt(prefKeyResID, defaultValue)
 
-            text.text = String.format(formatText, seekBar.progress)
+            text.text = String.format(Locale.getDefault(), formatText, seekBar.progress)
 
             seekBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
                 override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                    text.text = String.format(formatText, seekBar.progress)
+                    text.text = String.format(Locale.getDefault(), formatText, seekBar.progress)
                 }
 
                 override fun onStartTrackingTouch(seekBar: SeekBar?) {
@@ -479,8 +480,8 @@ class SettingsActivity : AppCompatActivity() {
         private fun createSeekTextSizeDialog(
             prefKeyResID: Int, defaultTextSize: Int, showText: String?, bold: Boolean
         ) {
-            val dialogView =
-                LayoutInflater.from(activity).inflate(R.layout.dialog_settings_progress, null)
+            @SuppressLint("InflateParams")
+            val dialogView = layoutInflater.inflate(R.layout.dialog_settings_progress, null)
             val seekBar = dialogView.findViewById<View?>(R.id.seekbar) as AppCompatSeekBar
             val text = dialogView.findViewById<View?>(R.id.text) as TextView
             seekBar.max = 300
@@ -527,9 +528,8 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         private fun createImageSeekDialog(prefKeyResID: Int) {
-            val dialogView = LayoutInflater.from(
-                activity
-            ).inflate(R.layout.dialog_settings_progress_image, null)
+            @SuppressLint("InflateParams")
+            val dialogView = layoutInflater.inflate(R.layout.dialog_settings_progress_image, null)
             val seekBar = dialogView.findViewById<View?>(R.id.seekbar) as AppCompatSeekBar
             val image = dialogView.findViewById<View>(R.id.image)
             seekBar.max = 300
