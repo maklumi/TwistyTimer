@@ -62,14 +62,15 @@
 
     <ImageView
         android:id="@+id/button_save"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_below="@id/down"
         android:layout_alignRight="@id/back"
         android:alpha="0.70"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:clickable="true"
-        android:padding="8dp"
+        android:scaleType="center"
+        app:tint="?attr/colorPrimary"
         app:srcCompat="@drawable/ic_outline_done_outline_16px" />
 
 

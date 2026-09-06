@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_marginTop="8dp"
     android:layout_marginBottom="8dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@drawable/outline_background_card"
-    android:orientation="vertical">
+    android:background="@drawable/outline_background_card">
 
     <TextView
         android:id="@+id/title"
         style="@style/BottomPanelListTitleTextStyle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@id/add_category"
         android:textStyle="bold"
         android:text="@string/category_select_dialog_title" />
 
-    <androidx.appcompat.widget.AppCompatTextView
+    <TextView
         android:id="@+id/add_category"
         android:gravity="center"
         android:layout_width="wrap_content"
@@ -31,14 +31,16 @@
         android:layout_marginBottom="8dp"
         android:background="@drawable/card_button_accent"
         android:clickable="true"
-        android:textColor="@color/md_blue_A700"
+        android:textColor="?attr/colorPrimary"
         app:drawableLeftCompat="@drawable/ic_category_add"
+        app:drawableTint="?attr/colorPrimary"
         android:drawablePadding="8dp"
         android:focusable="true"
         android:paddingLeft="12dp"
-        android:paddingTop="0dp"
+        android:paddingTop="8dp"
         android:paddingRight="16dp"
-        android:paddingBottom="0dp"
+        android:paddingBottom="8dp"
+        android:minHeight="48dp"
         android:text="@string/w_new_subtype"
         android:textSize="12sp" />
 
@@ -73,7 +75,8 @@
         android:textSize="12sp"
         android:paddingTop="6dp"
         android:paddingBottom="6dp"
+        android:alpha="0.7"
         android:text="@string/category_select_dialog_hint_edit"
-        android:textColor="@color/md_light_primary_text" />
+        android:textColor="?attr/colorOnSurface" />
 
 </RelativeLayout>

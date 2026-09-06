@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clickable="false"
-        app:rb_color="?colorAccent"
+        app:rb_color="?attr/colorTertiary"
         app:rb_duration="3000"
         app:rb_radius="64dp"
         app:rb_rippleAmount="1"
@@ -29,7 +29,7 @@
 
     <include
         android:id="@+id/scramble_box"
-        layout="@layout/item_scramble_box"
+        layout="@layout/view_scramble_box"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
@@ -51,7 +51,7 @@
         android:drawablePadding="16dp"
         android:gravity="center"
         android:text="@string/personal_best_message"
-        android:textColor="?colorTimerText"
+        android:textColor="?attr/colorPrimary"
         android:textStyle="bold"
         android:visibility="gone"
         tools:visibility="visible" />
@@ -70,8 +70,8 @@
         app:autoSizeTextType="uniform"
         app:autoSizeMaxTextSize="90sp"
         android:textSize="76sp"
-        android:textColor="?colorTimerText"
-        android:textColorHighlight="?colorAccent"
+        android:textColor="?attr/colorPrimary"
+        android:textColorHighlight="?attr/colorTertiary"
         android:textIsSelectable="false" />
 
     <TextView
@@ -83,8 +83,8 @@
         android:textStyle="bold"
         android:text="Inspection"
         android:textAllCaps="true"
-        android:textColor="?colorTimerText"
-        android:textColorHighlight="?colorAccent"
+        android:textColor="?attr/colorPrimary"
+        android:textColorHighlight="?attr/colorTertiary"
         android:textIsSelectable="false"
         android:textSize="16sp"
         android:visibility="gone"
@@ -92,7 +92,7 @@
 
     <include
         android:id="@+id/qa_buttons"
-        layout="@layout/item_qa_buttons"
+        layout="@layout/view_qa_buttons"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@id/chronometer"
@@ -107,13 +107,15 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_alignBaseline="@id/chronometer"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
         android:background="?selectableItemBackgroundBorderless"
         android:alpha=".9"
         android:paddingTop="24dp"
         android:paddingBottom="8dp"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        app:tint="?colorTimerText"
+        app:tint="?attr/colorPrimary"
         tools:visibility="visible"
         android:visibility="gone"/>
 
@@ -123,8 +125,8 @@
         android:layout_height="68dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="?tabBarPadding"
-        android:scaleType="fitStart"
+        android:layout_marginBottom="96dp"
+        android:scaleType="fitCenter"
         tools:background="@color/red_material" />
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
@@ -155,7 +157,7 @@
         android:layout_marginBottom="4dp"
         android:layout_marginLeft="4dp"
         android:text="@string/timer_detail_average_record_message"
-        android:textColor="?colorTimerText"
+        android:textColor="?attr/colorPrimary"
         android:textStyle="bold"
         android:textSize="12sp" />
 
@@ -169,7 +171,7 @@
         android:layout_marginRight="16dp"
         android:layout_marginBottom="?tabBarPadding"
         android:alpha=".85"
-        android:textColor="?colorTimerText"
+        android:textColor="?attr/colorPrimary"
         android:textSize="12sp"
         android:fontFamily="@font/lato"
         android:gravity="right"
@@ -185,7 +187,7 @@
         android:layout_marginBottom="?tabBarPadding"
         android:alpha=".85"
         android:gravity="left"
-        android:textColor="?colorTimerText"
+        android:textColor="?attr/colorPrimary"
         android:fontFamily="@font/lato"
         android:textSize="12sp"
         tools:text="Dev: 13.21\nBest: 12.14\nWorst: 45.21\nCount: 23.21" />

@@ -1,7 +1,6 @@
 package com.aricneto.twistytimer.adapter
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.text.Html
 import android.view.LayoutInflater
@@ -44,13 +43,13 @@ class SolveListAdapter(
 
     private val cardBackground: Drawable = createSquareDrawable(
         mContext,
-        fetchAttrColor(mContext, R.attr.colorItemListBackground),
+        fetchAttrColor(mContext, R.attr.colorSurfaceContainer),
         0, 10, 0f
     )
     private val selectedCardBackground: Drawable = createSquareDrawable(
         mContext,
-        fetchAttrColor(mContext, R.attr.colorItemListBackgroundSelected),
-        Color.BLACK, 10, 2f
+        fetchAttrColor(mContext, R.attr.colorSurfaceVariant),
+        fetchAttrColor(mContext, android.R.attr.colorPrimary), 10, 2f
     )
     private val mDateFormatSpec: String = mContext.getString(R.string.shortDateFormat)
 
@@ -76,8 +75,10 @@ class SolveListAdapter(
 
             if (selectedItems.contains(solve.id)) {
                 binding.card.background = selectedCardBackground
+                binding.selectedIndicator.visibility = View.VISIBLE
             } else {
                 binding.card.background = cardBackground
+                binding.selectedIndicator.visibility = View.GONE
             }
 
             binding.itemLayout.setOnClickListener {
@@ -145,6 +146,12 @@ class SolveListAdapter(
     }
 
     fun getSelectedIds(): List<Long> = selectedItems.toList()
+
+    fun clearSelection() {
+        isInSelectionMode = false
+        selectedItems.clear()
+        notifyItemRangeChanged(0, itemCount)
+    }
 
     override fun onUpdateDialog() {
         broadcast(CATEGORY_TIME_DATA_CHANGES, ACTION_TIMES_MODIFIED)

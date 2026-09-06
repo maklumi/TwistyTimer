@@ -26,9 +26,10 @@
         <TextView
             android:id="@+id/nameText"
             style="@style/DialogTitleTextStyle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
             tools:text="OLL 21" />
 
         <com.aricneto.twistytimer.layout.Cube
@@ -67,7 +68,7 @@
             android:layout_marginRight="16dp"
             android:layout_marginTop="16dp"
             android:lineSpacingExtra="4sp"
-            android:textColor="@android:color/black"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="14sp"
             tools:text="R U2 R2 U' R U' R' U2 F R F'
 y R' F R U R U' R2 F' R2 U' R' U R U R'
@@ -92,6 +93,7 @@ R' U2 R2 U R' U R U2 y R' F' R" />
             android:background="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:padding="16dp"
+            app:tint="?attr/colorPrimary"
             app:srcCompat="@drawable/ic_outline_edit_18px" />
 
         <ImageView
@@ -104,6 +106,7 @@ R' U2 R2 U R' U R U2 y R' F' R" />
             android:background="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:padding="16dp"
+            app:tint="?attr/colorPrimary"
             app:srcCompat="@drawable/ic_outline_timeline_18px" />
 
         <ImageView
@@ -116,6 +119,7 @@ R' U2 R2 U R' U R U2 y R' F' R" />
             android:background="?android:attr/selectableItemBackground"
             android:clickable="true"
             android:padding="16dp"
+            app:tint="?attr/colorPrimary"
             app:srcCompat="@drawable/ic_outline_cached_18px" />
 
     </RelativeLayout>

@@ -96,7 +96,7 @@ class AddTimeDialog : DialogFragment() {
                 popupMenu.menuInflater.inflate(R.menu.menu_add_time_options, popupMenu.menu)
                 popupMenu.setOnMenuItemClickListener { item: MenuItem ->
                     when (item.itemId) {
-                        R.id.penalty -> MaterialAlertDialogBuilder(mContext!!)
+                        R.id.penalty -> MaterialAlertDialogBuilder(requireActivity())
                             .setTitle(R.string.select_penalty)
                             .setSingleChoiceItems(
                                 R.array.array_penalties,
@@ -119,7 +119,7 @@ class AddTimeDialog : DialogFragment() {
                                 commentView.findViewById<TextInputEditText>(R.id.edit_text)
                             commentEditText.setText(mCurrentComment)
 
-                            MaterialAlertDialogBuilder(mContext!!)
+                            MaterialAlertDialogBuilder(requireActivity())
                                 .setTitle(R.string.edit_comment)
                                 .setView(commentView)
                                 .setPositiveButton(

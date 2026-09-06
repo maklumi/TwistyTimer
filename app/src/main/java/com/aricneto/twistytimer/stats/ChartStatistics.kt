@@ -15,6 +15,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 /**
  * A collector for solve times and related statistics (average times) to be presented in a chart.
@@ -42,7 +43,7 @@ class ChartStatistics private constructor(
     private val mNsOfAverages: IntArray
 
     /**
-     * Indicates if all of the charted times required are across the current session only. If
+     * Indicates if all the charted times required are across the current session only. If
      * only times for the current session are required, a more efficient approach may be taken to
      * load the saved solve times.
      * 
@@ -107,8 +108,6 @@ class ChartStatistics private constructor(
      */
     private var mPrevEntryXValue: String? = null
 
-    //private final String mLimitLineLabel;
-    //private final int mLimitLineColor;
     /**
      * Creates a new collector for chart statistics that will chart all collected values and all
      * averages-of-N values collected by the given `Statistics`. Each instance of
@@ -117,7 +116,7 @@ class ChartStatistics private constructor(
      * 
      * @param statistics
      * The statistics that will be updated as each solve time is recorded and that will provide
-     * the average values to be charted. Must not be `null`. Regardless of whether or not
+     * the average values to be charted. Must not be `null`. Regardless of whether
      * the chart data is for the current session or for all sessions, the statistics must be
      * configured to collect only solve times for the current session (i.e.,
      * [Statistics.isForCurrentSessionOnly] must return `true`).
@@ -150,14 +149,14 @@ class ChartStatistics private constructor(
         mLimitLineColor = chartStyle.getLimitLineColor();
         */
 
-        // Set the formatter for the date label on the chart X-axis. Localise the format, mostly to
+        // Set the formatter for the date label on the chart X-axis. Localize the format, mostly to
         // support the "MM/DD" order used in the USA. It will fall back to the most common "DD/MM"
-        // format (from "values/formats.xml") if no more specific localised format is found (such
+        // format (from "values/formats.xml") if no more specific localized format is found (such
         // as in "values-en-rUS/formats.xml". This also "pre-compiles" the pattern, making the
         // formatting operation faster later.
         mXValueFormatter = DateTimeFormat.forPattern(chartStyle.dateFormatSpec)
 
-        // Initialise and reset everything to a sane, empty state.
+        // Initialize and reset everything to a sane, empty state.
         reset()
     }
 
@@ -215,6 +214,10 @@ class ChartStatistics private constructor(
         mainDataSet.setCircleColor(allColor)
         mainDataSet.setColor(getLineColor(allColor))
 
+        // Enhancement: Gradient fill
+        mainDataSet.setDrawFilled(true)
+        mainDataSet.fillAlpha = 60
+
         chartData.addDataSet(mainDataSet)
 
         // Data set to show the progression of best times along the main line of all times.
@@ -223,13 +226,13 @@ class ChartStatistics private constructor(
         bestDataSet.enableDashedLine(3f, 6f, 0f)
 
         bestDataSet.setDrawCircles(true)
-        bestDataSet.setCircleRadius(BEST_TIME_CIRCLE_RADIUS_DP)
+        bestDataSet.circleRadius = BEST_TIME_CIRCLE_RADIUS_DP
         bestDataSet.setCircleColor(bestColor)
 
         bestDataSet.setDrawValues(false)
         bestDataSet.setValueTextColor(bestColor)
-        bestDataSet.setValueTextSize(BEST_TIME_VALUES_TEXT_SIZE_DP)
-        bestDataSet.setValueFormatter(TimeChartValueFormatter())
+        bestDataSet.valueTextSize = BEST_TIME_VALUES_TEXT_SIZE_DP
+        bestDataSet.valueFormatter = TimeChartValueFormatter()
 
         chartData.addDataSet(bestDataSet)
     }
@@ -252,19 +255,17 @@ class ChartStatistics private constructor(
         val bestAoNDataSet = createDataSet(label, color)
 
         bestAoNDataSet.setDrawCircles(true)
-        bestAoNDataSet.setCircleRadius(BEST_TIME_CIRCLE_RADIUS_DP)
+        bestAoNDataSet.circleRadius = BEST_TIME_CIRCLE_RADIUS_DP
         bestAoNDataSet.setCircleColor(color)
 
-        // Drawing the value of the best AoN time for each "N" seems like it would be a good idea,
-        // but the values are really hard because they appear over other chart lines and sometimes
+        // Drawing the value of the best AoN time for each "N" seems like it would be a good idea.
+        // But the values are really hard because they appear over other chart lines and sometimes
         // over the values drawn for the best time progression. Disabling them is no great loss,
         // as the statistics table shows the same values, anyway. Just showing a circle to mark
         // the best AoN time looks well enough on its own.
         bestAoNDataSet.setDrawValues(false)
 
-        //        bestAoNDataSet.setValueTextColor(color);
-//        bestAoNDataSet.setValueTextSize(BEST_TIME_VALUES_TEXT_SIZE_DP);
-//        bestAoNDataSet.setValueFormatter(new TimeChartValueFormatter());
+
         chartData.addDataSet(bestAoNDataSet)
     }
 
@@ -280,6 +281,10 @@ class ChartStatistics private constructor(
         // automatically, but requires a unique labels and colors on each data set.
         val dataSet = LineDataSet(null, label)
 
+        // Enhancement: Cubic lines for a more modern look
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+        dataSet.cubicIntensity = 0.15f
+
         // A dashed line can make peaks inaccurate. It also makes the graph look too "busy". It
         // is OK for some uses, such as progressions of best times, but that is left to the caller
         // to change once this new data set is returned.
@@ -292,7 +297,7 @@ class ChartStatistics private constructor(
         // thinner lines, so don't make lines too thick if the dataset is large!
         dataSet.setLineWidth(this.lineWidth)
         dataSet.setColor(color)
-        dataSet.setHighlightEnabled(false)
+        dataSet.isHighlightEnabled = false
 
         dataSet.setDrawCircles(false)
         dataSet.setDrawValues(false)
@@ -312,32 +317,8 @@ class ChartStatistics private constructor(
         // If it is done the other way around, some cached values related to the layout of the
         // legend for the previous statistics are not updated to match the new data sets and
         // crashes occur during rendering of the legend.
-        configureLegend(chart.getLegend())
+        configureLegend(chart.legend)
 
-        /*
-        chart.getAxisLeft().removeAllLimitLines();
-
-        if (getMeanTime() != AverageCalculator.UNKNOWN) { // At least one non-DNF solve time?
-            final LimitLine ll = new LimitLine(getMeanTime() / 1_000f, mLimitLineLabel);
-
-            ll.setLineColor(mLimitLineColor);
-            ll.setLineWidth(getLineWidth());
-            ll.enableDashedLine(20f, 10f, 0f);
-
-            ll.setTextColor(mLimitLineColor);
-            ll.setTextSize(MEAN_LIMIT_LINE_TEXT_SIZE_DP);
-            ll.setLabelPosition(LimitLine.LimitLabelPosition.LEFT_TOP);
-
-            chart.getAxisLeft().addLimitLine(ll);
-        }*/
-
-        // The maximum number of values that can be visible above which the time values are not
-        // drawn on the chart beside their data points. However, values are only drawn for the few
-        // "best" times, and these are likely to be much fewer (i.e., spread out along the X-axis),
-        // so the maximum can be increased from the default of 100. Otherwise, if there are more
-        // than 100 times visible, the "best" times will not be shown until the user zooms into the
-        // chart quite a lot.
-        //
         // One confusing aspect is that the visible count that the chart renderer compares to this
         // maximum count includes all points from all data sets, even those that have not been set
         // to show values (i.e., even when "setDrawValues(false)" is applied). For example, if
@@ -368,28 +349,28 @@ class ChartStatistics private constructor(
         var ds: LineDataSet?
 
         ds = mChartData!!.getDataSetByIndex(DS_ALL) as LineDataSet?
-        if (ds == null) return  // FIXME: This is just a workaround to stop crashes
+        if (ds == null) return
 
         legendEntries[DS_ALL] = LegendEntry()
         legendEntries[DS_ALL]!!.form = Legend.LegendForm.CIRCLE
-        legendEntries[DS_ALL]!!.label = ds.getLabel()
+        legendEntries[DS_ALL]!!.label = ds.label
         legendEntries[DS_ALL]!!.formColor = mChartStyle.allTimesColor
 
         ds = mChartData!!.getDataSetByIndex(DS_BEST) as LineDataSet?
-        if (ds == null) return  // FIXME: This is just a workaround to stop crashes
+        if (ds == null) return
 
         legendEntries[DS_BEST] = LegendEntry()
         legendEntries[DS_BEST]!!.form = Legend.LegendForm.CIRCLE
-        legendEntries[DS_BEST]!!.label = ds.getLabel()
-        legendEntries[DS_BEST]!!.formColor = ds.getColor()
+        legendEntries[DS_BEST]!!.label = ds.label
+        legendEntries[DS_BEST]!!.formColor = ds.color
 
         for (nIndex in 0..<numNs) {
             // A main AoN data set. The "best AoN" data sets are not represented in the legend.
             ds = mChartData!!.getDataSetByIndex(DS_AVG_0 + 2 * nIndex) as LineDataSet?
             legendEntries[DS_AVG_0 + nIndex] = LegendEntry()
             legendEntries[DS_AVG_0 + nIndex]!!.form = Legend.LegendForm.CIRCLE
-            legendEntries[DS_AVG_0 + nIndex]!!.label = ds!!.getLabel()
-            legendEntries[DS_AVG_0 + nIndex]!!.formColor = ds.getColor()
+            legendEntries[DS_AVG_0 + nIndex]!!.label = ds!!.label
+            legendEntries[DS_AVG_0 + nIndex]!!.formColor = ds.color
         }
 
         legend.setCustom(legendEntries)
@@ -446,10 +427,10 @@ class ChartStatistics private constructor(
                 // be drawn. There is no line charting the *progression* of best AoN times.
                 val bestAoNDS = mChartData!!.getDataSetByIndex(aonDSIndex + 1) as LineDataSet
 
-                if (bestAoNDS.getEntryCount() > 0) { // Should be 0 or 1, nothing more.
+                if (bestAoNDS.entryCount > 0) { // Should be 0 or 1, nothing more.
                     val oldEntry = bestAoNDS.getEntryForIndex(0) // Not an X-index.
 
-                    if (aonYValue < oldEntry.getY()) {
+                    if (aonYValue < oldEntry.y) {
                         // A new best AoN time! Replace the old one with this new one.
                         bestAoNDS.removeEntry(oldEntry)
                         bestAoNDS.addEntry(Entry(mXIndex.toFloat(), aonYValue))
@@ -462,31 +443,11 @@ class ChartStatistics private constructor(
         }
 
         if (isEntryAdded) {
-            // Add the X-axis value (a formatted solve date with just the day and month). The
-            // "date" value is interpreted as an instant in time relative to the Unix epoch in the
-            // UTC time zone. When "LocalDate" trims off the time to represent only a day, that
-            // day corresponds to a day in the system default (local) time zone that corresponds
-            // to that instant in time.
-            //final LocalDate day = new LocalDate(date);
-//
             /** The nature of the data means that sequential times will often be from the same
-            * / session performed on the same day. Therefore, it is easy to optimise this a bit by
+            * / session performed on the same day. Therefore, it is easy to optimize this a bit by
             * / not formatting the same day over-and-over. This may also save memory, as only a
             * / single "String" instance is created for each day. */
-            //final String xValue;
-//
-            //if (day.equals(mPrevEntryDay)) { // Also implies "mPrevEntryDay != null"
-            //    // Day has not changed, so re-use the previous X-value.
-            //    xValue = mPrevEntryXValue;
-            //} else {
-            //    // A new day (or the very first day), so format the day to a string and cache it.
-            //    xValue = mPrevEntryXValue = mXValueFormatter.print(day);
-            //    mPrevEntryDay = day;
-            //}
-
-            //mChartData.addXValue(xValue);
-
-            mXIndex++
+             mXIndex++
         }
         // If the new solve and all current averages were DNF or UNKNOWN, then no entry was added
         // to the chart, so do not add any X-axis value and do not increment the X-index.
@@ -499,23 +460,10 @@ class ChartStatistics private constructor(
      * The date on which the solve time was recorded. The values should be in milliseconds
      * since the Unix epoch time.
      */
-    // This methods takes away any confusion about what time value represents a DNF.
+    // This method takes away any confusion about what time value represents a DNF.
     fun addDNF(date: Long) {
         addTime(AverageCalculator.DNF, date)
     }
-
-    val meanTime: Long
-        /**
-         * Gets the simple arithmetic mean time of all non-DNF solves that were added to these chart
-         * statistics. The returned millisecond value is truncated to a whole milliseconds value, not
-         * rounded.
-         * 
-         * @return
-         * The mean time of all non-DNF solves that were added for the chart statistics. The result
-         * will be [AverageCalculator.UNKNOWN] if no times have been added, or if all added
-         * times were DNFs.
-         */
-        get() = mStatistics.sessionMeanTime
 
     private val lineWidth: Float
         /**
@@ -555,7 +503,7 @@ class ChartStatistics private constructor(
         override fun getFormattedValue(value: Float): String {
             // "value" is in fractional seconds. Convert to whole milliseconds and format it.
             return convertTimeToString(
-                Math.round(value * 1000).toLong(),
+                (value * 1000).roundToInt().toLong(),
                 PuzzleUtils.FORMAT_DEFAULT
             )
         }
@@ -570,7 +518,7 @@ class ChartStatistics private constructor(
         // NOTE: "ChartStatistics" is expected to be used from a Loader or AsyncTask, so it is
         // preferable not to have this class depend on a Context, as that could lead to memory leaks.
         // Instead, "ChartStyle" captures the necessary values from resources and theme attributes via
-        // a Context and then it can be passed when creating an instance of this class. Neither class
+        // a Context, and then it can be passed when creating an instance of this class. Neither class
         // then needs to hold a Context. "ChartStyle" can be created before the Loader or AsyncTask is
         // invoked and passed in before execution.
         /**
@@ -615,24 +563,12 @@ class ChartStatistics private constructor(
         private const val MAIN_TIME_CIRCLE_RADIUS_DP_BIG = 1.5f
 
         /**
-         * The Y-coordinate offset to apply to the value text of the "best" times to cause the text to
-         * be drawn below the corresponding data point instead of above it. The value is in DIP units.
-         */
-        // NOTE: This calculation approximately flips the text position to the opposite side of the
-        // data point (i.e., from above to below) based on the way "LineChartRenderer.drawValues" does
-        // the calculation (baseline is offset by -1.75 * circle-radius). Here, we reverse that offset
-        // twice to set the reflected position of the top of the text *below* the point and then offset
-        // by the text size to set the position on the new text baseline.
-        private val BEST_TIME_VALUES_Y_OFFSET_DP
-                : Float = BEST_TIME_CIRCLE_RADIUS_DP * 1.75f * 2f + BEST_TIME_VALUES_TEXT_SIZE_DP
-
-        /**
          * The data set index for the graph of all solve times.
          */
         private const val DS_ALL = 0
 
         /**
-         * The data set index for the graph of changes to the the best solve time.
+         * The data set index for the graph of changes to the best solve time.
          */
         private const val DS_BEST = 1
 

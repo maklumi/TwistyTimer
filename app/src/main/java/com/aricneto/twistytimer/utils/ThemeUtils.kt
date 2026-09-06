@@ -11,8 +11,8 @@ import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
 import androidx.annotation.StyleableRes
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import com.aricneto.twistify.R
 import com.aricneto.twistytimer.items.Theme
@@ -325,8 +325,22 @@ object ThemeUtils {
     @JvmStatic
     fun fetchAttrColor(context: Context, @AttrRes attrRes: Int): Int {
         val value = TypedValue()
-        context.theme.resolveAttribute(attrRes, value, true)
+        if (context.theme.resolveAttribute(attrRes, value, true)) {
+            return value.data
+        }
+        // Fallback to primary text color if resolution fails
+        context.theme.resolveAttribute(android.R.attr.textColorPrimary, value, true)
         return value.data
+    }
+
+    @JvmStatic
+    fun fetchAttrBool(context: Context, @AttrRes attrRes: Int): Boolean {
+        val value = TypedValue()
+        return if (context.theme.resolveAttribute(attrRes, value, true)) {
+            value.data != 0
+        } else {
+            false
+        }
     }
 
     /**
@@ -461,20 +475,50 @@ object ThemeUtils {
         @DrawableRes drawableRes: Int,
         @AttrRes colorAttrRes: Int
     ): Drawable {
-        val drawable = AppCompatResources.getDrawable(context, drawableRes)!!.mutate()
+        // Load drawable with theme awareness
+        val drawable = ResourcesCompat.getDrawable(context.resources, drawableRes, context.theme)!!.mutate()
+
+        // Wrap for tinting
         val wrap = DrawableCompat.wrap(drawable).mutate()
-        DrawableCompat.setTint(wrap, fetchAttrColor(context, colorAttrRes))
+
+        // Resolve Material3 theme color
+        val typedValue = TypedValue()
+        context.theme.resolveAttribute(colorAttrRes, typedValue, true)
+        val color = typedValue.data
+
+        // Apply tint
+        DrawableCompat.setTint(wrap, color)
         DrawableCompat.setTintMode(wrap, PorterDuff.Mode.SRC_IN)
 
         return wrap
     }
 
+
     /**
      * @return A ImageSpan with the given size multiplier. Supports vector drawables
      */
     fun getIconSpan(context: Context, size: Float): ImageSpan {
-        val drawable = AppCompatResources.getDrawable(context, R.drawable.ic_history_off)
-        drawable!!.setBounds(
+        // Load drawable with Material3 theme awareness
+        val drawable = ResourcesCompat.getDrawable(
+            context.resources,
+            R.drawable.ic_history_off,
+            context.theme
+        )!!.mutate()
+
+        // Resolve Material3 theme color (e.g., colorOnSurface)
+        val typedValue = TypedValue()
+        context.theme.resolveAttribute(
+            R.attr.colorOnSurface,
+            typedValue,
+            true
+        )
+        val colorOnSurface = typedValue.data
+
+        // Apply tint
+        drawable.setTint(colorOnSurface)
+
+        // Scale bounds
+        drawable.setBounds(
             0,
             0,
             (drawable.intrinsicWidth * size).toInt(),
@@ -483,6 +527,7 @@ object ThemeUtils {
 
         return ImageSpan(drawable)
     }
+
 
     fun spToPx(sp: Float, context: Context): Int {
         return TypedValue.applyDimension(

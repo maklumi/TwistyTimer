@@ -125,7 +125,7 @@ class SchemeSelectDialogMain : DialogFragment() {
         binding!!.down.setOnClickListener(clickListener)
 
         binding!!.reset.setOnClickListener { _: View? ->
-            MaterialAlertDialogBuilder(mContext!!)
+            MaterialAlertDialogBuilder(requireActivity())
                 .setMessage(R.string.reset_colorscheme)
                 .setPositiveButton(
                     R.string.action_reset_colorscheme

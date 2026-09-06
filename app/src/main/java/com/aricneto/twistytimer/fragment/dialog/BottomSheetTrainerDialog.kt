@@ -88,7 +88,7 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
         binding!!.title.setText(R.string.trainer_spinner_title)
         val icon = ThemeUtils.tintDrawable(
             requireContext(), R.drawable.ic_outline_control_camera_24px,
-            com.google.android.material.R.attr.colorOnSurface
+            R.attr.colorOnSurface
 //            ContextCompat.getColor(requireContext(), R.color.md_blue_A700)
         )
         binding!!.title.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)

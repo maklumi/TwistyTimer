@@ -4,7 +4,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?colorPrimary"
+    android:background="?attr/colorMainGradientStart"
     android:orientation="vertical">
 
     <androidx.viewpager2.widget.ViewPager2
@@ -20,7 +20,9 @@
 
         <include
             android:id="@+id/actionbar"
-            layout="@layout/main_actionbar" />
+            layout="@layout/view_main_actionbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
     </LinearLayout>
 

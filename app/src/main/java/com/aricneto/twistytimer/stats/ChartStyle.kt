@@ -122,13 +122,14 @@ class ChartStyle(context: Context) {
      * the new instance.
      */
     init {
-        this.allTimesColor = fetchAttrColor(context, R.attr.colorChartAllTimes)
-        this.bestTimesColor = fetchAttrColor(context, R.attr.colorChartBestTimes)
-        this.limitLineColor = fetchAttrColor(context, R.attr.colorChartMeanTime)
+        // Resolve Material3 theme colors instead of AppCompat
+        this.allTimesColor = fetchAttrColor(context, android.R.attr.colorPrimary)
+        this.bestTimesColor = fetchAttrColor(context, R.attr.colorTertiary)
+        this.limitLineColor = fetchAttrColor(context, R.attr.colorOutline)
 
-        mExtraColors[0] = fetchAttrColor(context, R.attr.colorChartExtra1)
-        mExtraColors[1] = fetchAttrColor(context, R.attr.colorChartExtra2)
-        mExtraColors[2] = fetchAttrColor(context, R.attr.colorChartExtra3)
+        mExtraColors[0] = fetchAttrColor(context, R.attr.colorOnSurfaceVariant)
+        mExtraColors[1] = fetchAttrColor(context, R.attr.colorOnTertiaryContainer)
+        mExtraColors[2] = fetchAttrColor(context, R.attr.colorOnSecondaryContainer)
 
         this.allTimesLabel = context.getString(R.string.graph_legend_all_times)
         this.bestTimesLabel = context.getString(R.string.graph_legend_best_times)

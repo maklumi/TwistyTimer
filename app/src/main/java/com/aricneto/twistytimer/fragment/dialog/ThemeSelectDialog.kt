@@ -26,7 +26,7 @@ import com.aricneto.twistytimer.utils.ThemeUtils.dpToPix
 import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
 import com.aricneto.twistytimer.utils.ThemeUtils.fetchBackgroundGradient
 import com.aricneto.twistytimer.utils.ThemeUtils.fetchStyleableAttr
-import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
+import com.google.android.material.color.MaterialColors
 
 /**
  * Created by Ari on 09/02/2016.
@@ -54,8 +54,8 @@ class ThemeSelectDialog : DialogFragment() {
         binding!!.list.setHasFixedSize(true)
         binding!!.list2.setHasFixedSize(true)
 
-        val themeLayoutManager = GridLayoutManager(mContext, 2, GridLayoutManager.HORIZONTAL, false)
-        val textLayoutManager = GridLayoutManager(mContext, 2, GridLayoutManager.HORIZONTAL, false)
+        val themeLayoutManager = GridLayoutManager(mContext, 4, GridLayoutManager.VERTICAL, false)
+        val textLayoutManager = GridLayoutManager(mContext, 4, GridLayoutManager.VERTICAL, false)
 
         binding!!.list.setLayoutManager(themeLayoutManager)
         binding!!.list2.setLayoutManager(textLayoutManager)
@@ -66,22 +66,7 @@ class ThemeSelectDialog : DialogFragment() {
         binding!!.list.setAdapter(themeListAdapter)
         binding!!.list2.setAdapter(textStyleListAdapter)
 
-        val cornerRadius = dpToPix(mContext!!, 20f)
-
-        // Set Text Style selector background
-        val gradientDrawable = fetchBackgroundGradient(mContext!!, preferredTheme)
-        gradientDrawable.cornerRadii = floatArrayOf(
-            0f,
-            0f,
-            0f,
-            0f,
-            cornerRadius.toFloat(),
-            cornerRadius.toFloat(),
-            cornerRadius.toFloat(),
-            cornerRadius.toFloat()
-        )
-
-        binding!!.list2.background = gradientDrawable
+        binding!!.dismiss.setOnClickListener { dismiss() }
 
         return binding!!.getRoot()
     }
@@ -131,10 +116,14 @@ internal class ThemeListAdapter(
         holder.themeTitle.text = themeSet[position]!!.name
         holder.themeCard.background = gradientDrawable
 
+        val textColor = MaterialColors.getColor(mContext, R.attr.colorOnSurface, Color.BLACK)
+
         if (themeSet[position]!!.prefName == currentTheme) {
             holder.themeTitle.setBackgroundResource(R.drawable.outline_background_card_warn)
+            holder.themeTitle.setTextColor(Color.BLACK)
         } else {
             holder.themeTitle.background = null
+            holder.themeTitle.setTextColor(textColor)
         }
 
         // Create onClickListener
@@ -166,7 +155,8 @@ internal class TextStyleListAdapter(
 
     private val currentTextStyle = getString(R.string.pk_text_style, "default")
 
-    var colorTimerText: Int = fetchAttrColor(mContext, R.attr.colorTimerText)
+    val textColor = MaterialColors.getColor(mContext, R.attr.colorOnSurface, Color.BLACK)
+    var colorPrimary: Int = textColor
 
     internal class CardViewHolder(var view: View) : RecyclerView.ViewHolder(view) {
         var themeCard: TextView = view.findViewById(R.id.card)
@@ -186,7 +176,7 @@ internal class TextStyleListAdapter(
         val gradientDrawable = GradientDrawable()
         gradientDrawable.setColor(Color.TRANSPARENT)
         gradientDrawable.cornerRadius = cornerRadius.toFloat()
-        gradientDrawable.setStroke(strokeWidth, colorTimerText)
+        gradientDrawable.setStroke(strokeWidth, fetchAttrColor(mContext, R.attr.colorOnSurface))
 
         // Set card title and background
         holder.themeTitle.text = themeSet[position]!!.name
@@ -194,18 +184,20 @@ internal class TextStyleListAdapter(
         holder.themeCard.setTextColor(
             fetchStyleableAttr(
                 mContext, themeSet[position]!!.resId,
-                R.styleable.BaseTwistyTheme,
-                R.styleable.BaseTwistyTheme_colorTimerText,
-                R.attr.colorTimerText
+                intArrayOf(androidx.appcompat.R.attr.colorPrimary),
+                0,
+                androidx.appcompat.R.attr.colorPrimary
             )
         )
+
+        val textColor = MaterialColors.getColor(mContext, R.attr.colorOnSurface, Color.BLACK)
 
         if (themeSet[position]!!.prefName == currentTextStyle) {
             holder.themeTitle.setBackgroundResource(R.drawable.outline_background_card_warn)
             holder.themeTitle.setTextColor(Color.BLACK)
         } else {
             holder.themeTitle.background = null
-            holder.themeTitle.setTextColor(colorTimerText)
+            holder.themeTitle.setTextColor(textColor)
         }
 
         // Create onClickListener

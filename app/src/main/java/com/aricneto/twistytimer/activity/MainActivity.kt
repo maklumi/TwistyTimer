@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.PorterDuff
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -15,13 +15,12 @@ import android.view.Menu
 import android.view.View
 import android.widget.ImageView
 import android.widget.ProgressBar
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
-import androidx.appcompat.app.AlertDialog
+import android.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
 import androidx.core.view.ViewCompat
@@ -58,11 +57,13 @@ import com.aricneto.twistytimer.utils.StoreUtils.isExternalStorageWritable
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MODIFIED
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
-import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrBool
-import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
+import com.aricneto.twistytimer.utils.ThemeUtils
 import com.aricneto.twistytimer.utils.ThemeUtils.preferredTextStyle
 import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.mikepenz.materialdrawer.holder.ColorHolder
 import com.mikepenz.materialdrawer.holder.ImageHolder
 import com.mikepenz.materialdrawer.holder.StringHolder
 import com.mikepenz.materialdrawer.model.DividerDrawerItem
@@ -195,7 +196,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         if (getBoolean(R.string.pk_tint_navigation_bar, false)) {
             theme.applyStyle(R.style.TintedNavigationBar, true)
             // Set navigation bar icon tint
-            if (fetchAttrBool(this, preferredTheme, R.styleable.BaseTwistyTheme_isLightTheme)) {
+            if (ThemeUtils.fetchAttrBool(this, android.R.attr.isLightTheme)) {
                 theme.applyStyle(R.style.LightNavBarIconStyle, true)
             }
         }
@@ -238,6 +239,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         }
 
         handleDrawer()
+
+        checkUpdateDialog()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -292,27 +295,26 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         mDrawer = findViewById(R.id.slider)
         mDrawerLayout = findViewById(R.id.root)
 
-        val headerView = View.inflate(this, R.layout.drawer_header, null) as ImageView
+        val headerView = View.inflate(this, R.layout.view_drawer_header, null) as ImageView
 
         mDrawer!!.headerView = headerView
 
-        headerView.setColorFilter(
-            fetchAttrColor(this, androidx.appcompat.R.attr.colorPrimary),
-            PorterDuff.Mode.MULTIPLY
-        )
-
-        val textColor = fetchAttrColor(this, R.attr.colorItemListText)
-        val accentColor = fetchAttrColor(this, R.attr.colorItemListTextAction)
-        val backgroundColor = fetchAttrColor(this, R.attr.colorBackgroundList)
+        val textColor = MaterialColors.getColor(this, R.attr.colorOnSurface, Color.WHITE)
+        val accentColor = MaterialColors.getColor(this, R.attr.colorTertiary, Color.BLUE)
+        val backgroundColor = MaterialColors.getColor(this, R.attr.colorSurface, Color.BLACK)
 
         mDrawer!!.setBackgroundColor(backgroundColor)
 
         val itemColorStateList = ColorStateList(
             arrayOf(
                 intArrayOf(android.R.attr.state_selected),
+                intArrayOf(android.R.attr.state_activated),
+                intArrayOf(android.R.attr.state_checked),
                 intArrayOf()
             ),
             intArrayOf(
+                accentColor,
+                accentColor,
                 accentColor,
                 textColor
             )
@@ -328,6 +330,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         timerItem.identifier = TIMER_ID.toLong()
         timerItem.textColor = itemColorStateList
         timerItem.iconColor = itemColorStateList
+        timerItem.isIconTinted = true
 
         val trainerOllItem = SecondaryDrawerItem()
         trainerOllItem.name = StringHolder(R.string.drawer_title_oll)
@@ -335,6 +338,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         trainerOllItem.identifier = TRAINER_OLL_ID.toLong()
         trainerOllItem.textColor = itemColorStateList
         trainerOllItem.iconColor = itemColorStateList
+        trainerOllItem.isIconTinted = true
+        trainerOllItem.level = 2
 
         val trainerPllItem = SecondaryDrawerItem()
         trainerPllItem.name = StringHolder(R.string.drawer_title_pll)
@@ -342,6 +347,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         trainerPllItem.identifier = TRAINER_PLL_ID.toLong()
         trainerPllItem.textColor = itemColorStateList
         trainerPllItem.iconColor = itemColorStateList
+        trainerPllItem.isIconTinted = true
+        trainerPllItem.level = 2
 
         val trainerItem = ExpandableDrawerItem()
         trainerItem.name = StringHolder(R.string.drawer_title_trainer)
@@ -350,6 +357,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         trainerItem.subItems = mutableListOf(trainerOllItem, trainerPllItem)
         trainerItem.textColor = itemColorStateList
         trainerItem.iconColor = itemColorStateList
+        trainerItem.isIconTinted = true
+        trainerItem.arrowColor = ColorHolder.fromColor(accentColor)
 
         val algsOllItem = SecondaryDrawerItem()
         algsOllItem.name = StringHolder(R.string.drawer_title_oll)
@@ -357,6 +366,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         algsOllItem.identifier = OLL_ID.toLong()
         algsOllItem.textColor = itemColorStateList
         algsOllItem.iconColor = itemColorStateList
+        algsOllItem.isIconTinted = true
+        algsOllItem.level = 2
 
         val algsPllItem = SecondaryDrawerItem()
         algsPllItem.name = StringHolder(R.string.drawer_title_pll)
@@ -364,6 +375,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         algsPllItem.identifier = PLL_ID.toLong()
         algsPllItem.textColor = itemColorStateList
         algsPllItem.iconColor = itemColorStateList
+        algsPllItem.isIconTinted = true
+        algsPllItem.level = 2
 
         val algorithmsItem = ExpandableDrawerItem()
         algorithmsItem.name = StringHolder(R.string.title_algorithms)
@@ -372,6 +385,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         algorithmsItem.subItems = mutableListOf(algsOllItem, algsPllItem)
         algorithmsItem.textColor = itemColorStateList
         algorithmsItem.iconColor = itemColorStateList
+        algorithmsItem.isIconTinted = true
+        algorithmsItem.arrowColor = ColorHolder.fromColor(accentColor)
 
         val otherSection = SectionDrawerItem()
         otherSection.name = StringHolder(R.string.drawer_title_other)
@@ -384,6 +399,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         exportImportItem.identifier = EXPORT_IMPORT_ID.toLong()
         exportImportItem.textColor = itemColorStateList
         exportImportItem.iconColor = itemColorStateList
+        exportImportItem.isIconTinted = true
 
         val changeThemeItem = PrimaryDrawerItem()
         changeThemeItem.name = StringHolder(R.string.drawer_title_changeTheme)
@@ -392,6 +408,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         changeThemeItem.identifier = THEME_ID.toLong()
         changeThemeItem.textColor = itemColorStateList
         changeThemeItem.iconColor = itemColorStateList
+        changeThemeItem.isIconTinted = true
 
         val changeColorSchemeItem = PrimaryDrawerItem()
         changeColorSchemeItem.name = StringHolder(R.string.drawer_title_changeColorScheme)
@@ -400,6 +417,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         changeColorSchemeItem.identifier = SCHEME_ID.toLong()
         changeColorSchemeItem.textColor = itemColorStateList
         changeColorSchemeItem.iconColor = itemColorStateList
+        changeColorSchemeItem.isIconTinted = true
 
         val settingsItem = PrimaryDrawerItem()
         settingsItem.name = StringHolder(R.string.action_settings)
@@ -408,6 +426,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         settingsItem.identifier = SETTINGS_ID.toLong()
         settingsItem.textColor = itemColorStateList
         settingsItem.iconColor = itemColorStateList
+        settingsItem.isIconTinted = true
 
         val aboutItem = PrimaryDrawerItem()
         aboutItem.name = StringHolder(R.string.drawer_about)
@@ -416,6 +435,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         aboutItem.identifier = ABOUT_ID.toLong()
         aboutItem.textColor = itemColorStateList
         aboutItem.iconColor = itemColorStateList
+        aboutItem.isIconTinted = true
 
         mDrawer!!.itemAdapter.add(
             timerItem,
@@ -442,6 +462,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
             debugItem.identifier = DEBUG_ID.toLong()
             debugItem.textColor = itemColorStateList
             debugItem.iconColor = itemColorStateList
+            debugItem.isIconTinted = true
 
             mDrawer!!.itemAdapter.add(
                 debugSection,
@@ -590,6 +611,21 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
             this, mDrawerLayout!!, null, R.string.drawer_open, R.string.drawer_close
         )
         mDrawerLayout!!.addDrawerListener(mDrawerToggle!!)
+    }
+
+    private fun checkUpdateDialog() {
+        if (getBoolean(R.string.pk_show_update_dialog, false)) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.app_name)
+                .setIcon(R.drawable.icon_launch)
+                .setMessage(R.string.pref_summary_new)
+                .setPositiveButton(R.string.action_done) { _, _ ->
+                    Prefs.edit {
+                        putBoolean(R.string.pk_show_update_dialog, false)
+                    }
+                }
+                .show()
+        }
     }
 
 
@@ -1021,7 +1057,7 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
     inner class SmoothActionBarDrawerToggle(
         activity: Activity?,
         drawerLayout: DrawerLayout?,
-        toolbar: Toolbar?,
+        toolbar: MaterialToolbar?,
         openDrawerContentDescRes: Int,
         closeDrawerContentDescRes: Int
     ) : ActionBarDrawerToggle(

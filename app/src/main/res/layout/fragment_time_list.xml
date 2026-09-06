@@ -42,7 +42,7 @@
         android:gravity="center"
         android:padding="16dp"
         android:text="@string/list_empty_state_message"
-        android:textColor="?colorTimerText"
+        android:textColor="?attr/colorPrimary"
         android:textSize="16sp"
         android:visibility="gone"
         tools:textColor="#000"
@@ -59,7 +59,7 @@
         android:layout_marginBottom="8dp"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
-        app:cardBackgroundColor="?colorItemListBackground"
+        app:cardBackgroundColor="?attr/colorSurfaceContainer"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
         app:cardPreventCornerOverlap="false">
@@ -78,7 +78,7 @@
                 android:paddingRight="14dp"
                 android:paddingBottom="6dp"
                 app:srcCompat="@drawable/ic_outline_alarm_add_18px"
-                app:tint="?colorItemListText" />
+                app:tint="?attr/colorOnSurface" />
 
             <View
                 android:layout_width="1dp"
@@ -86,7 +86,7 @@
                 android:layout_toRightOf="@id/add_time_button"
                 android:background="@color/black_divider" />
 
-            <androidx.appcompat.widget.AppCompatEditText
+            <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/search_box"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
@@ -98,8 +98,8 @@
                 android:inputType="text"
                 android:maxLines="1"
                 android:paddingLeft="16dp"
-                android:textColor="?colorItemListText"
-                android:textColorHint="?graph_stats_card_text_color_faded"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
                 android:textSize="14sp" />
 
             <ImageView
@@ -116,7 +116,7 @@
                 android:text="@string/action_add"
                 android:visibility="gone"
                 app:srcCompat="@drawable/ic_outline_delete_sweep_18px"
-                app:tint="?colorItemListText"
+                app:tint="?attr/colorOnSurface"
                 tools:visibility="visible" />
 
             <ImageView
@@ -132,7 +132,7 @@
                 android:paddingBottom="6dp"
                 android:text="@string/action_add"
                 app:srcCompat="@drawable/ic_outline_archive_18px"
-                app:tint="?colorItemListText" />
+                app:tint="?attr/colorOnSurface" />
 
             <ImageView
                 android:id="@+id/more_button"
@@ -145,9 +145,9 @@
                 android:paddingRight="12dp"
                 android:paddingBottom="6dp"
                 android:text="@string/action_add"
-                android:textColor="?graph_stats_card_text_color"
+                android:textColor="?attr/colorOnSurface"
                 app:srcCompat="@drawable/ic_outline_more_vert_18px"
-                app:tint="?colorItemListText" />
+                app:tint="?attr/colorOnSurface" />
 
         </RelativeLayout>
 

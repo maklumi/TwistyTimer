@@ -16,7 +16,7 @@
         android:gravity="center_vertical"
         android:paddingLeft="4dp"
         android:paddingRight="4dp"
-        android:textColor="#ffffffff"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="18sp"
         android:textStyle="bold"
         tools:text="Upcoming" />

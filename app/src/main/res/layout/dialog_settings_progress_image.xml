@@ -13,7 +13,7 @@
         android:layout_margin="8dp"
         android:background="@drawable/square_2" />
 
-    <androidx.appcompat.widget.AppCompatSeekBar
+    <SeekBar
         android:id="@+id/seekbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />

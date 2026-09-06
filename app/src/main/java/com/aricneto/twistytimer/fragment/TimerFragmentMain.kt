@@ -17,6 +17,7 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.LinearLayout
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -174,6 +175,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
 
         // Called when the user exits the action mode
         override fun onDestroyActionMode(mode: ActionMode?) {
+            broadcast(CATEGORY_UI_INTERACTIONS, ACTION_SELECTION_MODE_OFF)
         }
     }
 
@@ -411,15 +413,17 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
 
         binding.mainTabs.setSelectedTabIndicator(0)
         binding.mainTabs.tabIconTint =
-            AppCompatResources.getColorStateList(
-                requireContext(),
-                R.color.tab_color
-            )
+        ResourcesCompat.getColorStateList(
+            requireContext().resources,
+            R.color.tab_color,
+            requireContext().theme
+        )
+
         tabStrip = (binding.mainTabs.getChildAt(0) as? LinearLayout)
 
         binding.mainTabs.background.colorFilter =
             BlendModeColorFilterCompat.createBlendModeColorFilterCompat(
-                ThemeUtils.fetchAttrColor(requireContext(), R.attr.colorTabBar),
+                ThemeUtils.fetchAttrColor(requireContext(), R.attr.colorSurfaceContainer),
                 BlendModeCompat.SRC_IN
             )
 
@@ -586,7 +590,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
 
     /**
      * The app saves the last subtype used for each puzzle. This function is called to both update
-     * the last subtype when it's changed, and to set the subtipe.
+     * the last subtype when it's changed, and to set the subtype.
      */
     private fun updateCurrentCategory() {
         val sharedPreferences =

@@ -10,15 +10,16 @@
         android:layout_height="wrap_content"
         android:background="@drawable/outline_background_card_smoother">
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/nameText"
             style="@style/DialogTitleTextStyle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
             android:text="@string/add_time" />
 
-        <androidx.appcompat.widget.AppCompatCheckBox
+        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/check_scramble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -29,9 +30,9 @@
             android:layout_marginLeft="8dp"
             android:checked="true"
             android:text="@string/dialog_add_time_use_scramble"
-            android:textColor="@color/black_light_100" />
+            android:textColor="?attr/colorOnSurface" />
 
-        <androidx.appcompat.widget.AppCompatEditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edit_text_time"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -39,7 +40,7 @@
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
             android:inputType="number"
-            android:textColor="@color/black_light_100"
+            android:textColor="?attr/colorOnSurface"
             android:background="@drawable/outline_background_card"
             android:gravity="center"
             android:maxLength="11"
@@ -53,11 +54,13 @@
             android:layout_alignTop="@id/edit_text_time"
             android:layout_alignBottom="@id/edit_text_time"
             android:layout_alignRight="@id/edit_text_time"
+            android:minWidth="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
+            app:tint="?attr/colorPrimary"
             app:srcCompat="@drawable/ic_outline_more_vert_18px" />
 
         <include
@@ -74,6 +77,8 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/divider02"
             android:layout_alignParentRight="true"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
             android:focusable="true"
@@ -81,6 +86,7 @@
             android:paddingTop="16dp"
             android:paddingRight="16dp"
             android:paddingBottom="16dp"
+            app:tint="?attr/colorPrimary"
             app:srcCompat="@drawable/ic_outline_done_outline_16px" />
 
     </RelativeLayout>

@@ -6,7 +6,6 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
-import androidx.annotation.ColorInt
 import androidx.core.content.withStyledAttributes
 import androidx.core.graphics.toColorInt
 import com.aricneto.twistify.R
@@ -78,13 +77,10 @@ class Cube : View {
         mStickerRect = RectF()
     }
 
-    @ColorInt
-    private fun getStickerColor(colorLetter: Char): Int {
-        return mStickerColors!![colorLetter]!!
-    }
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
+        val state = mCubeState ?: return
 
         val width = getWidth()
 
@@ -158,7 +154,7 @@ class Cube : View {
                 // TODO: Error check if string is of correct size/format!
                 if (!((i == 0 || i == 4) && (j == 0 || j == 4))) {
                     mStickerPaint!!.color = AlgUtils.getColorFromStateIndex(
-                        mCubeState!!,
+                        state,
                         (5 * i) + j
                     )
                     canvas.drawRoundRect(

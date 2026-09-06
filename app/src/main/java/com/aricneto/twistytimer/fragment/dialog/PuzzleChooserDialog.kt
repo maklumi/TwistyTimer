@@ -12,7 +12,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.aricneto.twistify.R
-import com.aricneto.twistify.databinding.DialogPuzzleChooserDialogBinding
+import com.aricneto.twistify.databinding.DialogPuzzleChooserBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.aricneto.twistytimer.utils.PuzzleUtils.getPuzzleInPosition
@@ -57,7 +57,7 @@ class PuzzleChooserDialog : DialogFragment() {
         )
     }
 
-    private var binding: DialogPuzzleChooserDialogBinding? = null
+    private var binding: DialogPuzzleChooserBinding? = null
 
     /**
      * The selected puzzle type.
@@ -81,7 +81,7 @@ class PuzzleChooserDialog : DialogFragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
-        binding = DialogPuzzleChooserDialogBinding.inflate(inflater, container, false)
+        binding = DialogPuzzleChooserBinding.inflate(inflater, container, false)
 
         @StringRes val buttonTextResID =
             if (arguments != null) requireArguments().getInt(ARG_BUTTON_TEXT_RES_ID, 0) else 0

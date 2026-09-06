@@ -121,7 +121,7 @@ class CategorySelectDialog : DialogFragment() {
             createSubtypeView.findViewById<TextInputEditText>(R.id.edit_text)
         createSubtypeEditText.setHint(R.string.enter_type_name)
 
-        val createSubtypeDialog = MaterialAlertDialogBuilder(mContext!!)
+        val createSubtypeDialog = MaterialAlertDialogBuilder(requireActivity())
             .setTitle(R.string.enter_type_name)
             .setView(createSubtypeView)
             .setPositiveButton(
@@ -188,7 +188,7 @@ class CategorySelectDialog : DialogFragment() {
                                 renameView.findViewById<TextInputEditText>(R.id.edit_text)
                             renameEditText.setText(currentEditSubtype)
 
-                            MaterialAlertDialogBuilder(mContext!!)
+                            MaterialAlertDialogBuilder(requireActivity())
                                 .setTitle(R.string.enter_new_name_dialog)
                                 .setView(renameView)
                                 .setPositiveButton(
@@ -228,7 +228,7 @@ class CategorySelectDialog : DialogFragment() {
                         R.id.remove -> {
                             currentEditSubtype = subtypeList!![position]
                             // Remove Subtype dialog
-                            MaterialAlertDialogBuilder(mContext!!)
+                            MaterialAlertDialogBuilder(requireActivity())
                                 .setTitle(R.string.remove_subtype_confirmation)
                                 .setMessage(
                                     getString(R.string.remove_subtype_confirmation_content) + " \"" + currentEditSubtype + "\"?\n" + getString(

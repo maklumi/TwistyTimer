@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="?colorItemListBackground"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer"
     app:cardCornerRadius="14dp"
     tools:layout_margin="12dp">
 
@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/scramble_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -25,7 +25,7 @@
             android:layout_toLeftOf="@id/scramble_button_edit"
             android:gravity="center"
             android:text="F' U2 F2 D2 U2 L2 B R2 U2 B L' U2 F2 D2 U2 U2 F2 D2 U2 L2 B "
-            android:textColor="?colorItemListText"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="18sp" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -43,7 +43,7 @@
             app:trackCornerRadius="2dp"
             tools:visibility="visible" />
 
-        <androidx.appcompat.widget.AppCompatImageView
+        <ImageView
             android:id="@+id/scramble_button_reset"
             android:layout_width="36dp"
             android:layout_height="36dp"
@@ -54,10 +54,10 @@
             android:background="?selectableItemBackgroundBorderless"
             android:padding="6dp"
             android:layout_marginRight="4dp"
-            android:tint="?colorItemListText"
+            android:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_cached_24px" />
 
-        <androidx.appcompat.widget.AppCompatImageView
+        <ImageView
             android:id="@+id/scramble_button_edit"
             android:layout_width="36dp"
             android:layout_height="36dp"
@@ -68,10 +68,10 @@
             android:layout_marginRight="4dp"
             android:background="?selectableItemBackgroundBorderless"
             android:padding="6dp"
-            android:tint="?colorItemListText"
+            android:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_edit_24px" />
 
-        <androidx.appcompat.widget.AppCompatImageView
+        <ImageView
             android:id="@+id/scramble_button_hint"
             android:layout_width="36dp"
             android:layout_height="36dp"
@@ -84,10 +84,10 @@
             android:visibility="gone"
             tools:visibility="visible"
             android:layout_marginLeft="4dp"
-            android:tint="?colorItemListText"
+            android:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_wb_incandescent_24px" />
 
-        <androidx.appcompat.widget.AppCompatImageView
+        <ImageView
             android:id="@+id/scramble_button_manual_entry"
             android:layout_width="36dp"
             android:layout_height="36dp"
@@ -101,7 +101,7 @@
             android:layout_marginLeft="4dp"
             android:visibility="gone"
             tools:visibility="visible"
-            android:tint="?colorItemListText"
+            android:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_alarm_add_24dp" />
 
 

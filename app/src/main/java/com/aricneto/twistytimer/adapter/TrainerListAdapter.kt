@@ -37,12 +37,12 @@ class TrainerListAdapter(
     init {
         cardBackground = createSquareDrawable(
             context,
-            fetchAttrColor(context, R.attr.colorItemListBackground),
+            fetchAttrColor(context, R.attr.colorSurfaceContainer),
             0, 14, 0f
         )
         selectedCardBackground = createSquareDrawable(
             context,
-            fetchAttrColor(context, R.attr.colorItemListBackgroundSelected),
+            fetchAttrColor(context, R.attr.colorSurfaceVariant),
             Color.BLACK, 14, 2f
         )
 

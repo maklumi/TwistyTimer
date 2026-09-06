@@ -44,6 +44,7 @@
     <color name="md_indigo_200">#9FA8DA</color>
     <color name="md_grey_100">#F5F5F5</color>
     <color name="md_grey_200">#EEEEEE</color>
+    <color name="md_grey_300">#E0E0E0</color>
     <color name="md_white_1000">#FFFFFF</color>
     <color name="md_yellow_A400">#FFEA00</color>
     <color name="md_yellow_A200">#FFFF00</color>

@@ -1,7 +1,7 @@
 <resources>
 
     <style name="TintedNavigationBar">
-        <item name="android:navigationBarColor">?colorTabBar</item>
+        <item name="android:navigationBarColor">?attr/colorSurfaceContainer</item>
     </style>
 
     <!--
@@ -11,7 +11,7 @@
         <item name="android:elevation">@dimen/toolbar_elevation</item>
     </style>
 
-    <style name="ToolBarStyle.NoElevation">
+    <style name="ToolBarStyle.NoElevation" parent="ToolBarStyle">
         <item name="android:elevation">1dp</item>
     </style>
 

@@ -9,9 +9,10 @@
         android:layout_width="match_parent"
         android:layout_height="?actionBarSize"
         android:layout_alignParentTop="true"
-        android:background="?colorPrimary"
+        android:background="?attr/colorSurface"
         android:textStyle="bold"
         android:gravity="center"
+        android:textColor="?attr/colorOnSurface"
         android:text="@string/title_activity_settings"
         android:textSize="20sp" />
 
@@ -25,11 +26,12 @@
         android:layout_alignParentTop="true"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
+        app:tint="?attr/colorOnSurface"
         app:srcCompat="@drawable/ic_arrow_back_black_24dp" />
 
     <FrameLayout
         android:id="@+id/main_activity_container"
-        android:background="@color/md_white_1000"
+        android:background="?attr/colorSurface"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/title" />

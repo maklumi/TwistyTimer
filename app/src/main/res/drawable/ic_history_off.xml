@@ -10,7 +10,7 @@
         android:strokeLineJoin="round"
         android:strokeWidth="2"
         android:fillColor="#00000000"
-        android:strokeColor="#000000"
+        android:strokeColor="?attr/colorOnSurface"
         android:strokeLineCap="square"/>
   </group>
 </vector>

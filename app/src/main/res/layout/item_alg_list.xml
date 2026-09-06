@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
-    app:cardBackgroundColor="?colorItemListBackground"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer"
     app:cardCornerRadius="14dp"
     tools:cardBackgroundColor="#fff"
     tools:layout_width="140dp">
@@ -27,7 +27,7 @@
             android:layout_margin="2dp"
             android:gravity="center"
             android:text="OLL 21"
-            android:textColor="?colorItemListText"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="11sp"
             android:textStyle="normal" />
 

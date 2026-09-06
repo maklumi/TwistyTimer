@@ -274,7 +274,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         // or an "undo" facility and then to integrate that into the loaders. Therefore, a full
         // reload will probably be required.
         when (view.id) {
-            R.id.qa_remove -> MaterialAlertDialogBuilder(requireContext())
+            R.id.qa_remove -> MaterialAlertDialogBuilder(requireActivity())
                 .setMessage(R.string.delete_dialog_confirmation_title)
                 .setPositiveButton(
                     R.string.delete_dialog_confirmation_button
@@ -345,7 +345,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                     commentView.findViewById<TextInputEditText>(R.id.edit_text)
                 commentEditText.setText(currentSolve?.comment)
 
-                MaterialAlertDialogBuilder(requireContext())
+                MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.add_comment)
                     .setView(commentView)
                     .setPositiveButton(
@@ -414,7 +414,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                     editScrambleView.findViewById<TextInputEditText>(R.id.edit_text)
                 editScrambleEditText.setText(realScramble)
 
-                MaterialAlertDialogBuilder(requireContext())
+                MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.edit_scramble)
                     .setView(editScrambleView)
                     .setPositiveButton(
@@ -647,31 +647,31 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             binding.scrambleBox.scrambleText.setTextColor(
                 ThemeUtils.fetchAttrColor(
                     requireContext(),
-                    R.attr.colorTimerText
+                    android.R.attr.colorPrimary
                 )
             )
             binding.scrambleBox.scrambleButtonEdit.setColorFilter(
                 ThemeUtils.fetchAttrColor(
                     requireContext(),
-                    R.attr.colorTimerText
+                    android.R.attr.colorPrimary
                 )
             )
             binding.scrambleBox.scrambleButtonReset.setColorFilter(
                 ThemeUtils.fetchAttrColor(
                     requireContext(),
-                    R.attr.colorTimerText
+                    android.R.attr.colorPrimary
                 )
             )
             binding.scrambleBox.scrambleButtonHint.setColorFilter(
                 ThemeUtils.fetchAttrColor(
                     requireContext(),
-                    R.attr.colorTimerText
+                    android.R.attr.colorPrimary
                 )
             )
             binding.scrambleBox.scrambleButtonManualEntry.setColorFilter(
                 ThemeUtils.fetchAttrColor(
                     requireContext(),
-                    R.attr.colorTimerText
+                    android.R.attr.colorPrimary
                 )
             )
         }
@@ -784,7 +784,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             ThemeUtils.createSquareDrawableAttr(
                 requireContext(),
                 0,
-                R.attr.colorTimerText,
+                com.mikepenz.fastadapter.R.attr.colorPrimary,
                 20,
                 1.6f
             )
@@ -1101,7 +1101,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
             val poopDrawable = ThemeUtils.tintDrawable(
                 requireContext(),
                 R.drawable.ic_emoticon_poop,
-                R.attr.colorTimerText
+                android.R.attr.colorPrimary
             )
             // If "previousWorstTime" is a DNF or UNKNOWN, it will be less than zero. Therefore,
             // make sure it is at least greater than zero before testing against the new time.

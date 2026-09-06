@@ -1,46 +1,47 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!--
-    Styles are defined here (values/styles.xml) for the application themes. However, for v21
-    (values-v21/styles.xml) the styles are essentially the same, but for the addition of an
-    "android:statusBarColor" item to the v21 styles. To avoid redundancy, all the common theme
-    attributes are set in themes with names starting "Base...". These are then extended for the
-    different color themes. For the themes defined in the common "values/styles.xml" file, these
-    extensions are trivial; but those in "values-v21/styles.xml" add the extra attribute where
-    required.
-    -->
-
     <style name="BaseDefaultTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="windowActionModeOverlay">true</item>
         <item name="android:actionModeStyle">@style/ActionModeStyle</item>
+        <item name="actionModeStyle">@style/ActionModeStyle</item>
+        <item name="android:actionModeBackground">?attr/colorSurface</item>
+        <item name="actionModeBackground">?attr/colorSurface</item>
+        <item name="android:actionModeCloseDrawable">@drawable/ic_clear_black_24dp</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_clear_black_24dp</item>
 
-        <item name="isLightTheme">false</item>
 
         <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
         <item name="android:actionOverflowButtonStyle">@style/DefaultTheme.Overflow</item>
-        <item name="colorTimerText">@color/white_text</item>
-        <item name="colorActionBarText">?colorTimerText</item>
-
+        <item name="colorPrimary">@color/white_text</item>
         <item name="android:textColorPrimaryInverse">@color/black_text</item>
 
         <item name="popupMenuStyle">@style/RoundedPopupMenu</item>
         <item name="android:itemTextAppearance">@style/RoundedPopupMenu.Text</item>
 
-        <item name="colorBackgroundList">@color/materialGray</item>
-        <item name="colorItemListText">@color/black_text</item>
-        <item name="colorItemListTextAction">@color/md_blue_A700</item>
-        <item name="colorItemListBackground">@color/white_text</item>
-        <item name="colorItemListBackgroundSelected">@color/md_grey_200</item>
-        <item name="colorTimerDetailText">@color/white_secondary_icon</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3FFFFFF</item>
+        <item name="android:textColorTertiary">#B3FFFFFF</item>
+        <item name="android:textColorHint">#B3FFFFFF</item>
+        <item name="android:textColorLink">?attr/colorTertiary</item>
 
-        <item name="textColorContrastBackground">@android:color/white</item>
-        <item name="bottomSheetDialogTheme">@style/AppBottomSheetDialogTheme</item>
+        <item name="colorTertiary">@color/md_blue_A700</item>
+        <item name="colorOnTertiary">#FFFFFF</item>
+        <item name="colorTertiaryContainer">#FFEF8F</item>
+        <item name="colorSecondary">#B3FFFFFF</item>
+        <item name="colorSecondaryContainer">#444444</item>
+        <item name="colorOnSecondaryContainer">#FFFFFF</item>
+        <item name="colorOnSurfaceVariant">#B3FFFFFF</item>
+        <item name="colorSurfaceContainer">#1F1F1F</item>
+        <item name="colorSurfaceVariant">#4D4D4D</item>
+        <item name="colorOutline">#938F99</item>
+        <item name="colorOutlineVariant">#444444</item>
+        <item name="colorControlNormal">?attr/colorOnSurface</item>
+        <item name="preferenceTheme">@style/SettingsPreferenceTheme</item>
 
-        <item name="android:textColor">#000</item>
-
-        <item name="colorCardBackgroundWarn">#FFEF8F</item>
-        <item name="colorCardBackgroundFaded">#F0F0F0</item>
-        <item name="colorCardText">#000</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Material3.BottomSheetDialog</item>
 
         <item name="actionBarSize">54dp</item>
         <item name="actionBarPadding">70dp</item>
@@ -48,77 +49,48 @@
         <item name="tabBarPadding">48dp</item>
         <item name="statTextStyle">@style/StatTextStyle</item>
 
-        <item name="qaButtonSize">38dp</item>
+        <item name="qaButtonSize">48dp</item>
 
         <item name="defaultFontFamily">@font/quicksand_medium</item>
-
         <item name="android:fontFamily">?defaultFontFamily</item>
 
-        <!-- These items are those most commonly overridden for the color themes. -->
         <item name="colorMainGradientStart">#1959ff</item>
         <item name="colorMainGradientEnd">#3b12ff</item>
-
-        <item name="colorActionBar">#0045f6</item>
-        <item name="colorTabBar">#2900ef</item>
-
-        <item name="colorTabIconSelected">?colorTimerText</item>
-        <item name="colorTabIconFaded">@color/tabFadedDark</item>
-
         <item name="colorAccent">@color/md_amber_A200</item>
+        <item name="colorPrimaryDark">?attr/colorMainGradientStart</item>
 
-        <item name="colorPrimaryDark">?colorMainGradientStart</item>
-        <item name="colorPrimary">?colorMainGradientStart</item>
+        <!-- MaterialDrawer 9.x Theme Attributes -->
+        <item name="materialDrawerStyle">@style/Widget.MaterialDrawerStyle</item>
+        <item name="materialDrawerBackground">?attr/colorSurface</item>
+        <item name="materialDrawerDividerColor">?attr/colorOutlineVariant</item>
+        <item name="materialDrawerInsetForeground">?attr/colorSurface</item>
+        <item name="materialDrawerPrimaryIcon">?attr/colorOnSurfaceVariant</item>
+        <item name="materialDrawerPrimaryText">?attr/colorOnSurface</item>
+        <item name="materialDrawerSecondaryIcon">?attr/colorOnSurfaceVariant</item>
+        <item name="materialDrawerSecondaryText">?attr/colorOnSurfaceVariant</item>
+        <item name="materialDrawerSelectedBackgroundColor">?attr/colorSecondaryContainer</item>
 
-        <item name="mainColorBackground">#43FF8E</item>
-        <item name="colorAccentWhiteContrast">@color/md_amber_A700</item>
-        <item name="colorTextContrastAccent">@color/white_text</item>
-
-        <!--
-        The colors used for the lines on the graph. These are drawn against a background that is
-        given by the "colorPrimaryDark" attribute. For the different color themes, that background
-        changes, so any line color that would not stand out against "colorPrimaryDark" needs to be
-        overridden in the color theme with a contrasting color.
-
-        The first few colors are chosen to be consistent across all color themes, as they contrast
-        with all backgrounds (at this time). The "extra" colors, used for the average-of-N lines,
-        may vary for some color themes. They are effectively drawn over a background of
-        "colorPrimaryDark" and "colorChartAllTimes", so they must contrast with both.
-        -->
-        <item name="colorChartAllTimes">@color/md_white_1000</item>
-        <item name="colorChartBestTimes">@color/md_yellow_A400</item>
-        <item name="colorChartMeanTime">@color/md_orange_A400</item>
-
-        <item name="colorChartGrid">@color/md_yellow_A200</item>
-        <item name="colorChartAxis">@color/md_white_1000</item>
-        <item name="colorChartText">@color/md_white_1000</item>
-
-        <item name="colorChartExtra1">@color/md_red_500</item>
-        <item name="colorChartExtra2">@color/md_light_green_500</item>
-        <item name="colorChartExtra3">@color/md_cyan_500</item>
-
-
-        <item name="graph_stats_card_background">@color/md_white_1000</item>
-        <item name="graph_stats_card_background_alt">@color/md_grey_100</item>
-        <item name="graph_stats_card_background_faded">#F0F0F0</item>
-        <item name="graph_stats_card_divider">#E6E6E6</item>
-        <item name="graph_stats_card_text_color_faded">#74000000</item>
-        <item name="graph_stats_card_text_color">#D9000000</item>
-
+        <item name="materialAlertDialogTheme">@style/MyCustomAlertDialogTheme</item>
     </style>
 
-    <style name="BaseDefaultTheme.Launcher">
+    <style name="BaseDefaultTheme.Launcher" parent="BaseDefaultTheme">
         <item name="android:windowBackground">@drawable/background_gradient</item>
         <item name="colorPrimaryDark">#0062ff</item>
     </style>
 
     <style name="SettingsTheme" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/md_white_1000</item>
-        <item name="colorPrimaryDark">@color/md_white_1000</item>
+        <item name="colorPrimary">@color/md_blue_A700</item>
+        <item name="colorPrimaryDark">@color/md_blue_A700</item>
         <item name="colorAccent">@color/md_blue_A700</item>
         <item name="android:fontFamily">?defaultFontFamily</item>
-        <item name="colorItemListBackgroundSelected">@color/md_indigo_200</item>
+        <item name="colorSurfaceVariant">@color/md_indigo_200</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 
-        <item name="android:windowLightStatusBar" >true</item>
+    <style name="MyCustomAlertDialogTheme" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.Material3.BodyLarge</item>
+        <item name="colorPrimary">#2196F3</item>
     </style>
 
     <!--
@@ -130,26 +102,30 @@
     <style name="OverlayTheme" />
 
     <!--
-     A overlay that disables the timer colored background
+     An overlay that disables the timer colored background
      -->
-    <style name="OverlayTheme.NoBackground">
-        <item name="colorTimerDetailText">@color/black_secondary_icon</item>
-        <item name="mainColorBackground">@color/materialGray</item>
-        <item name="colorTimerText">@color/black_secondary_icon</item>
+    <style name="SettingsPreferenceTheme" parent="@style/PreferenceThemeOverlay">
+        <item name="preferenceCategoryStyle">@style/PreferenceCategoryStyle</item>
     </style>
 
+    <style name="PreferenceCategoryStyle" parent="Preference.Category">
+        <item name="allowDividerAbove">true</item>
+        <item name="allowDividerBelow">true</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
 
-    <style name="DefaultTheme.Overflow">
-        <item name="android:src">@drawable/ic_action_more_vert_white_24</item>
+    <style name="DefaultTheme.Overflow" parent="DefaultTheme">
+        <item name="android:src">@drawable/ic_outline_more_vert_18px</item>
+        <item name="android:tint">?attr/colorOnSurface</item>
         <item name="android:paddingRight">16dp</item>
     </style>
 
-    <style name="BaseDefaultTheme.ActionMode">
+    <style name="BaseDefaultTheme.ActionMode" parent="BaseDefaultTheme">
         <item name="android:actionModeStyle">@style/ActionModeStyle.Custom</item>
     </style>
 
     <style name="ActionModeStyle.Custom" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
-        <item name="android:textColor">?colorTimerText</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
     <!--
@@ -159,30 +135,22 @@
     <style name="BasePinkTheme" parent="DefaultTheme">
         <item name="colorMainGradientStart">#FF577E</item>
         <item name="colorMainGradientEnd">#FD61C0</item>
-
-        <item name="colorActionBar">#FF678A</item>
-        <item name="colorTabBar">#fd50b9</item>
-
         <item name="colorAccent">#c1fd61</item>
+        <item name="colorSurface">#1F1216</item>
+        <item name="colorSurfaceContainer">#2D1A20</item>
     </style>
 
     <style name="BasePurpleTheme" parent="DefaultTheme">
         <item name="colorMainGradientStart">@color/md_deep_purple_500</item>
         <item name="colorMainGradientEnd">@color/md_deep_purple_700</item>
-
-        <item name="colorActionBar">#6e40c2</item>
-        <item name="colorTabBar">#4b299b</item>
-
         <item name="colorAccent">@color/md_amber_A400</item>
+        <item name="colorSurface">#16121F</item>
+        <item name="colorSurfaceContainer">#201A2D</item>
     </style>
 
     <style name="BaseLightBlueTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#3AFAFA</item>
         <item name="colorMainGradientEnd">#42F7CD</item>
-
-        <item name="colorActionBar">#5bfbfb</item>
-        <item name="colorTabBar">#31F7C9</item>
-
         <item name="colorAccent">#f76642</item>
     </style>
 
@@ -190,228 +158,154 @@
         <item name="colorMainGradientStart">#a8ff78</item>
         <item name="colorMainGradientEnd">#78ffd6</item>
 
-        <item name="colorActionBar">#BBFF96</item>
-        <item name="colorTabBar">#93FFB9</item>
-
         <item name="colorAccent">#ff8f78</item>
-
-        <item name="colorChartExtra2">@color/md_deep_purple_A200</item>
     </style>
 
     <style name="BaseCyanTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#00FFA1</item>
         <item name="colorMainGradientEnd">#00FFFF</item>
-
-        <item name="colorActionBar">#55ffc0</item>
-        <item name="colorTabBar">#6ff</item>
-
         <item name="colorAccent">#ff4000</item>
-
-        <item name="colorChartExtra2">@color/md_deep_purple_A200</item>
     </style>
 
     <style name="BaseTealTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#18ff97</item>
         <item name="colorMainGradientEnd">#24f594</item>
-
-        <item name="colorActionBar">#29ff9f</item>
-        <item name="colorTabBar">#0bec84</item>
-
         <item name="colorAccent">#f53f24</item>
-
-        <item name="colorChartExtra2">@color/md_deep_purple_A200</item>
     </style>
 
     <style name="BaseRedTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#fbb74c</item>
         <item name="colorMainGradientEnd">#FF5656</item>
-
-        <item name="colorActionBar">#fcc46d</item>
-        <item name="colorTabBar">#FF5656</item>
-
         <item name="colorAccent">#56ff56</item>
     </style>
 
     <style name="BaseBrownTheme" parent="DefaultTheme">
         <item name="colorMainGradientStart">#5C3C30</item>
         <item name="colorMainGradientEnd">#422A24</item>
-
-        <item name="colorActionBar">#724b3c</item>
-        <item name="colorTabBar">#37231e</item>
-
         <item name="colorAccent">@color/md_amber_A200</item>
+        <item name="colorSurface">#1F1A12</item>
+        <item name="colorSurfaceContainer">#2D251A</item>
     </style>
 
     <style name="BaseBlueTheme" parent="DefaultTheme">
         <item name="colorMainGradientStart">#920EE6</item>
         <item name="colorMainGradientEnd">#6304E9</item>
-
-        <item name="colorActionBar">#9b14f1</item>
-        <item name="colorTabBar">#5503c8</item>
-
         <item name="colorAccent">@color/md_amber_500</item>
+        <item name="colorSurface">#12161F</item>
+        <item name="colorSurfaceContainer">#1A202D</item>
     </style>
 
     <style name="BaseBlackTheme" parent="DefaultTheme.Darker">
         <item name="colorMainGradientStart">#000000</item>
         <item name="colorMainGradientEnd">#000000</item>
-
         <item name="colorAccent">@color/md_amber_A200</item>
-
-        <item name="mainColorBackground">#000</item>
-        <item name="colorPrimary">#000</item>
-
-        <item name="colorTimerText">@color/md_white_1000</item>
-        <item name="colorActionBar">#000</item>
-        <item name="colorTabBar">#000</item>
-
-        <item name="colorBackgroundList">#000</item>
+        <item name="colorPrimary">@color/md_white_1000</item>
+        <item name="colorTertiary">@color/md_amber_A200</item>
+        <item name="materialDrawerSelectedBackgroundColor">@color/md_amber_A200</item>
+        <item name="colorSurface">#000</item>
         <item name="android:textColorPrimaryInverse">@color/white_text</item>
     </style>
 
     <style name="BaseGreenTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#6cf63e</item>
         <item name="colorMainGradientEnd">#15ff8e</item>
-
-        <item name="colorActionBar">#78f74e</item>
-        <item name="colorTabBar">#00f27d</item>
-
         <item name="colorAccent">#ff3415</item>
-
-        <item name="colorChartExtra2">@color/md_deep_purple_A200</item>
     </style>
 
     <style name="BaseOrangeTheme" parent="DefaultTheme">
         <item name="colorMainGradientStart">#ED1C24</item>
         <item name="colorMainGradientEnd">#FF6219</item>
-
-        <item name="colorActionBar">#d61119</item>
-        <item name="colorTabBar">#e54900</item>
-
-        <item name="colorChartExtra1">@color/md_indigo_700</item>
         <item name="colorAccent">#19c2ff</item>
+        <item name="colorSurface">#1F1412</item>
+        <item name="colorSurfaceContainer">#2D1D1A</item>
     </style>
 
     <style name="BaseDeepPurpleTheme" parent="DefaultTheme">
         <item name="colorMainGradientStart">#ED1E79</item>
         <item name="colorMainGradientEnd">#662D8C</item>
-
-        <item name="colorActionBar">#d81169</item>
-        <item name="colorTabBar">#5d297f</item>
-
         <item name="colorAccent">@color/md_amber_A400</item>
+        <item name="colorSurface">#18121F</item>
+        <item name="colorSurfaceContainer">#221A2D</item>
     </style>
 
     <style name="BaseBlueGrayTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#FFFEFF</item>
         <item name="colorMainGradientEnd">#D7FFFE</item>
-
-        <item name="colorActionBar">#FFFEFF</item>
-        <item name="colorTabBar">#e8fffe</item>
-
         <item name="colorAccent">@color/md_red_A200</item>
     </style>
 
     <style name="BaseWhiteTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#fff</item>
         <item name="colorMainGradientEnd">#fff</item>
-
-        <item name="colorActionBar">#FFFEFF</item>
-        <item name="colorTabBar">#fff</item>
-
+        <item name="colorPrimary">#000000</item>
+        <item name="colorTertiary">@color/md_red_A200</item>
+        <item name="materialDrawerSelectedBackgroundColor">@color/md_red_A200</item>
         <item name="colorAccent">@color/md_red_A200</item>
     </style>
 
     <style name="BaseWhiteGreenTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#c6ffbd</item>
         <item name="colorMainGradientEnd">#fff</item>
-
-        <item name="colorActionBar">#d5ffce</item>
-        <item name="colorTabBar">#f2fff0</item>
-
         <item name="colorAccent">@color/md_red_A200</item>
-
-        <item name="colorChartExtra2">@color/md_deep_purple_A100</item>
     </style>
 
 
     <style name="BaseYellowTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#FFEB7E</item>
         <item name="colorMainGradientEnd">#FFFD69</item>
-
-        <item name="colorActionBar">#ffee8f</item>
-        <item name="colorTabBar">#fffd7a</item>
-
         <item name="colorAccent">@color/md_pink_A100</item>
-
-        <item name="colorChartBestTimes">@color/md_indigo_A700</item>
-        <item name="colorChartExtra2">@color/md_deep_purple_A100</item>
     </style>
 
     <style name="BaseDawnTheme" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#fccb90</item>
         <item name="colorMainGradientEnd">#d57eeb</item>
-
-        <item name="colorActionBar">#fddab1</item>
-        <item name="colorTabBar">#d06fe9</item>
-
         <item name="colorAccent">#ebe07e</item>
-
-        <item name="colorChartBestTimes">@color/md_indigo_A700</item>
-        <item name="colorChartExtra2">@color/md_deep_purple_A100</item>
     </style>
 
     <style name="BaseBluyGray" parent="DefaultTheme">
         <item name="colorMainGradientStart">@color/md_blue_grey_500</item>
         <item name="colorMainGradientEnd">@color/md_blue_grey_700</item>
-
-        <item name="colorActionBar">#678695</item>
-        <item name="colorTabBar">#3e515a</item>
-
         <item name="colorAccent">@color/md_amber_A200</item>
+        <item name="colorSurface">#12181F</item>
+        <item name="colorSurfaceContainer">#1A222D</item>
     </style>
 
     <style name="TurtlySea" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#b2f9ff</item>
         <item name="colorMainGradientEnd">#efebbe</item>
-
-        <item name="colorActionBar">#d4fcff</item>
-        <item name="colorTabBar">#e8e3a3</item>
-
         <item name="colorAccent">@color/md_red_A200</item>
     </style>
 
     <style name="PixieFalls" parent="DefaultTheme.Light">
         <item name="colorMainGradientStart">#fcd6e3</item>
         <item name="colorMainGradientEnd">#aaf0ed</item>
-
-        <item name="colorActionBar">#fde6ee</item>
-        <item name="colorTabBar">#8debe7</item>
-
         <item name="colorAccent">@color/md_red_A200</item>
     </style>
 
     <style name="WanderingDusk" parent="DefaultTheme">
         <item name="colorMainGradientStart">#8e78ff</item>
         <item name="colorMainGradientEnd">#fc7d7b</item>
-
-        <item name="colorActionBar">#8067ff</item>
-        <item name="colorTabBar">#fb5c5a</item>
-
         <item name="colorAccent">#7bfc83</item>
+        <item name="colorSurface">#181218</item>
+        <item name="colorSurfaceContainer">#221A22</item>
     </style>
 
     <style name="SpottyGuy" parent="DefaultTheme.Darker">
         <item name="colorMainGradientStart">#0D0D0D</item>
         <item name="colorMainGradientEnd">#0D0D0D</item>
-
-        <item name="colorAccent">#1DB954</item>
-        <item name="colorItemListTextAction">?colorAccent</item>
-        <item name="colorChartGrid">#4EE784</item>
-
-        <item name="colorActionBar">#171717</item>
-        <item name="colorTabBar">#171717</item>
-
+        <item name="colorPrimary">#FFFFFF</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnSurfaceVariant">#B3FFFFFF</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorSurfaceContainer">#121212</item>
+        <item name="colorSurfaceVariant">#333333</item>
+        <item name="colorTertiary">#1DB954</item>
+        <item name="materialDrawerSelectedBackgroundColor">#1DB954</item>
+        <item name="colorOnTertiary">#000000</item>
+        <item name="colorAccent">?attr/colorTertiary</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3FFFFFF</item>
     </style>
 
 
@@ -419,30 +313,42 @@
     Base light timer icon/text color schemes
     -->
     <style name="DefaultTheme.Light" parent="DefaultTheme">
-        <item name="colorTimerText">@color/black_text_lighter</item>
-        <item name="android:windowLightStatusBar" >true</item>
-        <item name="colorTabIconFaded">@color/tabFadedLight</item>
+        <item name="colorPrimary">?attr/colorOnSurface</item>
+        <item name="colorSurface">@color/materialGray</item>
+        <item name="colorOnSurface">@color/black_text</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">@color/black_secondary_icon</item>
+        <item name="colorSurfaceContainer">@color/white_text</item>
+        <item name="colorSurfaceVariant">@color/md_grey_200</item>
+        <item name="colorOnSurfaceVariant">@color/black_secondary_icon</item>
+        <item name="colorSecondaryContainer">@color/md_grey_300</item>
+        <item name="colorOnSecondaryContainer">@color/black_text</item>
+        <item name="materialDrawerSelectedBackgroundColor">@color/md_grey_300</item>
+        <item name="colorOutline">#79747E</item>
+        <item name="colorOutlineVariant">#E0E0E0</item>
+        <item name="android:windowLightStatusBar">true</item>
 
         <item name="isLightTheme">true</item>
-
-        <item name="colorChartAllTimes">@color/black_light_100</item>
-        <item name="colorChartGrid">@color/black_light_50</item>
-        <item name="colorChartAxis">@color/black_light_50</item>
-        <item name="colorChartText">@color/black_light_100</item>
     </style>
 
     <!-- Base Darker theme for dark list items -->
     <style name="DefaultTheme.Darker" parent="DefaultTheme">
-        <item name="colorItemListBackground">#1F1F1F</item>
-        <item name="colorItemListBackgroundSelected">#4D4D4D</item>
-        <item name="colorItemListText">#E6FFFFFF</item>
-        <item name="colorItemListTextAction">@color/md_amber_A100</item>
-        <item name="graph_stats_card_text_color">#B3FFFFFF</item>
-        <item name="graph_stats_card_text_color_faded">#99FFFFFF</item>
-        <item name="graph_stats_card_background">#1F1F1F</item>
-        <item name="graph_stats_card_background_alt">#171717</item>
-        <item name="graph_stats_card_background_faded">#171717</item>
-        <item name="graph_stats_card_divider">#0D0D0D</item>
+        <item name="colorPrimary">?attr/colorOnSurface</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="android:textColorSecondary">?attr/colorOnSurfaceVariant</item>
+        <item name="colorSurfaceContainer">#1F1F1F</item>
+        <item name="colorSurfaceVariant">#4D4D4D</item>
+        <item name="colorOnSurfaceVariant">#B3FFFFFF</item>
+        <item name="colorOutline">#938F99</item>
+        <item name="colorOutlineVariant">#444444</item>
+        <item name="colorTertiary">@color/md_amber_A100</item>
+        <item name="colorSecondaryContainer">#333333</item>
+        <item name="colorOnSecondaryContainer">#FFFFFF</item>
+        <item name="materialDrawerSelectedBackgroundColor">@color/md_amber_A100</item>
     </style>
 
     <!--
@@ -450,66 +356,66 @@
     -->
 
     <style name="TextStylePessoa">
-        <item name="colorTimerText">@color/md_red_A400</item>
+        <item name="colorPrimary">@color/md_red_A400</item>
     </style>
 
     <style name="TextStyleBurgess">
-        <item name="colorTimerText">#FF4500</item>
+        <item name="colorPrimary">#FF4500</item>
     </style>
 
     <style name="TextStyleLou">
-        <item name="colorTimerText">#FF2A9F</item>
+        <item name="colorPrimary">#FF2A9F</item>
     </style>
 
     <style name="TextStyleBowie">
-        <item name="colorTimerText">#E86E60</item>
+        <item name="colorPrimary">#E86E60</item>
     </style>
 
     <style name="TextStyleBrie">
-        <item name="colorTimerText">#FFD4F9</item>
+        <item name="colorPrimary">#FFD4F9</item>
     </style>
 
     <style name="TextStyleMatsson">
-        <item name="colorTimerText">#651FFF</item>
+        <item name="colorPrimary">#651FFF</item>
     </style>
 
     <style name="TextStyleIsakov">
-        <item name="colorTimerText">@color/md_blue_A700</item>
+        <item name="colorPrimary">#2962FF</item>
     </style>
 
     <style name="TextStyleAdams">
-        <item name="colorTimerText">#54FFFF</item>
+        <item name="colorPrimary">#54FFFF</item>
     </style>
 
     <style name="TextStyleIrwin">
-        <item name="colorTimerText">#006B21</item>
+        <item name="colorPrimary">#006B21</item>
     </style>
 
     <style name="TextStyleTarkovsky">
-        <item name="colorTimerText">@color/md_green_A400</item>
+        <item name="colorPrimary">@color/md_green_A400</item>
     </style>
 
     <style name="TextStyleEbert">
-        <item name="colorTimerText">#82FFB3</item>
+        <item name="colorPrimary">#82FFB3</item>
     </style>
 
     <style name="TextStyleTolkien">
-        <item name="colorTimerText">#FFFF4C</item>
+        <item name="colorPrimary">#FFFF4C</item>
     </style>
 
     <style name="TextStyleAsimov">
-        <item name="colorTimerText">#FFFDBB</item>
+        <item name="colorPrimary">#FFFDBB</item>
     </style>
 
     <style name="TextStyleKubrick">
-        <item name="colorTimerText">#BDBDBD</item>
+        <item name="colorPrimary">#BDBDBD</item>
     </style>
 
     <!-- Style is declared in styles (v21) -->
-    <style name="TintedNavigationBar"/>
+    <style name="TintedNavigationBar" />
 
     <!-- Style is declared in styles (v27) -->
-    <style name="LightNavBarIconStyle"/>
+    <style name="LightNavBarIconStyle" />
 
     <!--
     Extensions to the "Base<Color>Theme" styles for the pre-v21 styles. These are all trivial.
@@ -556,12 +462,13 @@
     Other miscellaneous styles.
     -->
 
-    <style name="RoundedPopupMenu" parent="Base.Widget.AppCompat.Light.PopupMenu">
+    <style name="RoundedPopupMenu" parent="Widget.AppCompat.PopupMenu">
         <item name="android:popupBackground">@drawable/outline_background_card_menu</item>
     </style>
 
-    <style name="RoundedPopupMenu.Text" parent="@android:style/TextAppearance.Widget.IconMenu.Item">
+    <style name="RoundedPopupMenu.Text" parent="TextAppearance.AppCompat.Widget.PopupMenu.Large">
         <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
 
@@ -570,11 +477,12 @@
         <item name="android:paddingTop">8dp</item>
         <item name="android:paddingRight">8dp</item>
         <item name="android:paddingBottom">8dp</item>
+        <item name="android:minHeight">48dp</item>
         <item name="android:alpha">0.85</item>
         <item name="android:background">?selectableItemBackground</item>
         <item name="android:drawablePadding">20dp</item>
         <item name="android:gravity">center_vertical</item>
-        <item name="android:textColor">#000</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textSize">14sp</item>
     </style>
 
@@ -583,8 +491,7 @@
         <item name="android:paddingBottom">16dp</item>
         <item name="android:gravity">center</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">#000</item>
-        <item name="android:layout_centerHorizontal">true</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textSize">18sp</item>
     </style>
 
@@ -597,7 +504,7 @@
         <item name="android:background">?selectableItemBackground</item>
         <item name="android:drawablePadding">20dp</item>
         <item name="android:gravity">center_vertical</item>
-        <item name="android:textColor">#000</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textSize">14sp</item>
     </style>
 
@@ -619,8 +526,8 @@
         <item name="android:paddingRight">8dp</item>
         <item name="android:gravity">right</item>
         <item name="android:textSize">13.3sp</item>
-        <item name="android:background">?graph_stats_card_background</item>
-        <item name="android:textColor">?graph_stats_card_text_color</item>
+        <item name="android:background">?attr/colorSurfaceContainer</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="StatTabTextStyle">
@@ -631,7 +538,7 @@
         <item name="android:focusable">true</item>
         <item name="android:maxLines">1</item>
         <item name="android:textSize">13.3sp</item>
-        <item name="android:textColor">?graph_stats_card_text_color</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="DialogItem">
@@ -645,10 +552,13 @@
     </style>
 
     <style name="ActionModeStyle" parent="Base.Widget.AppCompat.ActionMode">
-        <item name="android:background">?colorPrimary</item>
-        <item name="android:backgroundSplit">?colorPrimary</item>
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="actionModeBackground">?attr/colorSurface</item>
+        <item name="android:backgroundSplit">?attr/colorSurface</item>
         <item name="android:titleTextStyle">@style/Toolbar.TitleText</item>
         <item name="android:subtitleTextStyle">@style/Toolbar.SubtitleText</item>
+        <item name="android:actionModeCloseDrawable">@drawable/ic_clear_black_24dp</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_clear_black_24dp</item>
     </style>
 
     <style name="DrawerArrowStyle" parent="Widget.AppCompat.DrawerArrowToggle">
@@ -665,7 +575,7 @@
         <item name="android:paddingLeft">16dp</item>
         <item name="android:background">?android:attr/selectableItemBackground</item>
         <item name="android:clickable">true</item>
-        <item name="android:textColor">@android:color/black</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:drawablePadding">16dp</item>
         <item name="android:alpha">0.8</item>
     </style>
@@ -674,38 +584,43 @@
         <item name="android:background">?attr/selectableItemBackground</item>
         <item name="android:gravity">center_vertical</item>
         <item name="android:padding">8dp</item>
-        <item name="android:textColor">#B3000000</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
         <item name="android:visibility">gone</item>
     </style>
 
-    <style name="Toolbar.TitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+    <style name="Toolbar.TitleText" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">?colorTimerText</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:gravity">center</item>
-        <item name="android:layout_gravity">center</item>
     </style>
 
-    <style name="Toolbar.SubtitleText" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
+    <style name="Toolbar.SubtitleText" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textSize">16sp</item>
         <item name="android:textStyle">normal</item>
     </style>
 
     <!-- "ToolBarStyle" is defined differently for v21. -->
     <style name="BaseToolBarStyle">
-        <item name="popupTheme">@style/ThemeOverlay.AppCompat.Light</item>
+        <item name="popupTheme">@style/ThemeOverlay.Material3.MaterialAlertDialog</item>
         <item name="android:theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
     </style>
 
     <style name="ToolBarStyle" parent="BaseToolBarStyle" />
 
     <!-- "Widget.Tarefa.Header.Spinner" is defined differently for v21. -->
-    <style name="Base.Widget.Tarefa.Header.Spinner" parent="Widget.AppCompat.Light.Spinner.DropDown.ActionBar">
+    <style name="Base.Widget.Tarefa.Header.Spinner" parent="Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu">
         <item name="android:background">?android:selectableItemBackground</item>
         <item name="android:dropDownSelector">?android:selectableItemBackground</item>
         <item name="android:divider">@null</item>
     </style>
 
     <style name="Widget.Tarefa.Header.Spinner" parent="Base.Widget.Tarefa.Header.Spinner" />
+
+    <style name="AppAlertDialogTheme" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">?attr/colorSurfaceContainer</item>
+        <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="colorPrimary">?attr/colorPrimary</item>
+    </style>
 
     <style name="HeaderSwitch">
         <!-- Active thumb color & Active track color(30% transparency) -->
@@ -716,13 +631,13 @@
         <item name="android:colorForeground">@color/black_text</item>
     </style>
 
-    <style name="DefaultTheme.NoActionBar">
+    <style name="DefaultTheme.NoActionBar" parent="DefaultTheme">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
-    <style name="DefaultTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="DefaultTheme.AppBarOverlay" parent="ThemeOverlay.Material3.DayNight.BottomSheetDialog" />
 
-    <style name="DefaultTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="DefaultTheme.PopupOverlay" parent="ThemeOverlay.Material3.Light" />
 
 </resources>

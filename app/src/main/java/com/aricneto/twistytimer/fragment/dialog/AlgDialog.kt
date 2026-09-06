@@ -7,7 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.AppCompatSeekBar
+import android.widget.SeekBar
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -48,7 +48,7 @@ class AlgDialog : DialogFragment() {
                 val editEditText = editView.findViewById<TextInputEditText>(R.id.edit_text)
                 editEditText.setText(algorithm!!.algs)
 
-                MaterialAlertDialogBuilder(mContext!!)
+                MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.edit_algorithm)
                     .setView(editView)
                     .setPositiveButton(
@@ -71,9 +71,9 @@ class AlgDialog : DialogFragment() {
                     R.layout.dialog_progress,
                     requireView().parent as ViewGroup,
                     false
-                ) as AppCompatSeekBar
+                ) as SeekBar
                 seekBar.progress = algorithm!!.progress
-                MaterialAlertDialogBuilder(mContext!!)
+                MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.dialog_set_progress)
                     .setView(seekBar)
                     .setPositiveButton(
@@ -91,7 +91,7 @@ class AlgDialog : DialogFragment() {
                     .show()
             }
 
-            R.id.revertButton -> MaterialAlertDialogBuilder(mContext!!)
+            R.id.revertButton -> MaterialAlertDialogBuilder(requireActivity())
                 .setTitle(R.string.dialog_revert_title_confirmation)
                 .setMessage(R.string.dialog_revert_content_confirmation)
                 .setPositiveButton(

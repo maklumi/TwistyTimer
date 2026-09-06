@@ -17,7 +17,7 @@
         android:layout_marginRight="18dp"
         android:background="?selectableItemBackgroundBorderless"
         android:padding="8dp"
-        android:tint="?colorTimerText"
+        android:tint="?attr/colorPrimary"
         app:srcCompat="@drawable/ic_clear_black_24dp" />
 
     <ImageView
@@ -26,7 +26,7 @@
         android:layout_height="?qaButtonSize"
         android:background="?selectableItemBackgroundBorderless"
         android:padding="8dp"
-        android:tint="?colorTimerText"
+        android:tint="?attr/colorPrimary"
         app:srcCompat="@drawable/ic_outline_block_24px" />
 
     <ImageView
@@ -37,7 +37,7 @@
         android:layout_marginRight="18dp"
         android:background="?selectableItemBackgroundBorderless"
         android:padding="8dp"
-        android:tint="?colorTimerText"
+        android:tint="?attr/colorPrimary"
         app:srcCompat="@drawable/ic_outline_flag_24px" />
 
     <ImageView
@@ -46,7 +46,7 @@
         android:layout_height="?qaButtonSize"
         android:background="?selectableItemBackgroundBorderless"
         android:padding="8dp"
-        android:tint="?colorTimerText"
+        android:tint="?attr/colorPrimary"
         app:srcCompat="@drawable/ic_outline_add_comment_24px" />
 
 </LinearLayout>

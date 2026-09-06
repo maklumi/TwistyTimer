@@ -6,6 +6,8 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.Html
+import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -33,7 +35,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.joda.time.DateTime
-import android.util.Log
 
 /**
  * Shows the timeList dialog
@@ -139,52 +140,51 @@ class TimeDialog : DialogFragment() {
                 popupMenu.show()
             }
 
-            R.id.editButton -> MaterialAlertDialogBuilder(mContext!!)
-                .setTitle(R.string.select_penalty)
-                .setSingleChoiceItems(
-                    R.array.array_penalties,
-                    solve!!.penalty
-                ) { dialog: DialogInterface?, which: Int ->
-                    when (which) {
-                        0 -> solve =
-                            PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.NO_PENALTY)
+            R.id.editButton ->
+                MaterialAlertDialogBuilder(requireActivity())
+                    .setTitle(R.string.select_penalty)
+                    .setSingleChoiceItems(
+                        R.array.array_penalties,
+                        solve!!.penalty
+                    ) { dialog: DialogInterface?, which: Int ->
+                        when (which) {
+                            0 -> solve =
+                                PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.NO_PENALTY)
 
-                        1 -> solve =
-                            PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_PLUSTWO)
+                            1 -> solve =
+                                PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_PLUSTWO)
 
-                        2 -> solve =
-                            PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_DNF)
+                            2 -> solve =
+                                PuzzleUtils.applyPenalty(solve!!, PuzzleUtils.PENALTY_DNF)
+                        }
+                        lifecycleScope.launch {
+                            solveRepository.updateSolve(
+                                id = solve!!.id,
+                                time = solve!!.time.toLong(),
+                                date = solve!!.date,
+                                scramble = solve!!.scramble,
+                                penalty = solve!!.penalty.toLong(),
+                                comment = solve!!.comment,
+                                history = solve!!.history,
+                                mode = solve!!.mode
+                            )
+                            updateList()
+                            dialog!!.dismiss()
+                        }
                     }
-                    lifecycleScope.launch {
-                        solveRepository.updateSolve(
-                            id = solve!!.id,
-                            time = solve!!.time.toLong(),
-                            date = solve!!.date,
-                            scramble = solve!!.scramble,
-                            penalty = solve!!.penalty.toLong(),
-                            comment = solve!!.comment,
-                            history = solve!!.history,
-                            mode = solve!!.mode
-                        )
-                        updateList()
-                        dialog!!.dismiss()
-                    }
-                }
-                .setNegativeButton(R.string.action_cancel, null)
-                .show()
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show()
 
             R.id.commentButton -> {
                 val commentView =
                     layoutInflater.inflate(
                         R.layout.dialog_input,
-                        requireView() as? ViewGroup,
-                        false
+                        null
                     )
-                val commentEditText =
-                    commentView.findViewById<TextInputEditText>(R.id.edit_text)
+                val commentEditText = commentView.findViewById<TextInputEditText>(R.id.edit_text)
                 commentEditText.setText(solve!!.comment)
 
-                MaterialAlertDialogBuilder(mContext!!)
+                MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.edit_comment)
                     .setView(commentView)
                     .setPositiveButton(
@@ -235,11 +235,9 @@ class TimeDialog : DialogFragment() {
 
         mId = requireArguments().getLong("id")
 
-        //Log.d("TIME DIALOG", "mId: " + mId + "\nexists: " + handler.idExists(mId));
         dialog!!.window!!.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
         lifecycleScope.launch {
-            //getDialog().getWindow().setWindowAnimations(R.style.DialogAnimationScale);
             val matchedSolve = TwistyTimer.getSolveRepository().getSolve(mId)
 
             if (matchedSolve != null) {
@@ -258,6 +256,7 @@ class TimeDialog : DialogFragment() {
                 when (solve!!.penalty) {
                     PuzzleUtils.PENALTY_DNF -> binding!!.puzzlePenaltyText.text =
                         getString(R.string.do_not_finished)
+
                     PuzzleUtils.PENALTY_PLUSTWO -> binding!!.puzzlePenaltyText.text =
                         "+2"
 

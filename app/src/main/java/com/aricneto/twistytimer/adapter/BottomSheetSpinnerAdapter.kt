@@ -7,8 +7,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.vectordrawable.graphics.drawable.VectorDrawableCompat
 import com.aricneto.twistify.R
+import com.aricneto.twistytimer.utils.ThemeUtils
 
 /**
  * Custom adapter for [com.aricneto.twistytimer.fragment.dialog.BottomSheetSpinnerDialog]
@@ -51,7 +53,14 @@ class BottomSheetSpinnerAdapter(
         if (iconResLength > 0 && mIconRes[position] != 0) {
             try {
                 val icon = VectorDrawableCompat.create(mContext.resources, mIconRes[position], null)
-                titleView.setCompoundDrawablesWithIntrinsicBounds(icon, null, null, null)
+                if (icon != null) {
+                    val wrappedIcon = DrawableCompat.wrap(icon.mutate())
+                    DrawableCompat.setTint(
+                        wrappedIcon,
+                        ThemeUtils.fetchAttrColor(mContext, androidx.appcompat.R.attr.colorPrimary)
+                    )
+                    titleView.setCompoundDrawablesWithIntrinsicBounds(wrappedIcon, null, null, null)
+                }
             } catch (e: Exception) {
                 Log.e("BottomSheetSpinner", "Error populating list!: $e")
             }

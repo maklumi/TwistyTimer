@@ -39,13 +39,13 @@ class StatGridAdapter(
         if (getItemId(position) % 2 == 0L) textView.setBackgroundColor(
             fetchAttrColor(
                 mContext,
-                R.attr.graph_stats_card_background_alt
+                R.attr.colorSurfaceVariant
             )
         )
         else textView.setBackgroundColor(
             fetchAttrColor(
                 mContext,
-                R.attr.graph_stats_card_background
+                R.attr.colorSurfaceContainer
             )
         )
 

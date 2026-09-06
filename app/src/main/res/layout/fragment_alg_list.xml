@@ -6,7 +6,9 @@
 
     <include
         android:id="@+id/actionbar"
-        layout="@layout/main_actionbar" />
+        layout="@layout/view_main_actionbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/list"

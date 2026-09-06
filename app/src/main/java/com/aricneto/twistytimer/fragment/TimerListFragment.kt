@@ -15,6 +15,7 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.TextWatcher
 import android.util.Log
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -44,6 +45,7 @@ import com.aricneto.twistytimer.utils.TTIntent.ACTION_COMMENT_ADDED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_DELETE_SELECTED_TIMES
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_HISTORY_TIMES_SHOWN
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_SCRAMBLE_MODIFIED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_SELECTION_MODE_OFF
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_SESSION_TIMES_SHOWN
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MODIFIED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MOVED_TO_HISTORY
@@ -117,7 +119,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     0
                 )
 
-                MaterialAlertDialogBuilder(mContext!!)
+                MaterialAlertDialogBuilder(requireActivity())
                     .setTitle(R.string.move_solves_to_history)
                     .setMessage(text)
                     .setPositiveButton(
@@ -134,7 +136,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     .show()
             }
 
-            R.id.clear_button -> MaterialAlertDialogBuilder(mContext!!)
+            R.id.clear_button -> MaterialAlertDialogBuilder(requireActivity())
                 .setTitle(R.string.remove_session_title)
                 .setMessage(R.string.remove_session_confirmation_content)
                 .setPositiveButton(
@@ -153,7 +155,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
             R.id.more_button -> {
                 // Main popup
                 val popupMenu = PopupMenu(requireActivity(), binding!!.moreButton)
-                //todo   popupMenu.menuInflater.inflate(R.menu.menu_list_more, popupMenu.menu)
+                popupMenu.menuInflater.inflate(R.menu.menu_list_more, popupMenu.menu)
 
                 popupMenu.setOnMenuItemClickListener { item: MenuItem ->
                     when (item.itemId) {
@@ -176,7 +178,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                                         mode
                                     )
 
-                                MaterialAlertDialogBuilder(mContext!!)
+                                MaterialAlertDialogBuilder(requireActivity())
                                     .setTitle(R.string.list_options_item_from_history)
                                     .setMessage(
                                         getString(
@@ -314,6 +316,9 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     ACTION_SCRAMBLE_MODIFIED ->
                         // A new scramble was generated
                         currentScramble = getScramble(intent)
+
+                    ACTION_SELECTION_MODE_OFF ->
+                        solveListAdapter?.clearSelection()
 
                     else -> {}
                 }
@@ -478,7 +483,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
 
         // Set different managers to support different orientations
         val gridLayoutManagerHorizontal =
-            StaggeredGridLayoutManager(6, StaggeredGridLayoutManager.VERTICAL)
+            StaggeredGridLayoutManager(4, StaggeredGridLayoutManager.VERTICAL)
         val gridLayoutManagerVertical =
             StaggeredGridLayoutManager(3, StaggeredGridLayoutManager.VERTICAL)
 

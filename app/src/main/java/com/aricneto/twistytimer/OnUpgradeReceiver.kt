@@ -4,15 +4,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.aricneto.twistify.R
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.aricneto.twistytimer.utils.Prefs
 
 class OnUpgradeReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.app_name)
-            .setIcon(R.drawable.icon_launch)
-            .setMessage(R.string.pref_summary_new)
-            .show()
+        if (intent.action == Intent.ACTION_MY_PACKAGE_REPLACED) {
+            Prefs.edit {
+                putBoolean(R.string.pk_show_update_dialog, true)
+            }
+        }
     }
 }

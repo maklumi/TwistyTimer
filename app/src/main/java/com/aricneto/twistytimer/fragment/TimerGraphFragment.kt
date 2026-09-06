@@ -127,12 +127,12 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         // Drawables for the stats cards buttons
         buttonDrawable = ThemeUtils.createSquareDrawable(
             mContext!!,
-            ThemeUtils.fetchAttrColor(mContext!!, R.attr.graph_stats_card_background),
+            ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorSurfaceContainer),
             0, 20, 0f
         )
         buttonDrawableFaded = ThemeUtils.createSquareDrawable(
             mContext!!,
-            ThemeUtils.fetchAttrColor(mContext!!, R.attr.graph_stats_card_background_faded),
+            ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorSurfaceVariant),
             0, 20, 0f
         )
 
@@ -175,11 +175,11 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         }
 
         // The color for the text in the legend and for the values along the chart's axes.
-        val chartTextColor = ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorChartText)
+        val chartTextColor = ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorOnSurface)
 
         // The color for the grid and the axes
-        val axisColor = ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorChartAxis)
-        val gridColor = ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorChartGrid)
+        val axisColor = ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorOutline)
+        val gridColor = ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorOutlineVariant)
 
         // Most of the following settings should be self-explanatory.
         // Those that aren't will be commented
@@ -191,10 +191,15 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         binding!!.linechart.axisLeft.isEnabled = false
         binding!!.linechart.legend.textColor = chartTextColor
         binding!!.linechart.extraBottomOffset = ThemeUtils.dpToPix(mContext!!, 4f).toFloat()
+        binding!!.linechart.extraRightOffset = ThemeUtils.dpToPix(mContext!!, 0f).toFloat()
         binding!!.linechart.description = null
+        binding!!.linechart.setTouchEnabled(true)
+        binding!!.linechart.isDragEnabled = true
+        binding!!.linechart.setScaleEnabled(true)
+        binding!!.linechart.setPinchZoom(false)
 
         // Set axis colors
-        val axisLeft = binding!!.linechart.axisRight
+        val axisRight = binding!!.linechart.axisRight
         val xAxis = binding!!.linechart.xAxis
 
         // X-axis settings
@@ -202,21 +207,25 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         // Draw X line markings on the bottom
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.axisLineColor = axisColor
-        xAxis.setDrawAxisLine(false)
+        xAxis.setDrawAxisLine(true)
         xAxis.textColor = chartTextColor
         xAxis.setAvoidFirstLastClipping(true)
         xAxis.valueFormatter = RoundedAxisValueFormatter(xAxis.mDecimals)
+        xAxis.granularity = 1f
 
-        axisLeft.setDrawGridLines(true)
-        //axisLeft.setSpaceTop(30f);
-        axisLeft.textColor = axisColor
-        axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
-        axisLeft.axisLineColor = axisColor
-        axisLeft.setDrawAxisLine(false)
-        axisLeft.gridColor = gridColor
-        axisLeft.enableGridDashedLine(10f, 8f, 0f)
-        axisLeft.valueFormatter = TimeFormatter()
-        axisLeft.setDrawLimitLinesBehindData(true)
+        axisRight.setDrawGridLines(true)
+        //axisRight.setSpaceTop(30f);
+        axisRight.textColor = chartTextColor
+        axisRight.textSize = 10f
+        axisRight.xOffset = 5f
+        axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        axisRight.axisLineColor = axisColor
+        axisRight.setDrawAxisLine(true)
+        axisRight.gridColor = gridColor
+        axisRight.gridLineWidth = 0.5f
+        axisRight.enableGridDashedLine(10f, 10f, 0f)
+        axisRight.valueFormatter = TimeFormatter()
+        axisRight.setDrawLimitLinesBehindData(true)
 
 
         // Find the gridView inside each included layout
@@ -276,10 +285,6 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         highlightStatTab(binding!!.statsContainerPager.statsTabImprovement)
         fadeStatTab(binding!!.statsContainerPager.statsTabOther)
         fadeStatTab(binding!!.statsContainerPager.statsTabAverage)
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
 
         // If the statistics are already loaded, the update notification will have been missed,
         // so fire that notification now. If the statistics are non-null, they will be displayed.
@@ -293,11 +298,11 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         // be reused. For now, those arguments are just passed via their respective fields to
         // "onCreateLoader".
         //
-        // Starting loaders here in "onActivityCreated" ensures that "onCreateView" is complete.
+        // Starting loaders here in "onViewCreated" ensures that the view is complete.
         //
         // An anonymous inner class is neater than implementing "LoaderCallbacks".
-        if (DEBUG_ME) Log.d(TAG, "onActivityCreated -> restartLoader: CHART_DATA_LOADER_ID")
-        getLoaderManager().restartLoader<Wrapper<ChartStatistics?>?>(
+        if (DEBUG_ME) Log.d(TAG, "onViewCreated -> restartLoader: CHART_DATA_LOADER_ID")
+        LoaderManager.getInstance(this).restartLoader<Wrapper<ChartStatistics?>?>(
             MainActivity.CHART_DATA_LOADER_ID, null,
             object : LoaderManager.LoaderCallbacks<Wrapper<ChartStatistics?>?> {
                 override fun onCreateLoader(
@@ -374,15 +379,14 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
     }
 
     private fun highlightStatTab(tab: TextView) {
-        tab.setTextColor(ThemeUtils.fetchAttrColor(mContext!!, R.attr.graph_stats_card_text_color))
+        tab.setTextColor(ThemeUtils.fetchAttrColor(mContext!!, R.attr.colorOnSurface))
         tab.background = buttonDrawable
     }
 
     private fun fadeStatTab(tab: TextView) {
         tab.setTextColor(
             ThemeUtils.fetchAttrColor(
-                mContext!!, R.attr
-                    .graph_stats_card_text_color_faded
+                mContext!!, R.attr.colorOnSurfaceVariant
             )
         )
         tab.background = buttonDrawableFaded
@@ -419,12 +423,8 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
      * should be hidden and a progress bar shown. When loading finishes, the columns should be
      * populated with values and be shown and the progress bar hidden. No action will be taken if
      * this fragment does not yet have a view, or if its view has been destroyed.
-     * 
-     * @param visibility
-     * The visibility to set on the statistics table columns. Use `View.GONE` or
-     * `View.VISIBLE`. The opposite visibility will be applied to the progress bar.
      */
-    private fun setStatsTableVisibility(visibility: Int) {
+    private fun setStatsTableVisibility() {
         if (view == null) {
             // Called before "onCreateView" or after "onDestroyView", so do nothing.
             return
@@ -464,7 +464,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
      */
     @SuppressLint("SetTextI18n")
     override fun onStatisticsUpdated(stats: Statistics?) {
-        if (DEBUG_ME) Log.d(TAG, "onStatisticsUpdated(" + stats + ")")
+        if (DEBUG_ME) Log.d(TAG, "onStatisticsUpdated($stats)")
 
         if (view == null) {
             // Must have arrived after "onDestroyView" was called, so do nothing.
@@ -473,7 +473,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
 
         if (stats == null) {
             // Hide the statistics and show the progress bar until the statistics become ready.
-            setStatsTableVisibility(View.GONE)
+            setStatsTableVisibility()
             return
         }
 
@@ -488,7 +488,7 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
 
 
         // Display the statistics and hide the progress bar.
-        setStatsTableVisibility(View.VISIBLE)
+        setStatsTableVisibility()
     }
 
     private fun buildImprovementStatList(stats: Statistics): ArrayList<Stat> {

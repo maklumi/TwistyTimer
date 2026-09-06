@@ -7,12 +7,13 @@
     android:background="@drawable/outline_background_card_top"
     android:orientation="vertical">
 
-    <androidx.appcompat.widget.AppCompatTextView
+    <TextView
         style="@style/BottomPanelListTitleTextStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textStyle="bold"
         android:text="@string/dialog_scramble_details"
+        app:drawableTint="?attr/colorPrimary"
         app:drawableRightCompat="@drawable/ic_outline_casino_24px" />
 
     <androidx.core.widget.NestedScrollView
@@ -38,23 +39,24 @@
                 android:fontFamily="@font/overpass_mono_semibold"
                 android:gravity="center"
                 android:lineSpacingExtra="5dp"
-                android:textColor="#000"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="20sp"
                 tools:text="F' U2 F2 D2 U2 L2 B R2 U2 B L B' U' L' F' U2 F2 D2 U2 L2 B F' U2 F2 D2 U2 L2 B F' U2 F2 D2 U2 L2 B " />
 
-            <androidx.appcompat.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/hint_title"
                 style="@style/BottomPanelListTitleTextStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="1dp"
                 android:layout_marginRight="1dp"
-                android:background="?colorCardBackgroundWarn"
+                android:background="?attr/colorSurfaceVariant"
                 android:textStyle="bold"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
                 android:text="@string/dialog_hint_title"
                 android:visibility="gone"
+                app:drawableTint="?attr/colorPrimary"
                 app:drawableRightCompat="@drawable/ic_outline_wb_incandescent_24px"
                 tools:visibility="visible" />
 
@@ -75,7 +77,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="1dp"
                 android:layout_marginRight="1dp"
-                android:background="?colorCardBackgroundWarn"
+                android:background="?attr/colorSurfaceVariant"
                 android:indeterminate="true"
                 android:visibility="gone"
                 app:indicatorColor="@color/md_red_400"
@@ -89,8 +91,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="1dp"
                 android:layout_marginRight="1dp"
-                android:alpha=".7"
-                android:background="?colorCardBackgroundWarn"
+                android:alpha="1.0"
+                android:background="?attr/colorSurfaceVariant"
                 android:textStyle="bold"
                 android:visibility="gone"
                 tools:text="Cross on U:\nF U F B U'\nF U F B2 F'"

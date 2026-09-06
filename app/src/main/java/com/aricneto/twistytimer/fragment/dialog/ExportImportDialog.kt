@@ -199,7 +199,7 @@ class ExportImportDialog : DialogFragment(), PuzzleCallback {
             // from that puzzle chooser is received ("onPuzzleTypeSelected"), this dialog
             // will exit and hand control back to the activity to perform the import.
             val activityMain: ExportImportCallbacks = getExImActivity()
-            MaterialAlertDialogBuilder(mContext!!)
+            MaterialAlertDialogBuilder(requireActivity())
                 .setTitle(R.string.import_external_title)
                 .setMessage(R.string.import_external_content_first)
                 .setPositiveButton(

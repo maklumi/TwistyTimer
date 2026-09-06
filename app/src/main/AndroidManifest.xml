@@ -13,8 +13,9 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
-        android:theme="@style/DefaultTheme"
-        tools:ignore="GoogleAppIndexingWarning">
+        tools:ignore="GoogleAppIndexingWarning"
+        android:theme="@style/BaseDefaultTheme"
+        tools:targetApi="33">
         <activity
             android:name="com.aricneto.twistytimer.activity.MainActivity"
             android:launchMode="singleTask"

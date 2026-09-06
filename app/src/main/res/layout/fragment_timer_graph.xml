@@ -19,7 +19,7 @@
 
         <androidx.cardview.widget.CardView
             android:id="@+id/stats_card"
-            app:cardBackgroundColor="?graph_stats_card_background"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
@@ -29,7 +29,7 @@
 
             <include
                 android:id="@+id/stats_container_pager"
-                layout="@layout/stats_table"
+                layout="@layout/view_stats_table"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 

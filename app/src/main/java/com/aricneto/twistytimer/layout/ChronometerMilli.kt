@@ -7,7 +7,7 @@ import android.os.Message
 import android.os.SystemClock
 import android.text.Html
 import android.util.AttributeSet
-import androidx.appcompat.widget.AppCompatTextView
+import android.widget.TextView
 import com.aricneto.twistify.R
 import com.aricneto.twistytimer.utils.Prefs.getBoolean
 import com.aricneto.twistytimer.utils.PuzzleUtils.FORMAT_NO_MILLI
@@ -31,7 +31,7 @@ class ChronometerMilli @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
-) : AppCompatTextView(context, attrs, defStyle) {
+) : TextView(context, attrs, defStyle) {
     private var hideTimeText: String? = null
     private var hideTimeEnabled = false
 

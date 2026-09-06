@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?colorPrimary"
+    android:background="?attr/colorMainGradientStart"
     tools:context="com.aricneto.twistytimer.activity.AboutActivity">
 
 
@@ -19,11 +19,11 @@
             android:layout_alignParentTop="true"
             android:gravity="center"
             android:text="@string/title_activity_about"
-            android:textColor="?colorTimerText"
+            android:textColor="?attr/colorPrimary"
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <androidx.appcompat.widget.AppCompatImageView
+        <ImageView
             android:id="@+id/back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -33,7 +33,7 @@
             android:layout_alignParentTop="true"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
-            android:tint="?colorTimerText"
+            app:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_arrow_back_black_24dp" />
 
         <ImageView
@@ -55,7 +55,7 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="16dp"
             android:text="@string/app_name"
-            android:textColor="?colorTimerText"
+            android:textColor="?attr/colorPrimary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -65,7 +65,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/appTitle"
             android:layout_centerHorizontal="true"
-            android:textColor="?colorTimerText"
+            android:textColor="?attr/colorPrimary"
             android:textSize="12sp"
             tools:text="APP VERSION" />
 
@@ -75,11 +75,11 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/appVersion"
             android:layout_centerHorizontal="true"
-            android:textColor="?colorTimerText"
+            android:textColor="?attr/colorPrimary"
             android:textSize="12sp"
             tools:text="aricneto" />
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/rateButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -93,11 +93,11 @@
             android:gravity="center"
             android:padding="8dp"
             android:text="@string/rate_app"
-            android:textColor="#000"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="14sp"
             app:drawableLeftCompat="@drawable/ic_outline_star_border_18px" />
 
-        <androidx.appcompat.widget.AppCompatTextView
+        <TextView
             android:id="@+id/translateButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -112,7 +112,7 @@
             android:gravity="center"
             android:padding="8dp"
             android:text="@string/about_translate_title"
-            android:textColor="#000"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="14sp"
             app:drawableLeftCompat="@drawable/ic_outline_translate_18px" />
 
@@ -131,7 +131,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center">
 
-                <androidx.appcompat.widget.AppCompatTextView
+                <TextView
                     android:id="@+id/feedbackButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -141,11 +141,11 @@
                     android:gravity="center"
                     android:padding="8dp"
                     android:text="@string/contact"
-                    android:textColor="@color/black_light_100"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="14sp"
                     app:drawableLeftCompat="@drawable/ic_outline_email_24px" />
 
-                <androidx.appcompat.widget.AppCompatTextView
+                <TextView
                     android:id="@+id/licenseButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -156,7 +156,7 @@
                     android:gravity="center"
                     android:padding="8dp"
                     android:text="@string/license"
-                    android:textColor="@color/black_light_100"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="14sp"
                     app:drawableLeftCompat="@drawable/ic_outline_copyright_18px" />
 
@@ -167,20 +167,24 @@
                 android:layout_height="match_parent"
                 android:gravity="center">
 
-                <androidx.appcompat.widget.AppCompatTextView
+                <TextView
                     android:id="@+id/testersButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_margin="8dp"
                     android:background="@drawable/outline_background_card"
                     android:drawablePadding="8dp"
                     android:gravity="center"
                     android:padding="8dp"
                     android:text="@string/testers"
-                    android:textColor="@color/black_light_100"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="14sp"
                     app:drawableLeftCompat="@drawable/ic_outline_bug_report_18px" />
 
-                <androidx.appcompat.widget.AppCompatTextView
+                <TextView
                     android:id="@+id/sourceButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_column="0"
                     android:layout_margin="8dp"
                     android:layout_marginLeft="32dp"
@@ -189,7 +193,7 @@
                     android:gravity="center"
                     android:padding="8dp"
                     android:text="@string/source"
-                    android:textColor="@color/black_light_100"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="14sp"
                     app:drawableLeftCompat="@drawable/ic_outline_track_changes_18px" />
 
@@ -200,27 +204,31 @@
                 android:layout_height="match_parent"
                 android:gravity="center">
 
-                <androidx.appcompat.widget.AppCompatTextView
+                <TextView
                     android:id="@+id/translatorsButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_margin="8dp"
                     android:background="@drawable/outline_background_card"
                     android:drawablePadding="8dp"
                     android:gravity="center"
                     android:padding="8dp"
                     android:text="@string/translators"
-                    android:textColor="@color/black_light_100"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="14sp"
                     app:drawableLeftCompat="@drawable/ic_outline_translate_18px" />
 
-                <androidx.appcompat.widget.AppCompatTextView
+                <TextView
                     android:id="@+id/contributorsButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_margin="8dp"
                     android:background="@drawable/outline_background_card"
                     android:drawablePadding="8dp"
                     android:gravity="center"
                     android:padding="8dp"
                     android:text="@string/contributors"
-                    android:textColor="@color/black_light_100"
+                    android:textColor="?attr/colorOnSurface"
                     android:textSize="14sp"
                     app:drawableLeftCompat="@drawable/ic_outline_build_24px" />
 
