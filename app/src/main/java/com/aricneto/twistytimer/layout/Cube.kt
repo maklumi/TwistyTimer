@@ -12,14 +12,13 @@ import com.aricneto.twistify.R
 import com.aricneto.twistytimer.utils.AlgUtils
 
 class Cube : View {
-    private var mStickerColors: HashMap<Char, Int>? = null
     private var mCubeState: String? = null
 
-    private var mCubePaint: Paint? = null
-    private var mStickerPaint: Paint? = null
+    private var mCubePaint: Paint = Paint()
+    private var mStickerPaint: Paint = Paint()
 
-    private var mStickerRect: RectF? = null
-    private var mCubeRect: RectF? = null
+    private var mStickerRect: RectF = RectF()
+    private var mCubeRect: RectF = RectF()
 
     private var mPadding = 0
     private var mStickerSize = 0f
@@ -43,9 +42,6 @@ class Cube : View {
     }
 
     private fun init(attrs: AttributeSet?) {
-        mPadding = 0
-        mCubeCornerRadius = 0f
-        mStickerCornerRadius = 0f
         initPaints()
         initRects()
 
@@ -60,16 +56,12 @@ class Cube : View {
     }
 
     private fun initPaints() {
-        mStickerColors = AlgUtils.colorLetterHashMap
+        mCubePaint.style = Paint.Style.FILL
+        mCubePaint.color = "#2E2E2E".toColorInt()
+        mCubePaint.isAntiAlias = true
 
-        mCubePaint = Paint()
-        mCubePaint!!.style = Paint.Style.FILL
-        mCubePaint!!.color = "#2E2E2E".toColorInt()
-        mCubePaint!!.isAntiAlias = true
-
-        mStickerPaint = Paint()
-        mStickerPaint!!.style = Paint.Style.FILL
-        mStickerPaint!!.isAntiAlias = true
+        mStickerPaint.style = Paint.Style.FILL
+        mStickerPaint.isAntiAlias = true
     }
 
     private fun initRects() {
@@ -96,14 +88,14 @@ class Cube : View {
         // which equals 4 stickers. Likewise, if you were to divide by 1.6, there would be 3.75 stickers
         val sizeSubtract = (mStickerSize / 1.6f)
 
-        mCubeRect!!.set(
+        mCubeRect.set(
             0f, 0f,
             (mPadding * 6) + (mStickerSize * 5) - (sizeSubtract * 2),
             (mPadding * 6) + (mStickerSize * 5) - (sizeSubtract * 2)
         )
 
         // draw cube background
-        canvas.drawRoundRect(mCubeRect!!, mCubeCornerRadius, mCubeCornerRadius, mCubePaint!!)
+        canvas.drawRoundRect(mCubeRect, mCubeCornerRadius, mCubeCornerRadius, mCubePaint)
 
         // Draw the cube
         // The edge conditions are used to draw half-stickers in the borders only
@@ -111,7 +103,7 @@ class Cube : View {
         // Basically, for every line, we create a rect at the beginning. We then draw that rect
         // and use its properties to calculate where the next sticker should be.
         for (i in 0..4) {
-            mStickerRect!!.set(
+            mStickerRect.set(
                 mPadding.toFloat(),
                 mPadding + ((mStickerSize + mPadding) * i) - sizeSubtract,
                 mPadding + mStickerSize,
@@ -120,21 +112,21 @@ class Cube : View {
 
             // top outer border
             if (i == 0) {
-                mStickerRect!!.set(
-                    mStickerRect!!.left,
+                mStickerRect.set(
+                    mStickerRect.left,
                     mPadding.toFloat(),
-                    mStickerRect!!.right,
-                    mStickerRect!!.bottom
+                    mStickerRect.right,
+                    mStickerRect.bottom
                 )
             }
 
             // bottom outer border
             if (i == 4) {
-                mStickerRect!!.set(
-                    mStickerRect!!.left,
-                    mStickerRect!!.top,
-                    mStickerRect!!.right,
-                    mStickerRect!!.bottom - sizeSubtract
+                mStickerRect.set(
+                    mStickerRect.left,
+                    mStickerRect.top,
+                    mStickerRect.right,
+                    mStickerRect.bottom - sizeSubtract
                 )
             }
 
@@ -142,33 +134,33 @@ class Cube : View {
                 // left outer border
 
                 if (j == 0) {
-                    mStickerRect!!.set(
+                    mStickerRect.set(
                         mPadding.toFloat(),  //mStickerRect.left + sizeSubtract,
-                        mStickerRect!!.top,
-                        mStickerRect!!.right - sizeSubtract,
-                        mStickerRect!!.bottom
+                        mStickerRect.top,
+                        mStickerRect.right - sizeSubtract,
+                        mStickerRect.bottom
                     )
                 }
 
                 // ignore the four corners
                 // TODO: Error check if string is of correct size/format!
                 if (!((i == 0 || i == 4) && (j == 0 || j == 4))) {
-                    mStickerPaint!!.color = AlgUtils.getColorFromStateIndex(
+                    mStickerPaint.color = AlgUtils.getColorFromStateIndex(
                         state,
                         (5 * i) + j
                     )
                     canvas.drawRoundRect(
-                        mStickerRect!!,
+                        mStickerRect,
                         mStickerCornerRadius,
                         mStickerCornerRadius,
-                        mStickerPaint!!
+                        mStickerPaint
                     )
                 }
-                mStickerRect!!.set(
-                    mStickerRect!!.right + mPadding,
-                    mStickerRect!!.top,
-                    if (j != 3) mStickerRect!!.right + mPadding + mStickerSize else mStickerRect!!.right + mPadding + mStickerSize - sizeSubtract,  // right outer border
-                    mStickerRect!!.bottom
+                mStickerRect.set(
+                    mStickerRect.right + mPadding,
+                    mStickerRect.top,
+                    if (j != 3) mStickerRect.right + mPadding + mStickerSize else mStickerRect.right + mPadding + mStickerSize - sizeSubtract,  // right outer border
+                    mStickerRect.bottom
                 )
             }
         }

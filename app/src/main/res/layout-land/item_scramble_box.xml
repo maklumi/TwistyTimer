@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -54,7 +55,7 @@
             android:background="?selectableItemBackgroundBorderless"
             android:padding="6dp"
             android:layout_marginRight="4dp"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_cached_24px" />
 
         <ImageView
@@ -68,7 +69,7 @@
             android:layout_marginRight="4dp"
             android:background="?selectableItemBackgroundBorderless"
             android:padding="6dp"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_edit_24px" />
 
         <ImageView
@@ -84,7 +85,7 @@
             android:visibility="gone"
             tools:visibility="visible"
             android:layout_marginLeft="4dp"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_wb_incandescent_24px" />
 
         <ImageView
@@ -101,7 +102,7 @@
             android:layout_marginLeft="4dp"
             android:visibility="gone"
             tools:visibility="visible"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             app:srcCompat="@drawable/ic_outline_alarm_add_24dp" />
 
 

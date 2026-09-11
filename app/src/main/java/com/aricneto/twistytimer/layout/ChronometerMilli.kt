@@ -180,7 +180,7 @@ class ChronometerMilli @JvmOverloads constructor(
         // default state-saving of this view, as full state saving and restoration of the elapsed
         // time, penalties, etc. is not yet implemented.
         mIsHoldingForStart = true
-        mTextSavedBeforeHolding = getText()
+        mTextSavedBeforeHolding = text
         updateText() // Will display "0.00" because "mIsHoldingForStart" is set.
     }
 

@@ -1,5 +1,5 @@
-<p align="center">
-  <img src="https://i.imgur.com/OLlZRiO.png?1"/>
+<p>
+  <img src="https://i.imgur.com/OLlZRiO.png?1" alt="Oll"/>
 </p>
 
 <a href="https://play.google.com/store/apps/details?id=com.aricneto.twistytimer" target="_blank">

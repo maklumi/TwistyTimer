@@ -85,4 +85,48 @@
         <item>XRBOXGYYYGOYYYGBYYYBXRROX</item>
     </string-array>
 
+    <string-array name="alg_reference_CMLL">
+        <item>XYNYXRGNOBNNNNNGYNYRXONBX</item> <!-- U1 -->
+        <item>XYNYXGONBRNNNNNRYNYBXGNOX</item> <!-- U2 -->
+        <item>XYNYXBRNOBNNNNNRYNYOXGNGX</item> <!-- U3 -->
+        <item>XYNYXOBNBRNNNNNRYNYOXGNGX</item> <!-- U4 -->
+        <item>XYNYXBRNOBNNNNNGYNYGXONRX</item> <!-- U5 -->
+        <item>XYNYXGONOBNNNNNRYNYRXGNBX</item> <!-- U6 -->
+        <item>XBNRXYONGYNNNNNGYNYRXONBX</item> <!-- T1 -->
+        <item>XONBXYGNRYNNNNNOYNYGXBNRX</item> <!-- T2 -->
+        <item>XRNOXYBNBYNNNNNRYNYOXGNGX</item> <!-- T3 -->
+        <item>XGNGXYRNOYNNNNNOYNYRXBNBX</item> <!-- T4 -->
+        <item>XONRXYGNGYNNNNNBYNYBXRNOX</item> <!-- T5 -->
+        <item>XONOXYGNBYNNNNNRYNYRXGNBX</item> <!-- T6 -->
+        <item>XGNRXOYNGYNNNNNRBNYBXYNOX</item> <!-- L1 -->
+        <item>XONRXBYNGYNNNNNRBNYOXYNGX</item> <!-- L2 -->
+        <item>XBNOXRYNBYNNNNNGRNYOXYNGX</item> <!-- L3 -->
+        <item>XBNRXRYNGYNNNNNOGNYBXYNOX</item> <!-- L4 -->
+        <item>XRNGXGYNOYNNNNNRBNYBXYNOX</item> <!-- L5 -->
+        <item>XRNOXGYNBYNNNNNRBNYOXYNGX</item> <!-- L6 -->
+        <item>XYNRXGONGYNNNNNOYNRBXBNYX</item> <!-- S1 -->
+        <item>XYNRXBRNGYNNNNNGYNBOXONYX</item> <!-- S2 -->
+        <item>XYNOXRGNBYNNNNNGYNRBXONYX</item> <!-- S3 -->
+        <item>XYNGXOBNOYNNNNNRYNRBXGNYX</item> <!-- S4 -->
+        <item>XYNGXRGNOYNNNNNBYNBOXRNYX</item> <!-- S5 -->
+        <item>XYNRXOBNGYNNNNNGYNRBXONYX</item> <!-- S6 -->
+        <item>XBNYXYONGONNNNNRBNYGXYNRX</item> <!-- As1 -->
+        <item>XGNYXYRNBRNNNNNBONYOXYNGX</item> <!-- As2 -->
+        <item>XRNYXYBNGONNNNNBONYGXYNRX</item> <!-- As3 -->
+        <item>XONYXYGNOBNNNNNRBNYGXYNRX</item> <!-- As4 -->
+        <item>XONYXYGNBRNNNNNBONYGXYNRX</item> <!-- As5 -->
+        <item>XGNYXYRNGONNNNNRBNYBXYNOX</item> <!-- As6 -->
+        <item>XYNYXRGNBRNNNNNOGNBOXYNYX</item> <!-- H1 -->
+        <item>XYNYXOBNBRNNNNNOGNGRXYNYX</item> <!-- H2 -->
+        <item>XYNYXGONBRNNNNNBONGRXYNYX</item> <!-- H3 -->
+        <item>XYNYXRGNGONNNNNBONRBXYNYX</item> <!-- H4 -->
+        <item>XRNYXYBNOBNNNNNYGNOGXRNYX</item> <!-- Pi1 -->
+        <item>XGNYXYRNGONNNNNYBNRBXONYX</item> <!-- Pi2 -->
+        <item>XGNYXYRNOBNNNNNYONRBXGNYX</item> <!-- Pi3 -->
+        <item>XGNYXYRNBRNNNNNYBNOGXONYX</item> <!-- Pi4 -->
+        <item>XRNYXYBNGONNNNNYBNGRXONYX</item> <!-- Pi5 -->
+        <item>XRNYXYBNRGNNNNNYBNOGXONYX</item> <!-- Pi6 -->
+        <item>XONGXBYNYRNNNNNBYNYOXRNGX</item> <!-- O1 -->
+        <item>XGNBXOYNYONNNNNRYNYRXGNBX</item> <!-- O2 -->
+    </string-array>
 </resources>

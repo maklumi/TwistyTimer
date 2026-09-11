@@ -350,11 +350,20 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         trainerPllItem.isIconTinted = true
         trainerPllItem.level = 2
 
+        val trainerCmllItem = SecondaryDrawerItem()
+        trainerCmllItem.name = StringHolder(R.string.drawer_title_cmll)
+        trainerCmllItem.icon = ImageHolder(R.drawable.ic_oll_black_24dp) // Placeholder icon
+        trainerCmllItem.identifier = TRAINER_CMLL_ID.toLong()
+        trainerCmllItem.textColor = itemColorStateList
+        trainerCmllItem.iconColor = itemColorStateList
+        trainerCmllItem.isIconTinted = true
+        trainerCmllItem.level = 2
+
         val trainerItem = ExpandableDrawerItem()
         trainerItem.name = StringHolder(R.string.drawer_title_trainer)
         trainerItem.icon = ImageHolder(R.drawable.ic_outline_control_camera_24px)
         trainerItem.isSelectable = false
-        trainerItem.subItems = mutableListOf(trainerOllItem, trainerPllItem)
+        trainerItem.subItems = mutableListOf(trainerOllItem, trainerPllItem, trainerCmllItem)
         trainerItem.textColor = itemColorStateList
         trainerItem.iconColor = itemColorStateList
         trainerItem.isIconTinted = true
@@ -378,11 +387,20 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         algsPllItem.isIconTinted = true
         algsPllItem.level = 2
 
+        val algsCmllItem = SecondaryDrawerItem()
+        algsCmllItem.name = StringHolder(R.string.drawer_title_cmll)
+        algsCmllItem.icon = ImageHolder(R.drawable.ic_oll_black_24dp) // Placeholder icon
+        algsCmllItem.identifier = CMLL_ID.toLong()
+        algsCmllItem.textColor = itemColorStateList
+        algsCmllItem.iconColor = itemColorStateList
+        algsCmllItem.isIconTinted = true
+        algsCmllItem.level = 2
+
         val algorithmsItem = ExpandableDrawerItem()
         algorithmsItem.name = StringHolder(R.string.title_algorithms)
         algorithmsItem.icon = ImageHolder(R.drawable.ic_outline_library_books_24px)
         algorithmsItem.isSelectable = false
-        algorithmsItem.subItems = mutableListOf(algsOllItem, algsPllItem)
+        algorithmsItem.subItems = mutableListOf(algsOllItem, algsPllItem, algsCmllItem)
         algorithmsItem.textColor = itemColorStateList
         algorithmsItem.iconColor = itemColorStateList
         algorithmsItem.isIconTinted = true
@@ -519,6 +537,21 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                             .commit()
                     }
 
+                    TRAINER_CMLL_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(
+                                    TrainerScrambler.TrainerSubset.CMLL.name,
+                                    "Normal",
+                                    TimerFragment.TIMER_MODE_TRAINER,
+                                    TrainerScrambler.TrainerSubset.CMLL
+                                ), "fragment_main"
+                            )
+                            .commit()
+                    }
+
                     OLL_ID -> mDrawerToggle!!.runWhenIdle {
                         fragmentManager!!
                             .beginTransaction()
@@ -537,6 +570,17 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                                 R.id.main_activity_container,
                                 newInstance(AlgRepository.SUBSET_PLL),
                                 "fragment_algs_pll"
+                            )
+                            .commit()
+                    }
+
+                    CMLL_ID -> mDrawerToggle!!.runWhenIdle {
+                        fragmentManager!!
+                            .beginTransaction()
+                            .replace(
+                                R.id.main_activity_container,
+                                newInstance(AlgRepository.SUBSET_CMLL),
+                                "fragment_algs_cmll"
                             )
                             .commit()
                     }
@@ -1099,11 +1143,13 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
         private const val SCHEME_ID = 9
         private const val OLL_ID = 6
         private const val PLL_ID = 7
+        private const val CMLL_ID = 8
         private const val EXPORT_IMPORT_ID = 10
         private const val ABOUT_ID = 4
         private const val SETTINGS_ID = 5
         private const val TRAINER_OLL_ID = 14
         private const val TRAINER_PLL_ID = 15
+        private const val TRAINER_CMLL_ID = 16
 
 
         /**

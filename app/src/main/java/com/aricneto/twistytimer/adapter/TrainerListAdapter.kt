@@ -93,6 +93,20 @@ class TrainerListAdapter(
                 )
                 selectedItems.addAll(pllCases)
             }
+
+            TrainerSubset.CMLL -> if (size != 42) {
+                val cases = arrayOf(
+                    "U fs", "U bs", "U fr", "U rows", "U xc", "U br",
+                    "T lb", "T rb", "T rows", "T fr", "T br", "T cols",
+                    "L mir", "L inv", "L pure", "L fc", "L diag", "L bc",
+                    "S lb", "S xc", "S fs", "S cols", "S rb", "S bs",
+                    "As rb", "As cols", "As bs", "As xc", "As fs", "As lb",
+                    "H cols", "H rows", "H col", "H row",
+                    "Pi rb", "Pi bs", "Pi xc", "Pi fs", "Pi cols", "Pi lb",
+                    "O adj", "O diag"
+                )
+                selectedItems.addAll(cases)
+            }
         }
         saveSelectedItems(currentSubset, currentPuzzleCategory, selectedItems)
         notifyItemRangeChanged(0, itemCount)

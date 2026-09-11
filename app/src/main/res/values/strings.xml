@@ -91,6 +91,7 @@
     <string name="drawer_open" translatable="false">Menu opened</string>
     <string name="drawer_title_changeColorScheme">Color scheme</string>
     <string name="drawer_title_changeTheme">App theme</string>
+    <string name="drawer_title_cmll" translatable="false">CMLL</string>
     <string name="drawer_title_export_import">Export/Import</string>
     <string name="drawer_title_oll" translatable="false">OLL</string>
     <string name="drawer_title_other">Other</string>
@@ -425,5 +426,11 @@
     <string name="list_sort_descending">Descending</string>
     <string name="item_scramble_box_tv_scramble">F\' U2 F2 D2 U2 L2 B R2 U2 B L B\' U\' L\'F\' U2 F2 D2 U2 L2 B</string>
     <string name="do_not_finished">DNF</string>
+    <string name="megaminx">Megaminx</string>
+    <string name="more">more</string>
+    <string name="save">save</string>
+    <string name="_42_35">42.35</string>
+    <string name="inspection">Inspection</string>
+    <string name="undo">undo</string>
 
 </resources>

@@ -24,6 +24,7 @@
         android:layout_alignBottom="@id/title"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
+        android:contentDescription="@string/action_cancel"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
         app:tint="?attr/colorOnSurface"

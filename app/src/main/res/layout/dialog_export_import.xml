@@ -39,8 +39,8 @@
             style="@style/DialogExportImportActions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="48dp"
             android:layout_marginBottom="8dp"
-            android:layout_marginLeft="40dp"
             android:text="@string/export_import_dialog_for_backup"
             tools:visibility="visible" />
 
@@ -50,7 +50,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:layout_marginLeft="40dp"
+            android:layout_marginLeft="48dp"
             android:text="@string/export_import_dialog_for_other_timers"
             tools:visibility="visible" />
 
@@ -79,7 +79,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:layout_marginLeft="40dp"
+            android:layout_marginLeft="48dp"
             android:text="@string/export_import_dialog_from_backup"
             tools:visibility="visible" />
 
@@ -89,7 +89,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:layout_marginLeft="40dp"
+            android:layout_marginLeft="48dp"
             android:text="@string/export_import_dialog_from_txt_file"
             tools:visibility="visible" />
 

@@ -39,6 +39,7 @@ object TrainerScrambler {
         return when (subset) {
             TrainerSubset.OLL -> 57
             TrainerSubset.PLL -> 0
+            TrainerSubset.CMLL -> 42
         }
     }
 
@@ -104,23 +105,25 @@ object TrainerScrambler {
      */
     fun generateTrainerCase(context: Context, subset: TrainerSubset, category: String?): String {
         val selectedItems: MutableSet<String>? = fetchSelectedItems(subset, category)
-        var caseAlg: String?
         var scramble = ""
-
-        var state: CubeState?
 
         if (selectedItems?.isNotEmpty() == true) {
             try {
-                // Fetch a random setup algorithm and set it as the cube state
-                caseAlg = fetchCaseAlgorithm(
+                // Fetch a random setup algorithm from the file trainer_scrambles.xml
+                val caseAlg = fetchCaseAlgorithm(
                     context, subset.name, selectedItems.elementAt(
                         random.nextInt(selectedItems.size)
                     )
                 )
-                state = solved.applyAlgorithm(caseAlg) as CubeState?
 
-                // Solve the state
-                scramble = (puzzle as ThreeByThreeCubePuzzle).solveIn(state, 20, null, null)
+                if (subset == TrainerSubset.CMLL) {
+                    // For CMLL, use the algorithm directly as the scramble as requested
+                    scramble = caseAlg.replace("\"", "") // Remove quotes if present
+                } else {
+                    // For others, use the solver to generate a random scramble for that state
+                    val state = solved.applyAlgorithm(caseAlg) as CubeState?
+                    scramble = (puzzle as ThreeByThreeCubePuzzle).solveIn(state, 20, null, null)
+                }
             } catch (e: InvalidScrambleException) {
                 e.printStackTrace()
             }
@@ -128,7 +131,11 @@ object TrainerScrambler {
             scramble = context.getString(R.string.trainer_help_message)
         }
 
-        return PuzzleUtils.applyRotationForAlgorithm(scramble, Y_ROTATIONS[random.nextInt(4)]!!)
+        return if (subset == TrainerSubset.CMLL) {
+            scramble // Don't apply extra y-rotation for CMLL as they are fixed scrambles
+        } else {
+            PuzzleUtils.applyRotationForAlgorithm(scramble, Y_ROTATIONS[random.nextInt(4)]!!)
+        }
     }
 
     private fun fetchCaseAlgorithm(context: Context, subset: String?, name: String): String {
@@ -156,7 +163,7 @@ object TrainerScrambler {
     }
 
     enum class TrainerSubset {
-        OLL, PLL
+        OLL, PLL, CMLL
     }
 }
 

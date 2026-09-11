@@ -52,7 +52,7 @@
             android:alpha=".85"
             android:padding="12dp"
             android:layout_marginRight="4dp"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             android:clickable="true"
             android:focusable="true"
             app:srcCompat="@drawable/ic_outline_cached_24px" />
@@ -68,7 +68,7 @@
             android:layout_marginRight="4dp"
             android:clickable="true"
             android:focusable="true"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             android:padding="12dp"
             app:srcCompat="@drawable/ic_outline_edit_24px" />
 
@@ -85,7 +85,7 @@
             android:focusable="true"
             android:background="?selectableItemBackgroundBorderless"
             app:srcCompat="@drawable/ic_outline_wb_incandescent_24px"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             android:padding="12dp"
             android:visibility="gone"
             tools:visibility="visible" />
@@ -102,7 +102,7 @@
             android:focusable="true"
             android:background="?selectableItemBackgroundBorderless"
             app:srcCompat="@drawable/ic_outline_alarm_add_24dp"
-            android:tint="?attr/colorOnSurface"
+            app:tint="?attr/colorOnSurface"
             android:padding="12dp"
             android:visibility="gone"
             tools:visibility="visible" />

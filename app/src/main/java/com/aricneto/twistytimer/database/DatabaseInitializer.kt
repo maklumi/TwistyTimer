@@ -25,14 +25,16 @@ object DatabaseInitializer {
 
     private suspend fun initializeAlgorithms(repository: AlgRepository) {
         val existing = repository.getAllAlgorithms()
-        if (existing.isEmpty()) {
-            val context = TwistyTimer.getAppContext()
-            val jsonString = context.assets.open("algorithms.json").use { 
-                it.bufferedReader().readText()
-            }
-            val algorithms = Json.decodeFromString<List<AlgorithmData>>(jsonString)
-            
-            algorithms.forEach { data ->
+        val existingKeys = existing.map { "${it.subset}:${it.name}" }.toSet()
+
+        val context = TwistyTimer.getAppContext()
+        val jsonString = context.assets.open("algorithms.json").use {
+            it.bufferedReader().readText()
+        }
+        val algorithms = Json.decodeFromString<List<AlgorithmData>>(jsonString)
+
+        algorithms.forEach { data ->
+            if (!existingKeys.contains("${data.subset}:${data.name}")) {
                 repository.insertAlgorithm(
                     subset = data.subset,
                     name = data.name,

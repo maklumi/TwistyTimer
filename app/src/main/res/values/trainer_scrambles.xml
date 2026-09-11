@@ -2669,4 +2669,291 @@
         <item>"R' F' U F U F' U' R' U' R F R' U R2"</item>
         <item>"R' F' U F R L2 U' B L B L' B2 U L2"</item>
     </string-array>
+    <!-- CMLL Cases -->
+
+    <string-array name="TRAINER_CMLL_O_ADJ">
+        <item>"R U R2 F' R U R U' R' F R U' R'"</item>
+        <item>"F R U' R' U R U R2 F' R U R U' R'"</item>
+        <item>"r U R2 F' R U R U' R' F R U' r'"</item>
+        <item>"L' U R U' L U2 R' U R U2 R'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_O_DIAG">
+        <item>"F R' F' R U R U' R' F R U' R' U R U R' F'"</item>
+        <item>"F U R U' R' F R U' R' U R U R2 F' R F'"</item>
+        <item>"R B U2 B' U R' F R' F' R2 U R'"</item>
+        <item>"F' r' U' r F r2 D' r U r' D r2"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_H_COLS">
+        <item>"R U2 R' U' R U R' U' R U' R' U'"</item>
+        <item>"R U R' U R U' R' U R U2 R'"</item>
+        <item>"r U' r' U' r U r' U r U r'"</item>
+        <item>"r U' r' U' r U' r' U r U r'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_H_ROWS">
+        <item>"F R U R' U' R U R' U' R U R' U' F'"</item>
+        <item>"F U R U' R' U R U' R' U R U' R' F'"</item>
+        <item>"F U' R2 D R' U2 R D' R2 U F'"</item>
+        <item>"F U M R U' R' U R U' R' U r U' R' F'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_H_COL">
+        <item>"F R' F' R U2 F R' F' R2 U2 R' U'"</item>
+        <item>"R' F2 D R2 U' R2 D' F2 R"</item>
+        <item>"F R U' R' U' R U R' U R U' R' F' U"</item>
+        <item>"F R' F' R U R U' R' F U R U' R' F' U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_H_ROW">
+        <item>"r U' r2 D' r U r' D r2 U r' U2"</item>
+        <item>"r' F R F' r U' R' U' R U' R' U"</item>
+        <item>"L' U R U' L U' R' U' R U' R' U"</item>
+        <item>"R U' R2 D' r U r' D R2 U R' U2"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_PI_RB">
+        <item>"F U R U' R' U R U' R' F'"</item>
+        <item>"F R U R' U' R U R' U' F' U2"</item>
+        <item>"r U' r2 U r2 U r2 U' r"</item>
+        <item>"R U2 R2 U' R2 U' R2 U2 R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_PI_BS">
+        <item>"R U2 R' U' R U R' U2 R' F R F' U'"</item>
+        <item>"R U2 R' U2 R' F R2 U R' U' F' U'"</item>
+        <item>"R U2 R' U' R U R' U2 r' F R F' M' U'"</item>
+        <item>"f' U f R' U2 R' U R U' R' U2 R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_PI_XC">
+        <item>"F U R U' R' U F' U' R' F' R U"</item>
+        <item>"R' F2 D R2 U R2 D' F2 R"</item>
+        <item>"r' F2 D R2 U R2 D' F2 r"</item>
+        <item>"F R U R' U' R U' R' U R U R' F' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_PI_FS">
+        <item>"F R' F' R U2 R U' R' U R U2 R'"</item>
+        <item>"F U R U' R2 F' R U2 R U2 R'"</item>
+        <item>"M F R' F' r U2 R U' R' U R U2 R'"</item>
+        <item>"F U R U' R' U R U' R2 F' R U R U' R'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_PI_COLS">
+        <item>"r U' r2 D' r U' r' D r2 U r' U"</item>
+        <item>"r U R' U R U r' F R' F' R U2"</item>
+        <item>"R U R' U r U r' F R' F' R U2"</item>
+        <item>"R U R2 D' R U2 R' D R U' R U2 R' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_PI_LB">
+        <item>"R' U2 R U R' F R' F' R U R U"</item>
+        <item>"R' U' R U' R' U F' U F R"</item>
+        <item>"R B U B' U R' U' R U' R' U2"</item>
+        <item>"r U2 R' U' R U R' F R' F' R U' R U' r' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_U_FS">
+        <item>"R U2 R D R' U2 R D' R2 U2"</item>
+        <item>"F' U2 F U r U r' U r U r'"</item>
+        <item>"R U2 r D r' U2 r D' r' R' U2"</item>
+        <item>"F U' R' U' R U F' U2 R' U2 R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_U_BS">
+        <item>"R' U2 R' D' R U2 R' D R2"</item>
+        <item>"F U2 F' U' R' F' R U' R' F' R"</item>
+        <item>"L' U2 L' D' L U2 L' D L2 U2"</item>
+        <item>"R' U2 r' D' r U2 r' D r R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_U_FR">
+        <item>"R U2 R' U' R U' R2 U2 R U R' U R"</item>
+        <item>"R' F' R U R2 F2 U' F' U F' R2"</item>
+        <item>"R' U2 R U R' U R2 U2 R' U' R U' R' U2"</item>
+        <item>"R U' R' U2 R U R' U2 R U R' U R U' R' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_U_ROWS">
+        <item>"F U R2 D R' U' R D' R2 F' U"</item>
+        <item>"F U R2 D' R U' R' D R2 F' R' U R U"</item>
+        <item>"F R2 D R' U R D' R2 U' F'"</item>
+        <item>"R' F R' F' R U R U' R' F R U' R' U R U R' F' R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_U_XC">
+        <item>"r' D' r U r' D r U' r U r' U2"</item>
+        <item>"r' U r' D' r U' r' D r U' r"</item>
+        <item>"R' D R U' R U R' U R' D' R U"</item>
+        <item>"F R U R' U' R U' R' U' R U R' F'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_U_BR">
+        <item>"F U R U' R' F' U"</item>
+        <item>"F R U R' U' F' U'"</item>
+        <item>"R' U' F' U F R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_T_LB">
+        <item>"F R' F' R U R U' R' U"</item>
+        <item>"f U' f' L U L U' L' U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_T_RB">
+        <item>"F' L F L' U' L' U L U'"</item>
+        <item>"F' r U r' U' r' F r U'"</item>
+        <item>"F R U' R' U' R U R' F' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_T_ROWS">
+        <item>"F2 R U' R' U R U R2 F' R F'"</item>
+        <item>"R' U' R U' R' U2 R2 U R' U R U2 R'"</item>
+        <item>"R' F2 r U r' F R2 U2 R' U' R U' R' U"</item>
+        <item>"R' U' R U R' U R U2 R' U R U2 R' U' R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_T_FR">
+        <item>"R' F R' F' R2 U2 r' U' r"</item>
+        <item>"r U' r' U' F R' F' R2 U' R'"</item>
+        <item>"R U R2 F R F' U r U r' U2"</item>
+        <item>"r' F R' F' R2 U2 r' U' R"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_T_BR">
+        <item>"r U' r' U r' D' r U' r' D r"</item>
+        <item>"R' D R U' R U' R' U R' D' R U'"</item>
+        <item>"F R U' R' U R U R' U R U' R' F' U2"</item>
+        <item>"R' F R U' R F R' U R F' R'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_T_COLS">
+        <item>"r U' r2 D' r U2 r' D r2 U r' U2"</item>
+        <item>"r' U r U r2 D' r U' r' D r2 U2"</item>
+        <item>"R' U R2 D r' U2 r D' R2 U' R"</item>
+        <item>"R' F R2 F R' U2 R F' R2 F' R U2"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_S_LB">
+        <item>"R U2 R' U' R U' R' U'"</item>
+        <item>"r U2 R' U' R U' r' U'"</item>
+        <item>"R' U' R U' R' U2 R"</item>
+        <item>"L U2 L' U' L U' L' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_S_XC">
+        <item>"F' L F L' U2 L' U2 L U'"</item>
+        <item>"F' r U r' U2 r' F2 r U'"</item>
+        <item>"F' r U r' U2 L' U2 L U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_S_FS">
+        <item>"R U2 R' U2 R' F R F' U'"</item>
+        <item>"R U R' U' R' F R2 U R' U' F' U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_S_COLS">
+        <item>"R2 D R' U R D' R' U R' U' R U' R'"</item>
+        <item>"R U2 R' U' R U' R' F R' F' R U R U' R' U'"</item>
+        <item>"R' F2 R2 U2 R' F' R U2 R2 F2 R U2"</item>
+        <item>"R' F U2 F' R F R' U2 R F'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_S_RB">
+        <item>"R U2 R' F R' F' R U' R U' R' U"</item>
+        <item>"R U2 r' F R' F' r U' R U' R' U"</item>
+        <item>"R U R' F' R U2 R' U' R U' R' F R U' R' U"</item>
+        <item>"R U2 L' U R' U' L U' R U' R' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_S_BS">
+        <item>"R' F R F' r U r' U'"</item>
+        <item>"L' U R U' L U R' U'"</item>
+        <item>"r' F R F' r U R' U'"</item>
+        <item>"R' U L U' R U L' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_AS_RB">
+        <item>"R' U2 R U R' U R U'"</item>
+        <item>"R U R' U R U2 R' U2"</item>
+        <item>"L' U2 L U L' U L U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_AS_COLS">
+        <item>"R U R' U R U' R D R' U' R D' R2 U"</item>
+        <item>"R2 D' R U' R' D R U' R U R' U R U2"</item>
+        <item>"F R' U2 R F' R' F U2 F' R U"</item>
+        <item>"L' U2 L U L' U L F' L F L' U' L' U L U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_AS_BS">
+        <item>"r' F2 r U2 r U' r' F U"</item>
+        <item>"L' U2 L U2 L F' L' F U"</item>
+        <item>"F U R U2 R' U' R U R' F' U2"</item>
+        <item>"R' F2 R U2 R U' r' F M' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_AS_XC">
+        <item>"F R' F' R U2 R U2 R' U"</item>
+        <item>"M F R' F' r U2 R U2 R' U"</item>
+        <item>"M F R' F' R U2 R U2 r' U"</item>
+        <item>"F U R U' R2 F' R U R U' R' U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_AS_FS">
+        <item>"r U' r' F R' F' R U"</item>
+        <item>"R U' r' F R' F' r U"</item>
+        <item>"R U' L' U R' U' L U"</item>
+        <item>"L U' R' U L' U' R U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_AS_LB">
+        <item>"R U R' U R' F R F' R U2 R' U'"</item>
+        <item>"R' U' F R' F' R U' R U R' U R"</item>
+        <item>"R U R' U r' F R F' r U2 R' U'"</item>
+        <item>"L' U2 L F' L F L' U L' U L U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_L_MIR">
+        <item>"r' F' r U r U' r' F U"</item>
+        <item>"F R U' R' U R U R' F' U2"</item>
+        <item>"R' U' R' D' R U R' D R2"</item>
+        <item>"L' U' L U L F' L' F U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_L_INV">
+        <item>"R U R' U' R' F R F' U2"</item>
+        <item>"r U R' U' r' F R F' U2"</item>
+        <item>"F' U' F U r U r' U"</item>
+        <item>"F R' F' R U R U' R' F R' F' R U R U' R' U2"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_L_PURE">
+        <item>"R U2 R' U' R U R' U' R U R' U' R U' R'"</item>
+        <item>"R U R' U R U' R' U R U' R' U R U2 R'"</item>
+        <item>"r U2 R' U' R U R' U' R U r' U' R U' R'"</item>
+        <item>"R' U' R U' R' U R U' R' U R U' R' U2 R U"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_L_FC">
+        <item>"R2 D R' U2 R D' R' U2 R' U2"</item>
+        <item>"R r D r' U2 r D' r' U2 R' U2"</item>
+        <item>"F R' F' R U2 F R' F' R U' R U' R'"</item>
+        <item>"r U' r' U2 r' D' r U2 r' D r U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_L_DIAG">
+        <item>"R U2 R' F R' F' R2 U2 R' U2"</item>
+        <item>"r U2 R' F R' F' R2 U2 r' U2"</item>
+        <item>"R2 F' R U R U' R' F R U' R' U R"</item>
+        <item>"R U2 R2 F R F' R U2 R' U'"</item>
+    </string-array>
+
+    <string-array name="TRAINER_CMLL_L_BC">
+        <item>"R2 D' R U2 R' D R U2 R U'"</item>
+        <item>"F R U' R' U' R U R2 F' R U R U' R' U2"</item>
+        <item>"r' U r U2 r D r' U2 r D' r' U2"</item>
+        <item>"R' r' D' r U2 r' D r U2 R U'"</item>
+    </string-array>
 </resources>

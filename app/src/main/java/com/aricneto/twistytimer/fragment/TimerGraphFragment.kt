@@ -373,7 +373,10 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         // Used to alternate background colors in foreach
 
         for ((row, label) in resources.getStringArray(stringArrayRes).withIndex()) {
-            statList.add(Stat(label, row))
+            statList.add(Stat(
+                label, scope = 0,
+                row = row
+            ))
         }
         return statList
     }

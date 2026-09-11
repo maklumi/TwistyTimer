@@ -9,11 +9,14 @@
     tools:context="com.aricneto.twistytimer.fragment.TimerFragment">
 
     <!-- The margin is there so that opening the drawer doesn't start the timer -->
+
     <FrameLayout
         android:id="@+id/startTimerLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginLeft="16dp" />
+        android:layout_marginLeft="16dp">
+
+    </FrameLayout>
 
     <com.aricneto.twistytimer.layout.RippleBackgroundView
         android:id="@+id/rippleBackground"
@@ -64,7 +67,7 @@
         android:alpha=".95"
         android:gravity="center"
         android:fontFamily="@font/lato_bold"
-        android:text="42.35"
+        android:text="@string/_42_35"
         android:layout_marginLeft="32dp"
         android:layout_marginRight="32dp"
         app:autoSizeTextType="uniform"
@@ -81,7 +84,7 @@
         android:layout_above="@id/chronometer"
         android:layout_centerHorizontal="true"
         android:textStyle="bold"
-        android:text="Inspection"
+        android:text="@string/inspection"
         android:textAllCaps="true"
         android:textColor="?attr/colorPrimary"
         android:textColorHighlight="?attr/colorTertiary"
@@ -102,6 +105,7 @@
 
     <ImageView
         android:id="@+id/qa_undo"
+        android:contentDescription="@string/undo"
         app:srcCompat="@drawable/ic_outline_undo_24px"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -119,16 +123,6 @@
         tools:visibility="visible"
         android:visibility="gone"/>
 
-    <ImageView
-        android:id="@+id/scramble_img"
-        android:layout_width="84dp"
-        android:layout_height="68dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="96dp"
-        android:scaleType="fitCenter"
-        tools:background="@color/red_material" />
-
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/progressSpinner"
         android:layout_width="wrap_content"
@@ -142,25 +136,40 @@
 
     <TextView
         android:id="@+id/detail_average_record_message"
-        android:layout_above="@id/sessionDetailTextAverage"
-        android:layout_toRightOf="@id/scramble_img"
-        android:layout_alignRight="@id/sessionDetailTextAverage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_above="@+id/sessionDetailTextAverage"
+        android:layout_marginLeft="4dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
         android:paddingLeft="6dp"
         android:paddingTop="2dp"
         android:paddingRight="6dp"
         android:paddingBottom="4dp"
-        android:gravity="center"
-        android:visibility="gone"
-        tools:visibility="visible"
-        android:layout_marginBottom="4dp"
-        android:layout_marginLeft="4dp"
         android:text="@string/timer_detail_average_record_message"
         android:textColor="?attr/colorPrimary"
+        android:textSize="12sp"
         android:textStyle="bold"
-        android:textSize="12sp" />
+        android:visibility="gone"
+        tools:visibility="visible" />
 
+
+    <ImageView
+        android:id="@+id/scramble_img"
+        android:layout_width="84dp"
+        android:layout_height="68dp"
+        android:layout_above="@+id/progressSpinner"
+        android:layout_below="@+id/qa_undo"
+        android:layout_alignStart="@+id/chronometer"
+        android:layout_alignEnd="@+id/chronometer"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="@string/scrambleImageSize_text"
+        android:scaleType="fitCenter"
+        tools:background="@color/red_material" />
 
     <TextView
         android:id="@+id/sessionDetailTextAverage"
@@ -171,10 +180,10 @@
         android:layout_marginRight="16dp"
         android:layout_marginBottom="?tabBarPadding"
         android:alpha=".85"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="12sp"
         android:fontFamily="@font/lato"
         android:gravity="right"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="12sp"
         tools:text="Ao5: 12.2\nAo12: 12.2\nAo50: 12.2\nAo100: 23.21" />
 
     <TextView
@@ -197,6 +206,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/scramble_box"
+        android:contentDescription="@string/scrambleImageSize_summary"
         tools:visibility="gone"
         android:visibility="gone" />
 

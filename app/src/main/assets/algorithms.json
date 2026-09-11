@@ -466,5 +466,257 @@
     "name": "Y",
     "state": "YYYYYYYYYRBOGGBORRBOG",
     "algs": "F R U' R' U' R U R' F' R U R' U' R' F R F'\nF R' F R2 U' R' U' R U R' F' R U R' U' F'\nR2 U' R2 U' R2 U y' R U R' B2 R U' R'\nR2 U' R' U R U' y' x' L' U' R U' R' U' L U"
+  },
+  {
+    "subset": "CMLL",
+    "name": "U fs",
+    "state": "GNONNNYNYYNYBNRBNOGNR",
+    "algs": "U2 R2 D R' U2 R D' R' U2 R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "U bs",
+    "state": "ONBNNNYNYYNYRNBONGRNG",
+    "algs": "R2' D' R U2 R' D R U2 R"
+  },
+  {
+    "subset": "CMLL",
+    "name": "U fr",
+    "state": "RNONNNYNYYNYBNOGNGRNB",
+    "algs": "R' U' R U' R' U2 R2 U R' U R U2 R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "U rows",
+    "state": "BNBNNNYNYYNYRNOGNGRNO",
+    "algs": "U' F R2 D R' U R D' R2' U' F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "U xc",
+    "state": "RNONNNYNYYNYBNGRNOGNB",
+    "algs": "U2 r U' r' U r' D' r U' r' D r"
+  },
+  {
+    "subset": "CMLL",
+    "name": "U br",
+    "state": "ONONNNYNYYNYBNRBNGRNG",
+    "algs": "U' F R U R' U' F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "T lb",
+    "state": "ONGNNNYNYBNRYNRBNOGNY",
+    "algs": "U' R U R' U' R' F R F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "T rb",
+    "state": "GNRNNNYNYONBYNGRNBONY",
+    "algs": "U L' U' L U L F' L' F"
+  },
+  {
+    "subset": "CMLL",
+    "name": "T rows",
+    "state": "BNBNNNYNYRNOYNOGNGRNY",
+    "algs": "R U2 R' U' R U' R2' U2' R U R' U R"
+  },
+  {
+    "subset": "CMLL",
+    "name": "T fr",
+    "state": "RNONNNYNYGNGYNRBNBONY",
+    "algs": "r' U r U2' R2' F R F' R"
+  },
+  {
+    "subset": "CMLL",
+    "name": "T br",
+    "state": "GNGNNNYNYONRYNBONRBNY",
+    "algs": "r' D' r U r' D r U' r U r'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "T cols",
+    "state": "GNBNNNYNYONYYNRBNGRNY",
+    "algs": "U2 r2' D' r U r' D r2 U' r' U' r"
+  },
+  {
+    "subset": "CMLL",
+    "name": "L mir",
+    "state": "YNGNNNBNYGNRYNBONYRNO",
+    "algs": "F R U' R' U' R U R' F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "L inv",
+    "state": "YNGNNNBNYONRYNOGNYRNB",
+    "algs": "F R' F' R U R U' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "L pure",
+    "state": "YNBNNNRNYBNOYNOGNYGNR",
+    "algs": "U2 R U R' U R U' R' U R U' R' U R U2' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "L fc",
+    "state": "YNGNNNGNYBNRYNBONYONR",
+    "algs": "R U2 R D R' U2 R D' R2'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "L diag",
+    "state": "YNONNNBNYRNGYNBONYRNG",
+    "algs": "U2 R' U' R U R' F' R U R' U' R' F R2"
+  },
+  {
+    "subset": "CMLL",
+    "name": "L bc",
+    "state": "YNBNNNBNYRNOYNOGNYRNG",
+    "algs": "U' R' U2 R' D' R U2 R' D R2"
+  },
+  {
+    "subset": "CMLL",
+    "name": "S lb",
+    "state": "ONGNNNYNRYNRYNBYNBONG",
+    "algs": "R U R' U R U2 R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "S xc",
+    "state": "RNGNNNYNBYNRYNOYNOGNB",
+    "algs": "L' U2 L U2' L F' L' F"
+  },
+  {
+    "subset": "CMLL",
+    "name": "S fs",
+    "state": "GNBNNNYNRYNOYNBYNOGNR",
+    "algs": "F R' F' R U2 R U2' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "S cols",
+    "state": "BNONNNYNRYNGYNBYNGRNO",
+    "algs": "R U R' U' R' F R F' R U R' U R U2' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "S rb",
+    "state": "GNONNNYNBYNGYNOYNRBNR",
+    "algs": "U2' R U R' U R' F R F' R U2' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "S bs",
+    "state": "BNGNNNYNRYNRYNBYNOGNO",
+    "algs": "R U' L' U R' U' L"
+  },
+  {
+    "subset": "CMLL",
+    "name": "As rb",
+    "state": "ONGNNNBNYBNYONGRNYRNY",
+    "algs": "U' R U2' R' U' R U' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "As cols",
+    "state": "RNBNNNONYGNYRNOGNYBNY",
+    "algs": "R2 D R' U R D' R' U R' U' R U' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "As bs",
+    "state": "BNGNNNONYRNYONGRNYBNY",
+    "algs": "F' r U r' U2' r' F2 r"
+  },
+  {
+    "subset": "CMLL",
+    "name": "As xc",
+    "state": "GNONNNBNYONYBNGRNYRNY",
+    "algs": "R U2' R' U2' R' F R F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "As fs",
+    "state": "GNBNNNONYONYRNGRNYBNY",
+    "algs": "L' U R U' L U R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "As lb",
+    "state": "RNGNNNBNYGNYONBONYRNY",
+    "algs": "U2' R U2' R' F R' F' R U' R U' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "H cols",
+    "state": "GNBNNNGNBYNYRNOYNYONR",
+    "algs": "U' R U R' U R U' R' U R U2 R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "H rows",
+    "state": "BNBNNNGNGYNYRNRYNYONO",
+    "algs": "F R U R' U' R U R' U' R U R' U' F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "H col",
+    "state": "ONBNNNONGYNYRNRYNYBNG",
+    "algs": "U' R U2' R2' F R F' U2 R' F R F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "H row",
+    "state": "GNGNNNONRYNYONBYNYBNR",
+    "algs": "r U' r2' D' r U' r' D r2 U r'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "Pi rb",
+    "state": "BNONNNGNORNYBNGYNRYNY",
+    "algs": "F R U R' U' R U R' U' F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "Pi bs",
+    "state": "RNGNNNBNRGNYONBYNOYNY",
+    "algs": "U F R' F' R U2 R U' R' U R U2' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "Pi xc",
+    "state": "RNONNNONRGNYBNBYNGYNY",
+    "algs": "U' R' F R U F U' R U R' U' F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "Pi fs",
+    "state": "RNBNNNBNOGNYRNGYNOYNY",
+    "algs": "R U2 R' U' R U R' U2' R' F R F'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "Pi cols",
+    "state": "BNGNNNBNGRNYONRYNOYNY",
+    "algs": "U' r U' r2' D' r U r' D r2 U r'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "Pi lb",
+    "state": "BNGNNNBNORNYGNGYNOYNY",
+    "algs": "U' R' U' R' F R F' R U' R' U2 R"
+  },
+  {
+    "subset": "CMLL",
+    "name": "O adj",
+    "state": "YNYNNNYNYONGRNOGNRBNB",
+    "algs": "R U R' F' R U R' U' R' F R2 U' R'"
+  },
+  {
+    "subset": "CMLL",
+    "name": "O diag",
+    "state": "YNYNNNYNYGNBONRBNGRNO",
+    "algs": "F R U' R' U' R U R' F' R U R' U' R' F R F'"
   }
 ]

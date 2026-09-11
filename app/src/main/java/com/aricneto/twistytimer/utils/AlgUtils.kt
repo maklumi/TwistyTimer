@@ -20,6 +20,8 @@ object AlgUtils {
 
     private var CASES_PLL: MutableList<String> = mutableListOf()
 
+    private var CASES_CMLL: MutableList<String> = mutableListOf()
+
     val colorLetterHashMap: HashMap<Char, Int>
         /**
          * This function returns a hashmap which contains the colors for each face of the cube
@@ -57,6 +59,7 @@ object AlgUtils {
                 val resId = when (subset) {
                     "OLL" -> R.array.alg_reference_OLL
                     "PLL" -> R.array.alg_reference_PLL
+                    "CMLL" -> R.array.alg_reference_CMLL
                     else -> 0
                 }
 
@@ -108,6 +111,24 @@ object AlgUtils {
             return CASES_PLL
         }
 
+    private val subsetCasesCMLL: MutableList<String>
+        get() {
+            if (CASES_CMLL.isEmpty()) {
+                val cases = arrayOf(
+                    "U fs", "U bs", "U fr", "U rows", "U xc", "U br",
+                    "T lb", "T rb", "T rows", "T fr", "T br", "T cols",
+                    "L mir", "L inv", "L pure", "L fc", "L diag", "L bc",
+                    "S lb", "S xc", "S fs", "S cols", "S rb", "S bs",
+                    "As rb", "As cols", "As bs", "As xc", "As fs", "As lb",
+                    "H cols", "H rows", "H col", "H row",
+                    "Pi rb", "Pi bs", "Pi xc", "Pi fs", "Pi cols", "Pi lb",
+                    "O adj", "O diag"
+                )
+                CASES_CMLL = ArrayList(listOf(*cases))
+            }
+            return CASES_CMLL
+        }
+
     /**
      * Converts a case name to its specific id reference in the reference_states.xml file
      * @return
@@ -116,6 +137,7 @@ object AlgUtils {
         when (subset) {
             "PLL" -> return subsetCases.indexOf(name)
             "OLL" -> return name.substring(4).toInt() - 1
+            "CMLL" -> return subsetCasesCMLL.indexOf(name.replace("CMLL ", ""))
         }
         return 0
     }
@@ -560,6 +582,51 @@ object AlgUtils {
                         "y M2' U' M2' U' M' U2' M2' U2' M'\n" +
                         "M' U' M2' U' M2' U' M' U2' M2'\n" +
                         "R' U' R2 U R U R' U' R U R U' R U' R'"
+            }
+
+            "CMLL" -> when (name) {
+                "U fs" -> return "U2 R2 D R' U2 R D' R' U2 R'"
+                "U bs" -> return "R2' D' R U2 R' D R U2 R"
+                "U fr" -> return "R' U' R U' R' U2 R2 U R' U R U2 R'"
+                "U rows" -> return "U' F R2 D R' U R D' R2' U' F'"
+                "U xc" -> return "U2 r U' r' U r' D' r U' r' D r"
+                "U br" -> return "U' F R U R' U' F'"
+                "T lb" -> return "U' R U R' U' R' F R F'"
+                "T rb" -> return "U L' U' L U L F' L' F"
+                "T rows" -> return "R U2 R' U' R U' R2' U2' R U R' U R"
+                "T fr" -> return "r' U r U2' R2' F R F' R"
+                "T br" -> return "r' D' r U r' D r U' r U r'"
+                "T cols" -> return "U2 r2' D' r U r' D r2 U' r' U' r"
+                "L mir" -> return "F R U' R' U' R U R' F'"
+                "L inv" -> return "F R' F' R U R U' R'"
+                "L pure" -> return "U2 R U R' U R U' R' U R U' R' U R U2' R'"
+                "L fc" -> return "R U2 R D R' U2 R D' R2'"
+                "L diag" -> return "U2 R' U' R U R' F' R U R' U' R' F R2"
+                "L bc" -> return "U' R' U2 R' D' R U2 R' D R2"
+                "S lb" -> return "R U R' U R U2 R'"
+                "S xc" -> return "L' U2 L U2' L F' L' F"
+                "S fs" -> return "F R' F' R U2 R U2' R'"
+                "S cols" -> return "R U R' U' R' F R F' R U R' U R U2' R'"
+                "S rb" -> return "U2' R U R' U R' F R F' R U2' R'"
+                "S bs" -> return "R U' L' U R' U' L"
+                "As rb" -> return "U' R U2' R' U' R U' R'"
+                "As cols" -> return "R2 D R' U R D' R' U R' U' R U' R'"
+                "As bs" -> return "F' r U r' U2' r' F2 r"
+                "As xc" -> return "R U2' R' U2' R' F R F'"
+                "As fs" -> return "L' U R U' L U R'"
+                "As lb" -> return "U2' R U2' R' F R' F' R U' R U' R'"
+                "H cols" -> return "U' R U R' U R U' R' U R U2 R'"
+                "H rows" -> return "F R U R' U' R U R' U' R U R' U' F'"
+                "H col" -> return "U' R U2' R2' F R F' U2 R' F R F'"
+                "H row" -> return "r U' r2' D' r U' r' D r2 U r'"
+                "Pi rb" -> return "F R U R' U' R U R' U' F'"
+                "Pi bs" -> return "U F R' F' R U2 R U' R' U R U2' R'"
+                "Pi xc" -> return "U' R' F R U F U' R U R' U' F'"
+                "Pi fs" -> return "R U2 R' U' R U R' U2' R' F R F'"
+                "Pi cols" -> return "U' r U' r2' D' r U r' D r2 U r'"
+                "Pi lb" -> return "U' R' U' R' F R F' R U' R' U2 R"
+                "O adj" -> return "R U R' F' R U R' U' R' F R2 U' R'"
+                "O diag" -> return "F R U' R' U' R U R' F' R U R' U' R' F R F'"
             }
 
         }
