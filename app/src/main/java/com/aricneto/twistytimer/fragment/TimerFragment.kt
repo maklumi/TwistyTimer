@@ -63,6 +63,9 @@ import com.aricneto.twistytimer.utils.PuzzleUtils.PENALTY_PLUSTWO
 import com.aricneto.twistytimer.utils.PuzzleUtils.TYPE_333
 import com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString
 import com.aricneto.twistytimer.utils.ScrambleGenerator
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_COMMENT_ADDED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_SCRAMBLE_MODIFIED
@@ -76,11 +79,8 @@ import com.aricneto.twistytimer.utils.TTIntent.ACTION_TOOLBAR_RESTORED
 import com.aricneto.twistytimer.utils.TTIntent.BroadcastBuilder
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
-import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.aricneto.twistytimer.utils.TTIntent.getSolve
-import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
-import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
 import com.aricneto.twistytimer.utils.ThemeUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -197,62 +197,68 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
      */
     private var mRecentStatistics: Statistics? = null
 
-    // Receives broadcasts related to changes to the timer user interface.
-    private val mUIInteractionReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                val binding = binding ?: return
-                when (intent?.action) {
-                    ACTION_SCROLLED_PAGE -> {
-                        if (holdEnabled) {
-                            holdHandler?.removeCallbacks(holdRunnable ?: return)
-                        }
-                        binding.chronometer.setHighlighted(false)
-                        binding.chronometer.cancelHoldForStart()
-                        isReady = false
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                TTEventBus.events.collect { intent ->
+                    if (intent.hasCategory(CATEGORY_UI_INTERACTIONS)) {
+                        handleUIInteraction(intent)
                     }
-
-                    ACTION_TIME_ADDED_MANUALLY -> {
-                        currentSolve = getSolve(intent)
-                        val solve = currentSolve
-                        if (solve != null) {
-                            binding.chronometer.text = HtmlCompat.fromHtml(
-                                convertTimeToString(
-                                    solve.time.toLong(),
-                                    PuzzleUtils.FORMAT_SMALL_MILLI
-                                ), HtmlCompat.FROM_HTML_MODE_LEGACY
-                            )
-                            hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
-                            broadcastNewSolve()
-                            declareRecordTimes(solve)
-                        }
-                    }
-
-                    ACTION_TOOLBAR_RESTORED -> {
-                        showItems()
-                        animationDone = true
-                        // Wait for animations to run before broadcasting solve to avoid UI stuttering
-                        val handler = Handler(Looper.getMainLooper())
-                        handler.postDelayed({
-                            if (!isCanceled) {
-                                // Only broadcast a new solve if it hasn't been canceled
-                                broadcastNewSolve()
-                            } else {
-                                // The detail stats are triggered by a stats update.
-                                // Since the solve has been canceled, there's no new stats
-                                // to load, and it must be triggered manually
-                                showDetailStats()
-                            }
-                            // reset isCanceled state
-                            isCanceled = false
-                        }, (mAnimationDuration + 50).toLong())
-                    }
-
-                    ACTION_GENERATE_SCRAMBLE -> generateNewScramble()
                 }
             }
         }
+    }
+
+    private fun handleUIInteraction(intent: Intent) {
+        val binding = binding ?: return
+        when (intent.action) {
+            ACTION_SCROLLED_PAGE -> {
+                if (holdEnabled) {
+                    holdHandler?.removeCallbacks(holdRunnable ?: return)
+                }
+                binding.chronometer.setHighlighted(false)
+                binding.chronometer.cancelHoldForStart()
+                isReady = false
+            }
+
+            ACTION_TIME_ADDED_MANUALLY -> {
+                currentSolve = getSolve(intent)
+                val solve = currentSolve
+                if (solve != null) {
+                    binding.chronometer.text = HtmlCompat.fromHtml(
+                        convertTimeToString(
+                            solve.time.toLong(),
+                            PuzzleUtils.FORMAT_SMALL_MILLI
+                        ), HtmlCompat.FROM_HTML_MODE_LEGACY
+                    )
+                    hideButtons(hideQuickActionButtons = true, hideUndoButton = true)
+                    broadcastNewSolve()
+                    declareRecordTimes(solve)
+                }
+            }
+
+            ACTION_TOOLBAR_RESTORED -> {
+                showItems()
+                animationDone = true
+                // Wait for animations to run before broadcasting solve to avoid UI stuttering
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed({
+                    if (!isCanceled) {
+                        // Only broadcast a new solve if it hasn't been canceled
+                        broadcastNewSolve()
+                    } else {
+                        // The detail stats are triggered by a stats update.
+                        // Since the solve has been canceled, there's no new stats
+                        // to load, and it must be triggered manually
+                        showDetailStats()
+                    }
+                    // reset isCanceled                    isCanceled = false
+                }, (mAnimationDuration + 50).toLong())
+            }
+
+            ACTION_GENERATE_SCRAMBLE -> generateNewScramble()
+        }
+    }
 
     private var holdRunnable: Runnable? = null
     private var holdHandler: Handler? = null
@@ -491,8 +497,6 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         )
 
         generator = ScrambleGenerator(requireNotNull(currentPuzzle))
-        // Register a receiver to update if something has changed
-        registerReceiver(mUIInteractionReceiver)
     }
 
     @SuppressLint("ClickableViewAccessibility", "RestrictedApi")
@@ -511,6 +515,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
     @SuppressLint("ClickableViewAccessibility", "RestrictedApi")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        observeEvents()
         val binding = binding ?: return
 
         // Necessary for the scramble image to show
@@ -1461,7 +1466,6 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         if (DEBUG_ME) Log.d(TAG, "onDetach()")
         super.onDetach()
         // To fix memory leaks
-        unregisterReceiver(mUIInteractionReceiver)
         scrambleJob?.cancel()
         optimalCrossJob?.cancel()
     }

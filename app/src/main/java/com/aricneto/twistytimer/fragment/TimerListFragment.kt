@@ -41,6 +41,7 @@ import com.aricneto.twistytimer.stats.StatisticsCache
 import com.aricneto.twistytimer.stats.StatisticsCache.StatisticsObserver
 import com.aricneto.twistytimer.utils.Prefs.getBoolean
 import com.aricneto.twistytimer.utils.PuzzleUtils
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_COMMENT_ADDED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_DELETE_SELECTED_TIMES
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_HISTORY_TIMES_SHOWN
@@ -52,11 +53,8 @@ import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMES_MOVED_TO_HISTORY
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_ADDED
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
-import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.aricneto.twistytimer.utils.TTIntent.getScramble
-import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
-import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
 import com.aricneto.twistytimer.utils.ThemeUtils
 import com.aricneto.twistytimer.viewmodel.TimerViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -265,65 +263,69 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
         }
     }
 
-    // Receives broadcasts after changes have been made to time data or the selection of that data.
-    private val mTimeDataChangedReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_TIME_DATA_CHANGES) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_COMMENT_ADDED -> if (!history) reloadList()
-                    ACTION_TIME_ADDED ->
-                        // When "history" is enabled, the list of times does not include times from
-                        // the current session. Times are only added to the current session, so
-                        // there is no need to refresh the "history" list on adding a session time.
-                        if (!history) {
-                            /*
-                            If a time has been added by the timer, wait a few seconds to let the
-                            (expensive) timer animations run before doing anything with the new data.
-                            Since the user will, in most cases (unless they quickly change tabs
-                            immediately after stopping the timer), will be at the Timer screen. This
-                            delay will not be noticeable, and will improve the feeling of responsiveness
-                            at the Timer page.
-                         */
-                            val handler = Handler(Looper.getMainLooper())
-                            handler.postDelayed({ reloadList() }, 600)
-                        }
-
-                    ACTION_TIMES_MOVED_TO_HISTORY, ACTION_TIMES_MODIFIED -> reloadList()
-                    ACTION_HISTORY_TIMES_SHOWN -> {
-                        history = true
-                        reloadList()
-                    }
-
-                    ACTION_SESSION_TIMES_SHOWN -> {
-                        history = false
-                        reloadList()
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                TTEventBus.events.collect { intent ->
+                    if (intent.hasCategory(CATEGORY_TIME_DATA_CHANGES)) {
+                        handleTimeDataChanged(intent)
+                    } else if (intent.hasCategory(CATEGORY_UI_INTERACTIONS)) {
+                        handleUIInteraction(intent)
                     }
                 }
             }
         }
+    }
 
-    // Receives broadcasts about UI interactions that require actions to be taken.
-    private val mUIInteractionReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_DELETE_SELECTED_TIMES ->
-                        // Operation will delete times and then broadcast "ACTION_TIMES_MODIFIED".
-                        viewModel.deleteSolves(solveListAdapter!!.getSelectedIds())
-
-                    ACTION_SCRAMBLE_MODIFIED ->
-                        // A new scramble was generated
-                        currentScramble = getScramble(intent)
-
-                    ACTION_SELECTION_MODE_OFF ->
-                        solveListAdapter?.clearSelection()
-
-                    else -> {}
+    private fun handleTimeDataChanged(intent: Intent) {
+        when (intent.action) {
+            ACTION_COMMENT_ADDED -> if (!history) reloadList()
+            ACTION_TIME_ADDED ->
+                // When "history" is enabled, the list of times does not include times from
+                // the current session. Times are only added to the current session, so
+                // there is no need to refresh the "history" list on adding a session time.
+                if (!history) {
+                    /*
+                    If a time has been added by the timer, wait a few seconds to let the
+                    (expensive) timer animations run before doing anything with the new data.
+                    Since the user will, in most cases (unless they quickly change tabs
+                    immediately after stopping the timer), will be at the Timer screen. This
+                    delay will not be noticeable, and will improve the feeling of responsiveness
+                    at the Timer page.
+                 */
+                    val handler = Handler(Looper.getMainLooper())
+                    handler.postDelayed({ reloadList() }, 600)
                 }
+
+            ACTION_TIMES_MOVED_TO_HISTORY, ACTION_TIMES_MODIFIED -> reloadList()
+            ACTION_HISTORY_TIMES_SHOWN -> {
+                history = true
+                reloadList()
+            }
+
+            ACTION_SESSION_TIMES_SHOWN -> {
+                history = false
+                reloadList()
             }
         }
+    }
+
+    private fun handleUIInteraction(intent: Intent) {
+        when (intent.action) {
+            ACTION_DELETE_SELECTED_TIMES ->
+                // Operation will delete times and then broadcast "ACTION_TIMES_MODIFIED".
+                viewModel.deleteSolves(solveListAdapter!!.getSelectedIds())
+
+            ACTION_SCRAMBLE_MODIFIED ->
+                // A new scramble was generated
+                currentScramble = getScramble(intent)
+
+            ACTION_SELECTION_MODE_OFF ->
+                solveListAdapter?.clearSelection()
+
+            else -> {}
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (DEBUG_ME) Log.d(TAG, "updateLocale(savedInstanceState=$savedInstanceState)")
@@ -393,8 +395,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
             orderByDir
         )
 
-        registerReceiver(mTimeDataChangedReceiver)
-        registerReceiver(mUIInteractionReceiver)
+        observeEvents()
 
         // If the statistics are already loaded, the update notification will have been missed,
         // so fire that notification now and start observing further updates.
@@ -431,9 +432,6 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
     override fun onDetach() {
         if (DEBUG_ME) Log.d(TAG, "onDetach()")
         super.onDetach()
-        // To fix memory leaks
-        unregisterReceiver(mTimeDataChangedReceiver)
-        unregisterReceiver(mUIInteractionReceiver)
     }
 
     /**

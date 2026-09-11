@@ -17,8 +17,10 @@ import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.appcompat.widget.TooltipCompat
 import androidx.fragment.app.Fragment
-import androidx.loader.app.LoaderManager
-import androidx.loader.content.Loader
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimerGraphBinding
 import com.aricneto.twistytimer.activity.MainActivity
@@ -29,7 +31,6 @@ import com.aricneto.twistytimer.spans.RoundedAxisValueFormatter
 import com.aricneto.twistytimer.spans.TimeFormatter
 import com.aricneto.twistytimer.stats.AverageCalculator.Companion.tr
 import com.aricneto.twistytimer.stats.ChartStatistics
-import com.aricneto.twistytimer.stats.ChartStatisticsLoader
 import com.aricneto.twistytimer.stats.ChartStyle
 import com.aricneto.twistytimer.stats.Statistics
 import com.aricneto.twistytimer.stats.StatisticsCache
@@ -37,10 +38,12 @@ import com.aricneto.twistytimer.stats.StatisticsCache.StatisticsObserver
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString
 import com.aricneto.twistytimer.utils.ThemeUtils
-import com.aricneto.twistytimer.utils.Wrapper
+import com.aricneto.twistytimer.viewmodel.TimerGraphViewModel
 import com.github.mikephil.charting.animation.Easing
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /* Things that must be hidden/shown when refreshing the card.
@@ -55,6 +58,8 @@ import java.util.Locale
  * create an instance of this fragment.
  */
 class TimerGraphFragment : Fragment(), StatisticsObserver {
+    private val viewModel: TimerGraphViewModel by viewModels()
+
     private var currentPuzzle: String? = null
     private var currentPuzzleSubtype: String? = null
     private var mode: Int = 0
@@ -294,45 +299,18 @@ class TimerGraphFragment : Fragment(), StatisticsObserver {
         onStatisticsUpdated(StatisticsCache.instance.statistics)
         StatisticsCache.instance.registerObserver(this) // Unregistered in "onDestroyView".
 
-        // "restartLoader" ensures that any old loader with the wrong puzzle type/subtype will not
-        // be reused. For now, those arguments are just passed via their respective fields to
-        // "onCreateLoader".
-        //
-        // Starting loaders here in "onViewCreated" ensures that the view is complete.
-        //
-        // An anonymous inner class is neater than implementing "LoaderCallbacks".
-        if (DEBUG_ME) Log.d(TAG, "onViewCreated -> restartLoader: CHART_DATA_LOADER_ID")
-        LoaderManager.getInstance(this).restartLoader<Wrapper<ChartStatistics?>?>(
-            MainActivity.CHART_DATA_LOADER_ID, null,
-            object : LoaderManager.LoaderCallbacks<Wrapper<ChartStatistics?>?> {
-                override fun onCreateLoader(
-                    id: Int,
-                    args: Bundle?
-                ): Loader<Wrapper<ChartStatistics?>?> {
-                    if (DEBUG_ME) Log.d(TAG, "onCreateLoader: CHART_DATA_LOADER_ID")
-                    // "ChartStyle" allows the Loader to be executed without the need to hold a
-                    // reference to an Activity context (required to access theme attributes),
-                    // which would be likely to cause memory leaks and crashes.
-                    return ChartStatisticsLoader(
-                        requireContext(), ChartStyle(requireActivity()), currentPuzzle,
-                        currentPuzzleSubtype, !history, mode
-                    )
-                }
+        viewModel.setChartStyle(ChartStyle(requireActivity()))
+        viewModel.updateParams(currentPuzzle, currentPuzzleSubtype, !history, mode)
 
-                override fun onLoadFinished(
-                    loader: Loader<Wrapper<ChartStatistics?>?>,
-                    data: Wrapper<ChartStatistics?>?
-                ) {
-                    if (DEBUG_ME) Log.d(TAG, "onLoadFinished: CHART_DATA_LOADER_ID")
-                    updateChart(data?.content()!!)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.chartStatistics.collectLatest { stats ->
+                    if (stats != null) {
+                        updateChart(stats)
+                    }
                 }
-
-                override fun onLoaderReset(loader: Loader<Wrapper<ChartStatistics?>?>) {
-                    if (DEBUG_ME) Log.d(TAG, "onLoaderReset: CHART_DATA_LOADER_ID")
-                    // Nothing to do here, as the "ChartStatistics" object was never retained.
-                    // The view is most likely destroyed at this time, so no need to update it.
-                }
-            })
+            }
+        }
     }
 
     override fun onDestroyView() {

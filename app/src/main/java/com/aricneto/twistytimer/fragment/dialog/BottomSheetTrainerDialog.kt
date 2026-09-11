@@ -19,15 +19,13 @@ import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.DialogBottomsheetRecyclerBinding
 import com.aricneto.twistytimer.adapter.TrainerListAdapter
 import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_ALGS_MODIFIED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_CATEGORY
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_ALG_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
-import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
-import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
-import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
 import com.aricneto.twistytimer.utils.ThemeUtils
 import com.aricneto.twistytimer.viewmodel.AlgViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -42,27 +40,23 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
     var trainerListAdapter: TrainerListAdapter? = null
     private val viewModel: AlgViewModel by viewModels()
 
-    // Receives broadcasts about changes to the algorithm data.
-    private val mAlgDataChangedReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_ALG_DATA_CHANGES) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_ALGS_MODIFIED -> reloadList()
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                TTEventBus.events.collect { intent ->
+                    if (intent.hasCategory(CATEGORY_ALG_DATA_CHANGES)) {
+                        when (intent.action) {
+                            ACTION_ALGS_MODIFIED -> reloadList()
+                        }
+                    } else if (intent.hasCategory(CATEGORY_UI_INTERACTIONS)) {
+                        when (intent.action) {
+                            ACTION_CHANGED_CATEGORY -> reloadList()
+                        }
+                    }
                 }
             }
         }
-
-    // Receives broadcasts about changes to the time user interface.
-    private val mUIInteractionReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_CHANGED_CATEGORY -> reloadList()
-                }
-            }
-        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,8 +108,7 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
             }
         }
 
-        registerReceiver(mAlgDataChangedReceiver)
-        registerReceiver(mUIInteractionReceiver)
+        observeEvents()
 
         return binding!!.getRoot()
     }
@@ -123,8 +116,6 @@ class BottomSheetTrainerDialog : BottomSheetDialogFragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
-        unregisterReceiver(mAlgDataChangedReceiver)
-        unregisterReceiver(mUIInteractionReceiver)
     }
 
     fun reloadList() {

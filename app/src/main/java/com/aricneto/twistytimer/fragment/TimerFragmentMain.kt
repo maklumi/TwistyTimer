@@ -16,16 +16,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.LinearLayout
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
+import androidx.core.util.size
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.loader.app.LoaderManager
-import androidx.loader.content.Loader
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback
@@ -40,47 +41,45 @@ import com.aricneto.twistytimer.fragment.dialog.PuzzleSelectDialog.Companion.new
 import com.aricneto.twistytimer.listener.DialogListenerMessage
 import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener
 import com.aricneto.twistytimer.puzzle.TrainerScrambler.TrainerSubset
-import com.aricneto.twistytimer.stats.Statistics
 import com.aricneto.twistytimer.stats.StatisticsCache
-import com.aricneto.twistytimer.stats.StatisticsLoader
 import com.aricneto.twistytimer.utils.Prefs
 import com.aricneto.twistytimer.utils.Prefs.edit
 import com.aricneto.twistytimer.utils.Prefs.getBoolean
 import com.aricneto.twistytimer.utils.Prefs.getInt
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.aricneto.twistytimer.utils.PuzzleUtils.getPuzzleNameFromType
-import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_CATEGORY
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_DELETE_SELECTED_TIMES
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_HISTORY_TIMES_SHOWN
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_SCROLLED_PAGE
-import com.aricneto.twistytimer.utils.TTIntent.ACTION_SELECTION_MODE_ON
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_SELECTION_MODE_OFF
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_SELECTION_MODE_ON
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_SESSION_TIMES_SHOWN
-import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_SELECTED
-import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_UNSELECTED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMER_STARTED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIMER_STOPPED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_SELECTED
+import com.aricneto.twistytimer.utils.TTIntent.ACTION_TIME_UNSELECTED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_TOOLBAR_RESTORED
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_TIME_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
-import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
-import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
-import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
 import com.aricneto.twistytimer.utils.ThemeUtils
 import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
-import com.aricneto.twistytimer.utils.Wrapper
+import com.aricneto.twistytimer.viewmodel.TimerViewModel
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Locale
-import androidx.core.util.size
 
 open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
     DialogListenerMessage {
     private var binding: FragmentTimerMainBinding? = null
+
+    private val viewModel: TimerViewModel by viewModels()
 
     var actionMode: ActionMode? = null
 
@@ -179,99 +178,111 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
         }
     }
 
-    // Receives broadcasts about changes to the time user interface.
-    private val mUIInteractionReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_CHANGED_THEME -> try {
-                        // If the theme has been changed, then the activity will need to be recreated. The
-                        // theme can only be applied properly during the inflation of the layouts, so it has
-                        // to go back to "Activity.updateLocale()" to do that.
-                        (activity as? MainActivity)?.onRecreateRequired()
-                    } catch (_: Exception) {
-                    }
-
-                    ACTION_TIMER_STARTED -> {
-                        (activity as? MainActivity)?.setDrawerLock(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
-                        binding?.pager?.isUserInputEnabled = false
-                        activateTabLayout(false)
-                        binding?.actionbar?.toolbar?.animate()
-                            ?.translationY(-(binding?.actionbar?.toolbar?.height?.toFloat() ?: 0f))
-                            ?.alpha(0f)?.duration = mAnimationDuration.toLong()
-
-                        binding?.tabView?.animate()
-                            ?.translationY(binding?.tabView?.height?.toFloat() ?: 0f)
-                            ?.alpha(0f)?.duration = mAnimationDuration.toLong()
-                    }
-
-                    ACTION_TIMER_STOPPED -> {
-                        (activity as? MainActivity)?.setDrawerLock(DrawerLayout.LOCK_MODE_UNDEFINED)
-                        binding?.actionbar?.toolbar?.animate()
-                            ?.translationY(0f)
-                            ?.alpha(1f)?.duration = mAnimationDuration.toLong()
-
-                        binding?.tabView?.animate()
-                            ?.translationY(0f)
-                            ?.alpha(1f)
-                            ?.setDuration(mAnimationDuration.toLong())
-                            ?.withEndAction {
-                                broadcast(
-                                    CATEGORY_UI_INTERACTIONS,
-                                    ACTION_TOOLBAR_RESTORED
-                                )
-                            }
-
-                        activateTabLayout(true)
-                        binding?.pager?.isUserInputEnabled = pagerEnabled
-                    }
-
-                    ACTION_SELECTION_MODE_ON -> {
-                        selectCount = 0
-                        actionMode =
-                            binding?.actionbar?.toolbar?.startActionMode(actionModeCallback)
-                    }
-
-                    ACTION_SELECTION_MODE_OFF -> {
-                        selectCount = 0
-                        actionMode?.finish()
-                    }
-
-                    ACTION_TIME_SELECTED -> {
-                        selectCount += 1
-                        actionMode?.title =
-                            resources.getQuantityString(
-                                R.plurals.selected_list,
-                                selectCount,
-                                selectCount
-                            )
-                    }
-
-                    ACTION_TIME_UNSELECTED -> {
-                        selectCount -= 1
-                        actionMode?.title =
-                            resources.getQuantityString(
-                                R.plurals.selected_list,
-                                selectCount,
-                                selectCount
-                            )
-                    }
-
-                    ACTION_CHANGED_CATEGORY -> {
-                        binding?.pager?.adapter = viewPagerAdapter
-                        binding?.pager?.setCurrentItem(currentPage, false)
-                        updatePuzzleSpinnerHeader()
-                        handleStatisticsLoader()
-
-                        if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) broadcast(
-                            CATEGORY_UI_INTERACTIONS,
-                            ACTION_GENERATE_SCRAMBLE
-                        )
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                TTEventBus.events.collect { intent ->
+                    if (intent.hasCategory(CATEGORY_UI_INTERACTIONS)) {
+                        handleUIInteraction(intent)
                     }
                 }
             }
         }
+    }
+
+    private fun handleUIInteraction(intent: Intent) {
+        when (intent.action) {
+            ACTION_CHANGED_THEME -> try {
+                // If the theme has been changed, then the activity will need to be recreated. The
+                // theme can only be applied properly during the inflation of the layouts, so it has
+                // to go back to "Activity.updateLocale()" to do that.
+                (activity as? MainActivity)?.onRecreateRequired()
+            } catch (_: Exception) {
+            }
+
+            ACTION_TIMER_STARTED -> {
+                (activity as? MainActivity)?.setDrawerLock(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+                binding?.pager?.isUserInputEnabled = false
+                activateTabLayout(false)
+                binding?.actionbar?.toolbar?.animate()
+                    ?.translationY(-(binding?.actionbar?.toolbar?.height?.toFloat() ?: 0f))
+                    ?.alpha(0f)?.duration = mAnimationDuration.toLong()
+
+                binding?.tabView?.animate()
+                    ?.translationY(binding?.tabView?.height?.toFloat() ?: 0f)
+                    ?.alpha(0f)?.duration = mAnimationDuration.toLong()
+            }
+
+            ACTION_TIMER_STOPPED -> {
+                (activity as? MainActivity)?.setDrawerLock(DrawerLayout.LOCK_MODE_UNDEFINED)
+                binding?.actionbar?.toolbar?.animate()
+                    ?.translationY(0f)
+                    ?.alpha(1f)?.duration = mAnimationDuration.toLong()
+
+                binding?.tabView?.animate()
+                    ?.translationY(0f)
+                    ?.alpha(1f)
+                    ?.setDuration(mAnimationDuration.toLong())
+                    ?.withEndAction {
+                        broadcast(
+                            CATEGORY_UI_INTERACTIONS,
+                            ACTION_TOOLBAR_RESTORED
+                        )
+                    }
+
+                activateTabLayout(true)
+                binding?.pager?.isUserInputEnabled = pagerEnabled
+            }
+
+            ACTION_SELECTION_MODE_ON -> {
+                selectCount = 0
+                actionMode =
+                    binding?.actionbar?.toolbar?.startActionMode(actionModeCallback)
+            }
+
+            ACTION_SELECTION_MODE_OFF -> {
+                selectCount = 0
+                actionMode?.finish()
+            }
+
+            ACTION_TIME_SELECTED -> {
+                selectCount += 1
+                actionMode?.title =
+                    resources.getQuantityString(
+                        R.plurals.selected_list,
+                        selectCount,
+                        selectCount
+                    )
+            }
+
+            ACTION_TIME_UNSELECTED -> {
+                selectCount -= 1
+                actionMode?.title =
+                    resources.getQuantityString(
+                        R.plurals.selected_list,
+                        selectCount,
+                        selectCount
+                    )
+            }
+
+            ACTION_CHANGED_CATEGORY -> {
+                binding?.pager?.adapter = viewPagerAdapter
+                binding?.pager?.setCurrentItem(currentPage, false)
+                updatePuzzleSpinnerHeader()
+                viewModel.updateParams(
+                    currentPuzzle,
+                    currentPuzzleCategory,
+                    currentModeInt,
+                    history
+                )
+
+                if (currentTimerMode == TimerFragment.TIMER_MODE_TRAINER) broadcast(
+                    CATEGORY_UI_INTERACTIONS,
+                    ACTION_GENERATE_SCRAMBLE
+                )
+            }
+        }
+    }
 
     private var mContext: Context? = null
     private var mFragmentManager: FragmentManager? = null
@@ -442,52 +453,19 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
             }
         })
 
-        // Register a receiver to update if something has changed
-        registerReceiver(mUIInteractionReceiver)
-
-        handleStatisticsLoader()
+        viewModel.updateParams(currentPuzzle, currentPuzzleCategory, currentModeInt, history)
+        observeStatistics()
+        observeEvents()
     }
 
-    private fun handleStatisticsLoader() {
-        // The "StatisticsLoader" is managed from this fragment, as it has the necessary access to
-        // the puzzle type, subtype and history values.
-        //
-        // "restartLoader" ensures that any old loader with the wrong puzzle type/subtype will not
-        // be reused. For now, those arguments are just passed via their respective fields to
-        // "onCreateLoader".
-
-        if (DEBUG_ME) Log.d(
-            TAG,
-            "Puzzle and subtype: $currentPuzzle // $currentPuzzleCategory"
-        )
-        if (DEBUG_ME) Log.d(TAG, "onActivityCreated -> restartLoader: STATISTICS_LOADER_ID")
-        LoaderManager.getInstance(this).restartLoader<Wrapper<Statistics?>?>(
-            MainActivity.STATISTICS_LOADER_ID, null,
-            object : LoaderManager.LoaderCallbacks<Wrapper<Statistics?>?> {
-                override fun onCreateLoader(id: Int, args: Bundle?): Loader<Wrapper<Statistics?>?> {
-                    if (DEBUG_ME) Log.d(TAG, "onCreateLoader: STATISTICS_LOADER_ID")
-                    return StatisticsLoader(
-                        requireContext(), Statistics.newAllTimeStatistics(),
-                        currentPuzzle, currentPuzzleCategory, currentModeInt
-                    )
+    private fun observeStatistics() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.statistics.collectLatest { stats ->
+                    StatisticsCache.instance.updateAndNotify(stats)
                 }
-
-                override fun onLoadFinished(
-                    loader: Loader<Wrapper<Statistics?>?>,
-                    data: Wrapper<Statistics?>?
-                ) {
-                    if (DEBUG_ME) Log.d(TAG, "onLoadFinished: STATISTICS_LOADER_ID")
-                    // Other fragments can get the statistics from the cache when they are
-                    // created and can register themselves as observers of further updates.
-                    StatisticsCache.instance.updateAndNotify(data?.content())
-                }
-
-                override fun onLoaderReset(loader: Loader<Wrapper<Statistics?>?>) {
-                    if (DEBUG_ME) Log.d(TAG, "onLoaderReset: STATISTICS_LOADER_ID")
-                    // Clear the cache and notify all observers that the statistics are "null".
-                    StatisticsCache.instance.updateAndNotify(null)
-                }
-            })
+            }
+        }
     }
 
     private fun activateTabLayout(b: Boolean) {
@@ -523,7 +501,6 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
     override fun onDetach() {
         if (DEBUG_ME) Log.d(TAG, "onDetach()")
         super.onDetach()
-        unregisterReceiver(mUIInteractionReceiver)
     }
 
     override fun onDestroyView() {
@@ -647,7 +624,7 @@ open class TimerFragmentMain : BaseFragment(), OnBackPressedInFragmentListener,
 
         /** update titles **/
         updatePuzzleSpinnerHeader()
-        handleStatisticsLoader()
+        viewModel.updateParams(currentPuzzle, currentPuzzleCategory, currentModeInt, history)
     }
 
     protected inner class NavigationAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {

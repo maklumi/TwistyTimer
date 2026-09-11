@@ -1157,18 +1157,6 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
          */
         private const val FRAG_TAG_EXIM_DIALOG = "export_import_dialog"
 
-        // NOTE: Loader IDs used by fragments need to be unique within the context of an activity that
-        // creates those fragments. Therefore, it is safer to define all the IDs in the same place.
-        /**
-         * The loader ID for the loader that loads data presented in the statistics table on the timer
-         * graph fragment and the summary statistics on the timer fragment.
-         */
-        const val STATISTICS_LOADER_ID: Int = 101
-
-        /**
-         * The loader ID for the loader that loads chart data presented in on the timer graph fragment.
-         */
-        const val CHART_DATA_LOADER_ID: Int = 102
 
     }
 }

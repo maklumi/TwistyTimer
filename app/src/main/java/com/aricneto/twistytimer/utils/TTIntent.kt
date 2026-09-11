@@ -1,21 +1,15 @@
 package com.aricneto.twistytimer.utils
 
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Parcelable
-import android.util.Log
-import androidx.fragment.app.Fragment
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.aricneto.twistify.BuildConfig
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.items.Solve
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.getPuzzleSubtype
 import com.aricneto.twistytimer.utils.TTIntent.getPuzzleType
 import com.aricneto.twistytimer.utils.TTIntent.getScramble
 import com.aricneto.twistytimer.utils.TTIntent.getSolve
-import java.util.Arrays
 
 /**
  * The actions for the broadcast intents that notify listeners of changes to the data or to the
@@ -24,16 +18,6 @@ import java.util.Arrays
  * @author damo
  */
 object TTIntent {
-    /**
-     * Flag to enable debug logging for this class.
-     */
-     const val DEBUG_ME = false
-
-    /**
-     * A "tag" to identify this class in log messages.
-     */
-     val TAG: String = TTIntent::class.java.simpleName
-
     /**
      * The name prefix for all categories and actions to ensure that their names do not clash with
      * any system names.
@@ -282,74 +266,6 @@ object TTIntent {
     }
 
     /**
-     * Broadcasts an intent for the given category and action. To add more details to the intent
-     * (via intent extras), use a [BroadcastBuilder].
-     * 
-     * @param category The category of the action.
-     * @param action   The action.
-     */
-    @JvmStatic
-    fun broadcast(category: String, action: String) {
-        BroadcastBuilder(category, action).broadcast()
-    }
-
-    /**
-     * Registers a broadcast receiver. The receiver will only be notified of intents that require
-     * the category given and only for the actions that are supported for that category. If the
-     * receiver is used by a fragment, create an instance of [TTFragmentBroadcastReceiver]
-     * and register it with the [.registerReceiver] method
-     * instead, as it will be easier to maintain.
-     * 
-     * @param receiver
-     * The broadcast receiver to be registered.
-     * @param category
-     * The category for the actions to be received. Must not be `null` and must be a
-     * supported category.
-     * 
-     * @throws IllegalArgumentException
-     * If the category is `null`, or is not one of the supported categories.
-     */
-    fun registerReceiver(receiver: BroadcastReceiver, category: String) {
-        val actions = ACTIONS_SUPPORTED_BY_CATEGORY[category]
-            ?: throw IllegalArgumentException("Category is not supported: $category")
-
-        val filter = IntentFilter()
-
-        filter.addCategory(category)
-
-        for (action in actions) {
-            // IntentFilter will only match Intents with one of these actions.
-            filter.addAction(action)
-        }
-
-        LocalBroadcastManager.getInstance(TwistyTimer.getAppContext())
-            .registerReceiver(receiver, filter)
-    }
-
-    /**
-     * Registers a fragment broadcast receiver. The receiver will only be notified of intents that
-     * require the category defined for the `TTFragmentBroadcastReceiver` and only for the
-     * actions supported by that category.
-     * 
-     * @param receiver The fragment broadcast receiver to be registered.
-     * 
-     * @throws IllegalArgumentException
-     * If the receiver does not define the name of a supported category.
-     */
-    fun registerReceiver(receiver: TTFragmentBroadcastReceiver) {
-        TTIntent.registerReceiver(receiver, receiver.category)
-    }
-
-    /**
-     * Unregisters a broadcast receiver. Any further broadcast intent will be ignored.
-     * 
-     * @param receiver The receiver to be unregistered.
-     */
-    fun unregisterReceiver(receiver: BroadcastReceiver) {
-        LocalBroadcastManager.getInstance(TwistyTimer.getAppContext()).unregisterReceiver(receiver)
-    }
-
-    /**
      * Gets the name of the puzzle type from an intent extra.
      * 
      * @param intent The intent from which to get the puzzle type.
@@ -403,67 +319,15 @@ object TTIntent {
     }
 
     /**
-     * A convenient wrapper for fragments that use a broadcast receiver that will only notify the
-     * fragment of an intent when the fragment is currently added to its activity.
-     */
-    // NOTE: The goal of this class is to make a more obvious connection between the categories and
-    // the fragments, as the category will be given in the code of the fragment class at the point
-    // where it instantiates an instance of this class. It also simplifies
-    abstract class TTFragmentBroadcastReceiver
-    /**
-     * Creates a new broadcast receiver to be used by a fragment. Matching broadcast intents
-     * will only be notified to the fragment via [.onReceiveWhileAdded] if the fragment is
-     * added to its activity at the time of the broadcast.
+     * Broadcasts an intent for the given category and action. To add more details to the intent
+     * (via intent extras), use a [BroadcastBuilder].
      * 
-     * @param fragment
-     * The fragment that will be receiving the broadcast intents.
-     * @param category
-     * The category of the intent actions.
-     */(
-        /**
-         * The fragment that is receiving the broadcasts.
-         */
-        private val mFragment: Fragment,
-        /**
-         * The intent category.
-         */
-        val category: String
-    ) : BroadcastReceiver() {
-        /**
-         * Gets the category of the intent actions that will be matched by this broadcast receiver.
-         * 
-         * @return The category.
-         */
-
-        /**
-         * Notifies the receiver of a matching broadcast intent that is received while the fragment
-         * is added to its activity. The receiver will only be notified of intents that require the
-         * category configured, or intents that require no category. (The latter is not a use-case
-         * that is expected in this application.)
-         * 
-         * @param context The context for the intent.
-         * @param intent  The matching intent that was received.
-         */
-        abstract fun onReceiveWhileAdded(context: Context?, intent: Intent?)
-
-        /**
-         * Notifies the receiver of a matching broadcast intent. This implementation will call
-         * [.onReceiveWhileAdded] only while the fragment is currently added
-         * to its activity, otherwise the intent will be ignored.
-         * 
-         * @param context The context for the intent.
-         * @param intent  The matching intent that was received.
-         */
-        // Make this final to make sure extensions only override "onReceiveWhileAdded".
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (mFragment.isAdded()) {
-                if (DEBUG_ME) Log.d(
-                    TAG, (mFragment.javaClass.getSimpleName()
-                            + ": onReceiveWhileAdded: " + intent)
-                )
-                onReceiveWhileAdded(context, intent)
-            }
-        }
+     * @param category The category of the action.
+     * @param action   The action.
+     */
+    @JvmStatic
+    fun broadcast(category: String, action: String) {
+        BroadcastBuilder(category, action).broadcast()
     }
 
     /**
@@ -514,7 +378,7 @@ object TTIntent {
                 }
             }
 
-            LocalBroadcastManager.getInstance(TwistyTimer.getAppContext()).sendBroadcast(mIntent)
+            TTEventBus.post(mIntent)
         }
 
         /**

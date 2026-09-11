@@ -17,13 +17,12 @@ import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentAlgListBinding
 import com.aricneto.twistytimer.activity.MainActivity
 import com.aricneto.twistytimer.adapter.AlgListAdapter
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_ALGS_MODIFIED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_CHANGED_THEME
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_ALG_DATA_CHANGES
 import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
-import com.aricneto.twistytimer.utils.TTIntent.TTFragmentBroadcastReceiver
-import com.aricneto.twistytimer.utils.TTIntent.registerReceiver
-import com.aricneto.twistytimer.utils.TTIntent.unregisterReceiver
+import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.aricneto.twistytimer.utils.ThemeUtils
 import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
 import com.aricneto.twistytimer.viewmodel.AlgViewModel
@@ -37,33 +36,27 @@ class AlgListFragment : BaseFragment() {
     private var algListAdapter: AlgListAdapter? = null
     private val viewModel: AlgViewModel by viewModels()
 
-    // Receives broadcasts about changes to the algorithm data.
-    private val mAlgDataChangedReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_ALG_DATA_CHANGES) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_ALGS_MODIFIED -> reloadList()
-                }
-            }
-        }
-
-    // Receives broadcasts about changes to the time user interface.
-    private val mUIInteractionReceiver
-            : TTFragmentBroadcastReceiver =
-        object : TTFragmentBroadcastReceiver(this, CATEGORY_UI_INTERACTIONS) {
-            override fun onReceiveWhileAdded(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    ACTION_CHANGED_THEME -> try {
-                        // If the theme has been changed, then the activity will need to be recreated. The
-                        // theme can only be applied properly during the inflation of the layouts, so it has
-                        // to go back to "Activity.updateLocale()" to do that.
-                        (activity as MainActivity).onRecreateRequired()
-                    } catch (_: Exception) {
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                TTEventBus.events.collect { intent ->
+                    if (intent.hasCategory(CATEGORY_ALG_DATA_CHANGES)) {
+                        when (intent.action) {
+                            ACTION_ALGS_MODIFIED -> reloadList()
+                        }
+                    } else if (intent.hasCategory(CATEGORY_UI_INTERACTIONS)) {
+                        when (intent.action) {
+                            ACTION_CHANGED_THEME -> try {
+                                // If the theme has been changed, then the activity will need to be recreated.
+                                (activity as MainActivity).onRecreateRequired()
+                            } catch (_: Exception) {
+                            }
+                        }
                     }
                 }
             }
         }
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,9 +99,7 @@ class AlgListFragment : BaseFragment() {
             }
         }
 
-        // Register a receiver to update if something has changed
-        registerReceiver(mAlgDataChangedReceiver)
-        registerReceiver(mUIInteractionReceiver)
+        observeEvents()
 
         return binding!!.getRoot()
     }
@@ -120,9 +111,6 @@ class AlgListFragment : BaseFragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // To fix memory leaks
-        unregisterReceiver(mAlgDataChangedReceiver)
-        unregisterReceiver(mUIInteractionReceiver)
     }
 
     fun reloadList() {

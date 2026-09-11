@@ -7,8 +7,8 @@ import com.aricneto.twistytimer.stats.StatisticsCache.StatisticsObserver
  * 
  * 
  * A non-persistent cache that maintains a reference to the most recently loaded [Statistics].
- * The statistics can be loaded by an activity using its `LoaderManager` and a
- * [StatisticsLoader] and then saved to this cache. Other components, typically fragments,
+ * The statistics can be loaded by an activity or fragment using its `ViewModel`
+ * and then saved to this cache. Other components, typically fragments,
  * can register themselves with this cache to be notified when the statistics are first loaded or
  * updated. The statistics can also be retrieved from the cache. See [.getStatistics] for
  * more details on accessing the statistics.
