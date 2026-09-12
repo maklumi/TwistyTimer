@@ -17,8 +17,6 @@ import android.media.ToneGenerator
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -32,7 +30,9 @@ import android.widget.Toast
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.PreferenceManager
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.FragmentTimerBinding
@@ -63,8 +63,6 @@ import com.aricneto.twistytimer.utils.PuzzleUtils.PENALTY_PLUSTWO
 import com.aricneto.twistytimer.utils.PuzzleUtils.TYPE_333
 import com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString
 import com.aricneto.twistytimer.utils.ScrambleGenerator
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_COMMENT_ADDED
 import com.aricneto.twistytimer.utils.TTIntent.ACTION_GENERATE_SCRAMBLE
@@ -86,10 +84,12 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.sqrt
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, StatisticsObserver {
@@ -214,7 +214,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
         when (intent.action) {
             ACTION_SCROLLED_PAGE -> {
                 if (holdEnabled) {
-                    holdHandler?.removeCallbacks(holdRunnable ?: return)
+                    holdJob?.cancel()
                 }
                 binding.chronometer.setHighlighted(false)
                 binding.chronometer.cancelHoldForStart()
@@ -241,8 +241,8 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 showItems()
                 animationDone = true
                 // Wait for animations to run before broadcasting solve to avoid UI stuttering
-                val handler = Handler(Looper.getMainLooper())
-                handler.postDelayed({
+                viewLifecycleOwner.lifecycleScope.launch {
+                    delay((mAnimationDuration + 50).toLong().milliseconds)
                     if (!isCanceled) {
                         // Only broadcast a new solve if it hasn't been canceled
                         broadcastNewSolve()
@@ -252,16 +252,16 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                         // to load, and it must be triggered manually
                         showDetailStats()
                     }
-                    // reset isCanceled                    isCanceled = false
-                }, (mAnimationDuration + 50).toLong())
+                    // reset isCanceled
+                    isCanceled = false
+                }
             }
 
             ACTION_GENERATE_SCRAMBLE -> generateNewScramble()
         }
     }
 
-    private var holdRunnable: Runnable? = null
-    private var holdHandler: Handler? = null
+    private var holdJob: Job? = null
     private var plusTwoCountdown: CountDownTimer? = null
 
     private var optimalCross: RubiksCubeOptimalCross? = null
@@ -772,18 +772,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
 
         // If hold-for-start is enabled, use the "isReady" flag to indicate if the hold was long
         // enough (0.5s) to trigger the starting of the timer.
-        if (holdEnabled) {
-            holdHandler = Handler(Looper.getMainLooper())
-            holdRunnable = Runnable {
-                isReady = true
-                // Indicate to the user that the hold was long enough.
-                binding.chronometer.setHighlighted(true)
-                if (!inspectionEnabled) {
-                    // If inspection is enabled, the toolbar is already hidden.
-                    hideToolbar()
-                }
-            }
-        }
+        // Handled via holdJob in onTouch.
 
         binding.detailAverageRecordMessage.background =
             ThemeUtils.createSquareDrawableAttr(
@@ -818,10 +807,17 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             // will still continue in the meantime.
                             if (holdEnabled) {
                                 isReady = false
-                                holdHandler?.postDelayed(
-                                    holdRunnable ?: return false,
-                                    HOLD_FOR_START_DELAY
-                                )
+                                holdJob?.cancel()
+                                holdJob = viewLifecycleOwner.lifecycleScope.launch {
+                                    delay(HOLD_FOR_START_DELAY.milliseconds)
+                                    isReady = true
+                                    // Indicate to the user that the hold was long enough.
+                                    binding.chronometer.setHighlighted(true)
+                                    if (!inspectionEnabled) {
+                                        // If inspection is enabled, the toolbar is already hidden.
+                                        hideToolbar()
+                                    }
+                                }
                             } else if (startCueEnabled) {
                                 binding.chronometer.setHighlighted(true)
                             }
@@ -837,7 +833,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             // starting the inspection, so start the timer unless "hold-to-start"
                             // is enabled and the hold delay was not long enough.
                             if (holdEnabled && !isReady) {
-                                holdHandler?.removeCallbacks(holdRunnable ?: return false)
+                                holdJob?.cancel()
                             } else {
                                 stopInspectionCountdown()
                                 startChronometer() // Toolbar is already hidden and remains so.
@@ -856,10 +852,14 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             if (!inspectionEnabled) {
                                 if (holdEnabled) {
                                     isReady = false
-                                    holdHandler?.postDelayed(
-                                        holdRunnable ?: return false,
-                                        HOLD_FOR_START_DELAY
-                                    )
+                                    holdJob?.cancel()
+                                    holdJob = viewLifecycleOwner.lifecycleScope.launch {
+                                        delay(HOLD_FOR_START_DELAY.milliseconds)
+                                        isReady = true
+                                        // Indicate to the user that the hold was long enough.
+                                        binding.chronometer.setHighlighted(true)
+                                        hideToolbar()
+                                    }
                                 } else if (startCueEnabled) {
                                     binding.chronometer.setHighlighted(true)
                                 }
@@ -882,7 +882,7 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                             } else if (holdEnabled && !isReady) {
                                 // Not held for long enough. Replace "0.00" with previous value.
                                 binding.chronometer.cancelHoldForStart()
-                                holdHandler?.removeCallbacks(holdRunnable ?: return false)
+                                holdJob?.cancel()
                             } else {
                                 // Inspection disabled. Hold-for-start disabled, or hold-for-start
                                 // enabled, but the hold time was long enough. In the latter case,
@@ -1095,9 +1095,10 @@ class TimerFragment : BaseFragment(), OnBackPressedInFragmentListener, Statistic
                 )
                 binding?.congratsText?.visibility = View.VISIBLE
 
-                Handler(Looper.getMainLooper()).postDelayed({
+                viewLifecycleOwner.lifecycleScope.launch {
+                    delay(2900.milliseconds)
                     binding?.rippleBackground?.stopRippleAnimation()
-                }, 2900)
+                }
             }
         }
 

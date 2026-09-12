@@ -7,15 +7,12 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.text.Editable
 import android.text.InputType
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.TextWatcher
 import android.util.Log
-import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
@@ -59,11 +56,13 @@ import com.aricneto.twistytimer.utils.ThemeUtils
 import com.aricneto.twistytimer.viewmodel.TimerViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import java.util.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, StatisticsObserver {
@@ -295,8 +294,10 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
                     delay will not be noticeable, and will improve the feeling of responsiveness
                     at the Timer page.
                  */
-                    val handler = Handler(Looper.getMainLooper())
-                    handler.postDelayed({ reloadList() }, 600)
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        delay(600.milliseconds)
+                        reloadList()
+                    }
                 }
 
             ACTION_TIMES_MOVED_TO_HISTORY, ACTION_TIMES_MODIFIED -> reloadList()

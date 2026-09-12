@@ -2,8 +2,7 @@ package com.aricneto.twistytimer.utils
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
-import androidx.annotation.BoolRes
+import androidx.preference.PreferenceManager
 import androidx.annotation.IntegerRes
 import androidx.annotation.StringRes
 import com.aricneto.twistytimer.TwistyTimer
@@ -42,16 +41,6 @@ object Prefs {
     @JvmStatic
     fun getDefaultIntValue(@IntegerRes res: Int): Int {
         return TwistyTimer.getAppContext().resources.getInteger(res)
-    }
-
-    /**
-     * Returns a [Boolean] given a [BoolRes]
-     * @param res an [BoolRes]
-     * @return an [Boolean] associated with the given [BoolRes]
-     */
-    @JvmStatic
-    fun getDefaultBoolValue(@BoolRes res: Int): Boolean {
-        return TwistyTimer.getAppContext().resources.getBoolean(res)
     }
 
     /**
@@ -127,7 +116,7 @@ object Prefs {
      *         // Do something entirely different.
      *         break;
      *     default:
-     *         // "key" did not match any of the string value of any of the given resource IDs.
+     *         // "key" did not match any of the string value of the given resource IDs.
      *         break;
      * }
      * </pre>
@@ -140,7 +129,7 @@ object Prefs {
      * @return
      * The first resource ID whose string value matches the given key; or zero if the key is
      * `null`, there are no resource IDs given, or the key does not match the string
-     * value of any of the given string resources.
+     * value of the given string resources.
      */
     @JvmStatic
     fun keyToResourceID(key: String?, vararg prefKeyResIDs: Int): Int {
@@ -175,7 +164,7 @@ object Prefs {
     }
 
     /**
-     * A simple wrapper for the shared preference editor that provides a easy way to use string
+     * A simple wrapper for the shared preference editor that provides an easy way to use string
      * resource IDs when setting preference values.
      */
     class Editor(private val mSPEditor: SharedPreferences.Editor) {
@@ -201,23 +190,6 @@ object Prefs {
          */
         fun putString(@StringRes prefKeyResID: Int, value: String?): Editor {
             mSPEditor.putString(TwistyTimer.getAppContext().getString(prefKeyResID), value)
-            return this
-        }
-
-        /**
-         * Sets the value of a shared preference to the given string set.
-         *
-         * @param prefKeyResID
-         * The string resource ID for the name of the preference key.
-         * See `values/pref_keys.xml`.
-         * @param value
-         * The new value of the preference.
-         *
-         * @return
-         * This editor, to allow method calls to be chained.
-         */
-        fun putStringSet(@StringRes prefKeyResID: Int, value: Set<String>?): Editor {
-            mSPEditor.putStringSet(TwistyTimer.getAppContext().getString(prefKeyResID), value)
             return this
         }
 

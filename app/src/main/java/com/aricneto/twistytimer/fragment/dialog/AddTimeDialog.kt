@@ -28,8 +28,10 @@ import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.aricneto.twistytimer.watcher.SolveTimeNumberTextWatcher
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Shows the algList dialog
@@ -177,10 +179,11 @@ class AddTimeDialog : DialogFragment() {
         binding!!.editTextTime.requestFocus()
 
         try {
-            binding!!.editTextTime.postDelayed({
+            lifecycleScope.launch {
+                delay(400.milliseconds)
                 (mContext!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .showSoftInput(binding!!.editTextTime, 0)
-            }, 400)
+            }
         } catch (e: Exception) {
             Log.e("AddTimeDialog", "Error showing keyboard: $e")
         }

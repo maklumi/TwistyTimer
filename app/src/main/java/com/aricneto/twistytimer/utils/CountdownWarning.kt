@@ -3,12 +3,17 @@ package com.aricneto.twistytimer.utils
 import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
+import android.os.Build
 import android.os.CountDownTimer
-import android.os.Handler
-import android.os.Looper
+import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import com.aricneto.twistytimer.TwistyTimer
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * A class used to create [CountDownTimer]s that vibrates and emits a tone once a specific
@@ -42,19 +47,31 @@ class CountdownWarning private constructor(builder: Builder) :
     }
 
     override fun onFinish() {
-        if (vibrateEnabled) vibrator.vibrate(vibrateDuration)
+        if (vibrateEnabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(
+                        vibrateDuration,
+                        VibrationEffect.DEFAULT_AMPLITUDE,
+                    )
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(vibrateDuration)
+            }
+        }
         if (toneEnabled) {
             try {
                 this.toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
                 toneGenerator!!.startTone(toneCode, toneDuration)
-                val handler = Handler(Looper.getMainLooper())
-                handler.postDelayed({
+                CoroutineScope(Dispatchers.Main).launch {
+                    delay(toneDuration.toLong().milliseconds)
                     if (toneGenerator != null) {
                         Log.d("Countdown", "toneGenerator released")
                         toneGenerator!!.release()
                         toneGenerator = null
                     }
-                }, toneDuration.toLong())
+                }
             } catch (e: Exception) {
                 Log.d("Countdown", "Exception while playing sound:$e")
             }

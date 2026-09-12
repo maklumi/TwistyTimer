@@ -4,15 +4,15 @@
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 
-    <style name="SettingsTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/md_white_1000</item>
-        <item name="colorPrimaryDark">@color/md_white_1000</item>
+    <style name="SettingsTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/md_blue_A700</item>
+        <item name="colorPrimaryDark">@color/md_blue_A700</item>
         <item name="colorAccent">@color/md_blue_A700</item>
         <item name="android:fontFamily">?defaultFontFamily</item>
         <item name="colorSurfaceVariant">@color/md_indigo_200</item>
 
-        <item name="android:windowLightStatusBar" >true</item>
-        <item name="android:navigationBarColor" >@color/md_white_1000</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/md_white_1000</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
     </style>
 </resources>
