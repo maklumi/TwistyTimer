@@ -6,6 +6,7 @@ import com.aricneto.twistytimer.database.AlgRepository
 import com.aricneto.twistytimer.database.DatabaseInitializer
 import com.aricneto.twistytimer.database.SolveRepository
 import com.aricneto.twistytimer.database.TwistyDatabaseFactory
+import com.aricneto.twistytimer.utils.ImportExportManager
 import com.aricneto.twistytimer.utils.LocaleUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,7 @@ class TwistyTimer : Application() {
 
         sAlgRepository = AlgRepository(TwistyDatabaseFactory.getDatabase().algorithmQueries)
         sSolveRepository = SolveRepository(TwistyDatabaseFactory.getDatabase().solveQueries)
+        sImportExportManager = ImportExportManager(contentResolver, sSolveRepository!!)
 
         CoroutineScope(Dispatchers.IO).launch {
             DatabaseInitializer.initialize(sAlgRepository!!, sSolveRepository!!)
@@ -78,6 +80,7 @@ class TwistyTimer : Application() {
     companion object {
         private var sAlgRepository: AlgRepository? = null
         private var sSolveRepository: SolveRepository? = null
+        private var sImportExportManager: ImportExportManager? = null
 
         /**
          * The cached reference to the application context.
@@ -92,6 +95,11 @@ class TwistyTimer : Application() {
         @JvmStatic
         fun getSolveRepository(): SolveRepository {
             return sSolveRepository!!
+        }
+
+        @JvmStatic
+        fun getImportExportManager(): ImportExportManager {
+            return sImportExportManager!!
         }
 
         /**
