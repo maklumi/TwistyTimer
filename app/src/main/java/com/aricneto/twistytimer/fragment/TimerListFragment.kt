@@ -60,7 +60,9 @@ import com.aricneto.twistytimer.viewmodel.TimerViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
-import org.joda.time.DateTime
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import java.util.Random
 
 
@@ -495,10 +497,10 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
     }
 
     private fun updateEasterEggs(root: RelativeLayout) {
-        val date = DateTime(DateTime.now())
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
         // April 1st (April Fools)
-        if (date.monthOfYear == 4 && date.dayOfMonth == 1) {
+        if (now.monthNumber == 4 && now.dayOfMonth == 1) {
             val clippyView =
                 LayoutInflater.from(mContext).inflate(
                     R.layout.item_easteregg_clippy,

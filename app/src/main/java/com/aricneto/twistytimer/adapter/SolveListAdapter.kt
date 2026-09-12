@@ -29,7 +29,12 @@ import com.aricneto.twistytimer.utils.TTIntent.CATEGORY_UI_INTERACTIONS
 import com.aricneto.twistytimer.utils.TTIntent.broadcast
 import com.aricneto.twistytimer.utils.ThemeUtils.createSquareDrawable
 import com.aricneto.twistytimer.utils.ThemeUtils.fetchAttrColor
-import org.joda.time.DateTime
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toLocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Manages the list of timed solves. It formats the time strings, handles
@@ -71,7 +76,10 @@ class SolveListAdapter(
     inner class SolveViewHolder(val binding: ItemTimeListBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(solve: Solve) {
-            binding.date.text = DateTime(solve.date).toString(mDateFormatSpec)
+            val dateTime = Instant.fromEpochMilliseconds(solve.date)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+            val formatter = DateTimeFormatter.ofPattern(mDateFormatSpec, Locale.getDefault())
+            binding.date.text = dateTime.toJavaLocalDateTime().format(formatter)
 
             if (selectedItems.contains(solve.id)) {
                 binding.card.background = selectedCardBackground

@@ -12,9 +12,8 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
-import org.joda.time.LocalDate
-import org.joda.time.format.DateTimeFormat
-import org.joda.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 /**
@@ -154,7 +153,7 @@ class ChartStatistics private constructor(
         // format (from "values/formats.xml") if no more specific localized format is found (such
         // as in "values-en-rUS/formats.xml". This also "pre-compiles" the pattern, making the
         // formatting operation faster later.
-        mXValueFormatter = DateTimeFormat.forPattern(chartStyle.dateFormatSpec)
+        mXValueFormatter = DateTimeFormatter.ofPattern(chartStyle.dateFormatSpec)
 
         // Initialize and reset everything to a sane, empty state.
         reset()

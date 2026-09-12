@@ -1,6 +1,9 @@
 package com.aricneto.twistytimer.utils
 
-import org.joda.time.DateTime
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import java.util.Locale
 
 /**
  * Utility methods and constants for the export and import of solve times to files.
@@ -36,13 +39,21 @@ object ExportImportUtils {
      */
     private const val PROBLEM_CHARACTERS = "?[]/\\=<>:;,'\"&$#*()|~`!{}%+\u0000"
 
-    private val fileTimeStamp: String?
+    private val fileTimeStamp: String
         /**
          * Gets the time-stamp in the format appropriate for inclusion in the file names.
          * 
          * @return The time-stamp.
          */
-        get() = DateTime.now().toString("y-MM-dd'_'kk-mm")
+        get() {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            @Suppress("DEPRECATION")
+            return String.format(
+                Locale.getDefault(),
+                "%d-%02d-%02d_%02d-%02d",
+                now.year, now.monthNumber, now.dayOfMonth, now.hour, now.minute
+            )
+        }
 
     /**
      * Sanitizes the given string, so that it should be safe to use in the name of a file. The

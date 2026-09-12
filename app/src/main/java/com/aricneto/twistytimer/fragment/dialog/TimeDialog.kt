@@ -34,7 +34,12 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.joda.time.DateTime
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toLocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Shows the timeList dialog
@@ -249,7 +254,9 @@ class TimeDialog : DialogFragment() {
                         PuzzleUtils.FORMAT_SMALL_MILLI
                     ), FROM_HTML_MODE_LEGACY
                 )
-                binding!!.dateText.text = DateTime(solve!!.date).toString("d MMM y'\n'H':'mm")
+                val dateTime = Instant.fromEpochMilliseconds(solve!!.date).toLocalDateTime(TimeZone.currentSystemDefault())
+                val formatter = DateTimeFormatter.ofPattern("d MMM y'\n'H':'mm", Locale.getDefault())
+                binding!!.dateText.text = dateTime.toJavaLocalDateTime().format(formatter)
 
                 binding!!.scrambleText.text = solve!!.scramble
 

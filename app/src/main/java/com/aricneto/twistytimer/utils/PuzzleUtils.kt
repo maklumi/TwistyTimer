@@ -10,9 +10,7 @@ import com.aricneto.twistytimer.stats.AverageCalculator
 import com.aricneto.twistytimer.stats.AverageCalculator.Companion.tr
 import com.aricneto.twistytimer.stats.Statistics
 import com.aricneto.twistytimer.utils.PuzzleUtils.getPuzzleInPosition
-import org.joda.time.Period
-import org.joda.time.format.PeriodFormatter
-import org.joda.time.format.PeriodFormatterBuilder
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
@@ -140,53 +138,63 @@ object PuzzleUtils {
      * Converts a duration value in milliseconds to a String
      * @param time
      * the time in milliseconds
-     * @param format
+     * @param timeFormat
      * the format. see FORMAT constants in [PuzzleUtils]
      * @return
      * a String containing the converted time
      */
     @JvmStatic
-    fun convertTimeToString(time: Long, format: Int): String {
+    fun convertTimeToString(time: Long, timeFormat: Int): String {
         if (time == TIME_DNF) return "DNF"
         if (time == 0L) return "--"
-        val period = Period(time)
-        val periodFormatterBuilder = PeriodFormatterBuilder()
+
+        val secondsTotal = time / 1000
+        val millis = (time % 1000) / 10
+        val seconds = secondsTotal % 60
+        val minutesTotal = secondsTotal / 60
+        val minutes = minutesTotal % 60
+        val hours = minutesTotal / 60
+
         val formattedString = StringBuilder()
 
-        // PeriodFormatter ignores appends (and suffixes) if time is not enough to convert.
-        // If the time ir smaller than 10_000 milliseconds (10 seconds), do not pad it with
-        // a zero
-        val periodFormatter: PeriodFormatter
-        if (format == FORMAT_LARGE) {
-            periodFormatter = periodFormatterBuilder
-                .appendHours().appendSuffix("h ")
-                .printZeroAlways()
-                .appendMinutes().appendSuffix("m")
-                .toFormatter()
+        if (timeFormat == FORMAT_LARGE) {
+            if (hours > 0) {
+                formattedString.append(hours).append("h ")
+            }
+            formattedString.append(minutes).append("m")
         } else {
-            periodFormatter = periodFormatterBuilder
-                .appendHours().appendSuffix("h ")
-                .appendMinutes().appendSuffix(":")
-                .printZeroAlways()
-                .minimumPrintedDigits(if (time < 10000) 1 else 2)
-                .appendSeconds()
-                .toFormatter()
-        }
-        formattedString.append(period.toString(periodFormatter))
+            if (hours > 0) {
+                formattedString.append(hours).append("h ")
+            }
+            if (minutes > 0 || hours > 0) {
+                if (hours > 0) {
+                    formattedString.append(String.format(Locale.getDefault(), "%02d", minutes))
+                } else {
+                    formattedString.append(minutes)
+                }
+                formattedString.append(":")
+            }
 
-        // Restrict millis to 2 digits
-        var millis = time % 1000
-        if (millis >= 10) millis /= 10
+            if (minutes > 0 || hours > 0) {
+                formattedString.append(String.format(Locale.getDefault(), "%02d", seconds))
+            } else {
+                if (time < 10000) {
+                    formattedString.append(seconds)
+                } else {
+                    formattedString.append(String.format(Locale.getDefault(), "%02d", seconds))
+                }
+            }
+        }
 
         // Append millis
-        when (format) {
+        when (timeFormat) {
             FORMAT_DEFAULT -> {
                 formattedString.append(".")
-                formattedString.append(if (millis >= 10) millis else "0$millis")
+                formattedString.append(String.format(Locale.getDefault(), "%02d", millis))
             }
             FORMAT_SMALL_MILLI -> {
                 formattedString.append("<small>.")
-                formattedString.append(if (millis >= 10) millis else "0$millis")
+                formattedString.append(String.format(Locale.getDefault(), "%02d", millis))
                 formattedString.append("</small>")
             }
             FORMAT_NO_MILLI -> {}

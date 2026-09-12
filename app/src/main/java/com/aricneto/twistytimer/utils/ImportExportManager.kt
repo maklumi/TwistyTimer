@@ -11,7 +11,12 @@ import com.opencsv.CSVParserBuilder
 import com.opencsv.CSVReaderBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.joda.time.DateTime
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -74,7 +79,7 @@ class ImportExportManager(
                             PuzzleUtils.FORMAT_DEFAULT
                         )
                                 + "\";\"" + solve.scramble
-                                + "\";\"" + DateTime(solve.date)
+                                + "\";\"" + Instant.fromEpochMilliseconds(solve.date).toLocalDateTime(TimeZone.currentSystemDefault())
                                 + "\"")
 
                         if (solve.penalty == PuzzleUtils.PENALTY_DNF) {
@@ -147,7 +152,7 @@ class ImportExportManager(
                     }
                 }
             } else if (fileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
-                val now = DateTime.now().millis
+                val now = Clock.System.now().toEpochMilliseconds()
                 while (true) {
                     val nextLine = csvReader.readNext() ?: break
                     if (nextLine.size <= 4) {
@@ -161,7 +166,9 @@ class ImportExportManager(
                             if (nextLine.size >= 3) {
                                 nextLine[2]?.let {
                                     try {
-                                        date = DateTime.parse(it).millis
+                                        date = LocalDateTime.parse(it)
+                                            .toInstant(TimeZone.currentSystemDefault())
+                                            .toEpochMilliseconds()
                                     } catch (_: Exception) {}
                                 }
                             }

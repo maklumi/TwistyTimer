@@ -29,7 +29,7 @@ import com.aricneto.twistytimer.watcher.SolveTimeNumberTextWatcher
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
-import org.joda.time.DateTime
+import kotlinx.datetime.Clock
 
 /**
  * Shows the algList dialog
@@ -55,7 +55,7 @@ class AddTimeDialog : DialogFragment() {
                     if (mCurrentPenalty == PuzzleUtils.PENALTY_PLUSTWO) time + 2000 else time,
                     currentPuzzle!!,
                     currentPuzzleSubtype!!,
-                    DateTime().millis,
+                    Clock.System.now().toEpochMilliseconds(),
                     if (binding!!.checkScramble.isChecked) currentScramble ?: "" else "",
                     mCurrentPenalty,
                     mCurrentComment,

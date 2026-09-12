@@ -58,6 +58,7 @@ android {
     useLibrary 'android.test.base'
     useLibrary 'android.test.mock'
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -97,13 +98,16 @@ dependencies {
     implementation "com.mikepenz:materialdrawer:9.0.2"
     implementation "com.mikepenz:fastadapter:5.7.0"
     // Joda-time
-    implementation 'net.danlew:android.joda:2.14.2.1'
+
     // Android SVG
     implementation 'com.caverock:androidsvg:1.4'
     // MPAndroidChart
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     // Material color picker
     implementation "com.github.skydoves:colorpickerview:2.4.0"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0"
