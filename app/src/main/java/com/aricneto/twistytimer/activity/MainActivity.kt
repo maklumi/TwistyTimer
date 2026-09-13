@@ -28,16 +28,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
+import androidx.navigation.NavOptions
+import androidx.navigation.fragment.NavHostFragment
 import com.aricneto.twistify.BuildConfig
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.ActivityMainBinding
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.database.AlgRepository
-import com.aricneto.twistytimer.fragment.AlgListFragment.Companion.newInstance
 import com.aricneto.twistytimer.fragment.TimerFragment
-import com.aricneto.twistytimer.fragment.TimerFragmentMain.Companion.newInstance
 import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog
 import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog.ExportImportCallbacks
 import com.aricneto.twistytimer.fragment.dialog.PuzzleChooserDialog.PuzzleCallback
@@ -82,8 +82,9 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
 
     private val viewModel: MainViewModel by viewModels()
 
+    private lateinit var navController: NavController
+
     var mDrawerToggle: SmoothActionBarDrawerToggle? = null
-    var fragmentManager: FragmentManager? = null
     var mDrawerLayout: DrawerLayout? = null
 
     private var mDrawer: MaterialDrawerSliderView? = null
@@ -213,23 +214,9 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
             insets
         }
 
-        fragmentManager = supportFragmentManager
-
-        if (savedInstanceState == null) {
-            fragmentManager!!
-                .beginTransaction()
-                .replace(
-                    R.id.main_activity_container,
-                    newInstance(
-                        PuzzleUtils.TYPE_333,
-                        "Normal",
-                        TimerFragment.TIMER_MODE_TIMER,
-                        TrainerScrambler.TrainerSubset.OLL
-                    ),
-                    "fragment_main"
-                )
-                .commit()
-        }
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
 
         handleDrawer()
 
@@ -242,12 +229,16 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
                     return
                 }
 
-                val mainFragment: Fragment? = fragmentManager!!.findFragmentByTag("fragment_main")
-
+                val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                val mainFragment: Fragment? = navHostFragment?.childFragmentManager?.primaryNavigationFragment
                 if (mainFragment is OnBackPressedInFragmentListener) {
-                    if ((mainFragment as OnBackPressedInFragmentListener).onBackPressedInFragment()) {
+                    if (mainFragment.onBackPressedInFragment()) {
                         return
                     }
+                }
+
+                if (navController.popBackStack()) {
+                    return
                 }
 
                 isEnabled = false
@@ -506,108 +497,68 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
 
     private fun onDrawerItemClicked(drawerItem: IDrawerItem<*>): Boolean {
         var closeDrawer = true
+        val bundle = Bundle()
+        val navOptions = NavOptions.Builder()
+            .setLaunchSingleTop(true)
+            .setPopUpTo(navController.graph.startDestinationId, false)
+            .build()
+
         when (drawerItem.identifier.toInt()) {
             TIMER_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(
-                            PuzzleUtils.TYPE_333,
-                            "Normal",
-                            TimerFragment.TIMER_MODE_TIMER,
-                            TrainerScrambler.TrainerSubset.PLL
-                        ), "fragment_main"
-                    )
-                    .commit()
+                bundle.putString("puzzle", PuzzleUtils.TYPE_333)
+                bundle.putString("puzzle_type", "Normal")
+                bundle.putString("timer_mode", TimerFragment.TIMER_MODE_TIMER)
+                bundle.putSerializable("trainer_subset", TrainerScrambler.TrainerSubset.PLL)
+                navController.navigate(R.id.timer_main, bundle, navOptions)
             }
 
             TRAINER_OLL_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(
-                            TrainerScrambler.TrainerSubset.OLL.name,
-                            "Normal",
-                            TimerFragment.TIMER_MODE_TRAINER,
-                            TrainerScrambler.TrainerSubset.OLL
-                        ), "fragment_main"
-                    )
-                    .commit()
+                bundle.putString("puzzle", TrainerScrambler.TrainerSubset.OLL.name)
+                bundle.putString("puzzle_type", "Normal")
+                bundle.putString("timer_mode", TimerFragment.TIMER_MODE_TRAINER)
+                bundle.putSerializable("trainer_subset", TrainerScrambler.TrainerSubset.OLL)
+                navController.navigate(R.id.timer_main, bundle, navOptions)
             }
 
             TRAINER_PLL_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(
-                            TrainerScrambler.TrainerSubset.PLL.name,
-                            "Normal",
-                            TimerFragment.TIMER_MODE_TRAINER,
-                            TrainerScrambler.TrainerSubset.PLL
-                        ), "fragment_main"
-                    )
-                    .commit()
+                bundle.putString("puzzle", TrainerScrambler.TrainerSubset.PLL.name)
+                bundle.putString("puzzle_type", "Normal")
+                bundle.putString("timer_mode", TimerFragment.TIMER_MODE_TRAINER)
+                bundle.putSerializable("trainer_subset", TrainerScrambler.TrainerSubset.PLL)
+                navController.navigate(R.id.timer_main, bundle, navOptions)
             }
 
             TRAINER_CMLL_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(
-                            TrainerScrambler.TrainerSubset.CMLL.name,
-                            "Normal",
-                            TimerFragment.TIMER_MODE_TRAINER,
-                            TrainerScrambler.TrainerSubset.CMLL
-                        ), "fragment_main"
-                    )
-                    .commit()
+                bundle.putString("puzzle", TrainerScrambler.TrainerSubset.CMLL.name)
+                bundle.putString("puzzle_type", "Normal")
+                bundle.putString("timer_mode", TimerFragment.TIMER_MODE_TRAINER)
+                bundle.putSerializable("trainer_subset", TrainerScrambler.TrainerSubset.CMLL)
+                navController.navigate(R.id.timer_main, bundle, navOptions)
             }
 
             OLL_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(AlgRepository.SUBSET_OLL),
-                        "fragment_algs_oll"
-                    )
-                    .commit()
+                bundle.putString("subset", AlgRepository.SUBSET_OLL)
+                navController.navigate(R.id.alg_list, bundle, navOptions)
             }
 
             PLL_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(AlgRepository.SUBSET_PLL),
-                        "fragment_algs_pll"
-                    )
-                    .commit()
+                bundle.putString("subset", AlgRepository.SUBSET_PLL)
+                navController.navigate(R.id.alg_list, bundle, navOptions)
             }
 
             CMLL_ID -> mDrawerToggle!!.runWhenIdle {
-                fragmentManager!!
-                    .beginTransaction()
-                    .replace(
-                        R.id.main_activity_container,
-                        newInstance(AlgRepository.SUBSET_CMLL),
-                        "fragment_algs_cmll"
-                    )
-                    .commit()
+                bundle.putString("subset", AlgRepository.SUBSET_CMLL)
+                navController.navigate(R.id.alg_list, bundle, navOptions)
             }
 
             EXPORT_IMPORT_ID -> ExportImportDialog.newInstance()
-                .show(fragmentManager!!, FRAG_TAG_EXIM_DIALOG)
+                .show(supportFragmentManager, FRAG_TAG_EXIM_DIALOG)
 
             THEME_ID -> ThemeSelectDialog.newInstance()
-                .show(fragmentManager!!, "theme_dialog")
+                .show(supportFragmentManager, "theme_dialog")
 
             SCHEME_ID -> SchemeSelectDialogMain.newInstance()
-                .show(fragmentManager!!, "scheme_dialog")
+                .show(supportFragmentManager, "scheme_dialog")
 
             SETTINGS_ID -> mDrawerToggle!!.runWhenIdle {
                 settingsLauncher.launch(Intent(applicationContext, SettingsActivity::class.java))
@@ -642,18 +593,11 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
             else -> {
                 closeDrawer = false
                 mDrawerToggle!!.runWhenIdle {
-                    fragmentManager!!
-                        .beginTransaction()
-                        .replace(
-                            R.id.main_activity_container,
-                            newInstance(
-                                PuzzleUtils.TYPE_333,
-                                "Normal",
-                                TimerFragment.TIMER_MODE_TIMER,
-                                TrainerScrambler.TrainerSubset.PLL
-                            ), "fragment_main"
-                        )
-                        .commit()
+                    bundle.putString("puzzle", PuzzleUtils.TYPE_333)
+                    bundle.putString("puzzle_type", "Normal")
+                    bundle.putString("timer_mode", TimerFragment.TIMER_MODE_TIMER)
+                    bundle.putSerializable("trainer_subset", TrainerScrambler.TrainerSubset.PLL)
+                    navController.navigate(R.id.timer_main, bundle, navOptions)
                 }
             }
         }
@@ -785,7 +729,8 @@ class MainActivity : AppCompatActivity(), ExportImportCallbacks, PuzzleCallback 
     ) {
         // This "relay" scheme ensures that this activity is not embroiled in the gory details of
         // what the "destinationFrag" wanted with the puzzle type/category.
-        val destinationFrag: Fragment? = fragmentManager!!.findFragmentByTag(tag)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val destinationFrag: Fragment? = navHostFragment.childFragmentManager.primaryNavigationFragment
 
         if (destinationFrag is PuzzleCallback) {
             (destinationFrag as PuzzleCallback)

@@ -58,10 +58,11 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import java.util.Random
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 
@@ -501,7 +502,7 @@ class TimerListFragment : BaseFragment(), OnBackPressedInFragmentListener, Stati
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
         // April 1st (April Fools)
-        if (now.monthNumber == 4 && now.dayOfMonth == 1) {
+        if (now.month.number == 4 && now.day == 1) {
             val clippyView =
                 LayoutInflater.from(mContext).inflate(
                     R.layout.item_easteregg_clippy,

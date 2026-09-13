@@ -34,10 +34,6 @@ class ScrambleGenerator(private val puzzleType: String) {
         }
     }
 
-    fun setPuzzle(puzzle: Puzzle) {
-        this.puzzle = puzzle
-    }
-
     /**
      * Returns a scramble drawable showing the puzzled scrambled
      * Uses Tnoodle lib
@@ -72,7 +68,7 @@ class ScrambleGenerator(private val puzzleType: String) {
         var pic: Drawable? = null
         try {
             cubeImg = puzzle.drawScramble(
-                scramble,
+                normalizeScramble(scramble),
                 puzzle.parseColorScheme("$back,$down,$front,$left,$right,$top")
             )?.toString()
         } catch (e: InvalidScrambleException) {
@@ -87,5 +83,40 @@ class ScrambleGenerator(private val puzzleType: String) {
             }
         }
         return pic
+    }
+
+    /**
+     * Normalizes a scramble by converting Roux-style lowercase moves and middle-slice moves
+     * into standard WCA-style wide moves or equivalent move sequences that TNoodle can process for 3x3.
+     */
+    private fun normalizeScramble(scramble: String?): String? {
+        if (scramble == null || puzzleType != PuzzleUtils.TYPE_333) return scramble
+
+        val moves = scramble.split("\\s+".toRegex())
+        val normalizedMoves = moves.map { move ->
+            when {
+                // Lowercase wide moves to WCA wide moves (e.g., r -> Rw)
+                move.startsWith("r") -> move.replaceFirst("r", "Rw")
+                move.startsWith("l") -> move.replaceFirst("l", "Lw")
+                move.startsWith("f") -> move.replaceFirst("f", "Fw")
+                move.startsWith("b") -> move.replaceFirst("b", "Bw")
+                move.startsWith("u") -> move.replaceFirst("u", "Uw")
+                move.startsWith("d") -> move.replaceFirst("d", "Dw")
+
+                // Middle slice moves to wide + single move combinations
+                move == "M" -> "Rw' R"
+                move == "M'" -> "Rw R'"
+                move == "M2" -> "Rw2 R2"
+                move == "S" -> "Fw F'"
+                move == "S'" -> "Fw' F"
+                move == "S2" -> "Fw2 F2"
+                move == "E" -> "Dw D'"
+                move == "E'" -> "Dw' D"
+                move == "E2" -> "Dw2 D2"
+
+                else -> move
+            }
+        }
+        return normalizedMoves.joinToString(" ")
     }
 }

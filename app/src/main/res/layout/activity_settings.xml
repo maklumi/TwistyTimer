@@ -30,11 +30,14 @@
         app:tint="?attr/colorOnSurface"
         app:srcCompat="@drawable/ic_arrow_back_black_24dp" />
 
-    <FrameLayout
-        android:id="@+id/main_activity_container"
-        android:background="?attr/colorSurface"
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/title" />
+        android:layout_below="@id/title"
+        android:background="?attr/colorSurface"
+        app:defaultNavHost="true"
+        app:navGraph="@navigation/settings_nav_graph" />
 
 </RelativeLayout>

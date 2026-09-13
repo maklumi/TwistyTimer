@@ -12,11 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import com.aricneto.twistify.R
 import com.aricneto.twistify.databinding.ActivitySettingsBinding
-import com.aricneto.twistytimer.fragment.SettingsFragment
 import com.aricneto.twistytimer.listener.OnBackPressedInFragmentListener
 import com.aricneto.twistytimer.utils.LocaleUtils.updateLocale
 import com.aricneto.twistytimer.utils.Prefs
@@ -25,6 +26,8 @@ import com.aricneto.twistytimer.utils.ThemeUtils.preferredTheme
 
 class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPreferenceStartScreenCallback {
     private var binding: ActivitySettingsBinding? = null
+
+    private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setTheme(preferredTheme)
@@ -54,16 +57,13 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
 
         binding!!.back.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        if (savedInstanceState == null) {
-            supportFragmentManager
-                .beginTransaction()
-                .replace(R.id.main_activity_container, SettingsFragment(), "fragment_settings")
-                .commit()
-        }
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val settingsFragment = supportFragmentManager.findFragmentByTag("fragment_settings")
+                val settingsFragment = navHostFragment.childFragmentManager.primaryNavigationFragment
 
                 if (settingsFragment is OnBackPressedInFragmentListener) {
                     if (settingsFragment.onBackPressedInFragment()) {
@@ -71,13 +71,13 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
                     }
                 }
 
-                if (supportFragmentManager.backStackEntryCount > 0) {
-                    supportFragmentManager.popBackStack()
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                    isEnabled = true
+                if (navController.popBackStack()) {
+                    return
                 }
+
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+                isEnabled = true
             }
         })
     }
@@ -86,15 +86,10 @@ class SettingsActivity : AppCompatActivity(), PreferenceFragmentCompat.OnPrefere
         caller: PreferenceFragmentCompat,
         pref: PreferenceScreen
     ): Boolean {
-        val fragment = SettingsFragment()
-        val args = Bundle()
-        args.putString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT, pref.key)
-        fragment.arguments = args
+        val bundle = Bundle()
+        bundle.putString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT, pref.key)
 
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.main_activity_container, fragment, "fragment_settings")
-            .addToBackStack(pref.key)
-            .commit()
+        navController.navigate(R.id.settings_fragment, bundle)
         return true
     }
 
