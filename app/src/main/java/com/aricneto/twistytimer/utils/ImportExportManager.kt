@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
 import com.aricneto.twistytimer.database.SolveRepository
-import com.aricneto.twistytimer.fragment.dialog.ExportImportDialog
 import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.utils.PuzzleUtils.convertTimeToString
 import com.opencsv.CSVParserBuilder
@@ -25,6 +24,10 @@ class ImportExportManager(
     private val contentResolver: ContentResolver,
     private val solveRepository: SolveRepository
 ) {
+    companion object {
+        const val EXIM_FORMAT_EXTERNAL: Int = 1
+        const val EXIM_FORMAT_BACKUP: Int = 2
+    }
 
     data class ImportResult(
         val successes: Int,
@@ -46,7 +49,7 @@ class ImportExportManager(
             var exports = 0
 
             when (fileFormat) {
-                ExportImportDialog.EXIM_FORMAT_BACKUP -> {
+                EXIM_FORMAT_BACKUP -> {
                     val csvHeader = "Puzzle;Category;Time(millis);Date(millis);Scramble;Penalty;Comment;Mode\n"
                     val solves = solveRepository.getAllSolves()
                     onProgress(0, solves.size)
@@ -69,7 +72,7 @@ class ImportExportManager(
                     }
                 }
 
-                ExportImportDialog.EXIM_FORMAT_EXTERNAL -> {
+                EXIM_FORMAT_EXTERNAL -> {
                     val solves = solveRepository.getSolvesForExport(puzzleType, puzzleCategory, mode)
                     onProgress(0, solves.size)
 
@@ -125,7 +128,7 @@ class ImportExportManager(
                 .withCSVParser(parser)
                 .build()
 
-            if (fileFormat == ExportImportDialog.EXIM_FORMAT_BACKUP) {
+            if (fileFormat == EXIM_FORMAT_BACKUP) {
                 csvReader.readNext() // header
                 while (true) {
                     val nextLine = csvReader.readNext() ?: break
@@ -151,7 +154,7 @@ class ImportExportManager(
                         parseErrors++
                     }
                 }
-            } else if (fileFormat == ExportImportDialog.EXIM_FORMAT_EXTERNAL) {
+            } else if (fileFormat == EXIM_FORMAT_EXTERNAL) {
                 val now = Clock.System.now().toEpochMilliseconds()
                 while (true) {
                     val nextLine = csvReader.readNext() ?: break

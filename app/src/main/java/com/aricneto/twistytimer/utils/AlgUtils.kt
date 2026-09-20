@@ -134,12 +134,20 @@ object AlgUtils {
      * @return
      */
     fun caseNameToSubsetId(subset: String, name: String): Int {
-        when (subset) {
-            "PLL" -> return subsetCases.indexOf(name)
-            "OLL" -> return name.substring(4).toInt() - 1
-            "CMLL" -> return subsetCasesCMLL.indexOf(name.replace("CMLL ", ""))
+        try {
+            when (subset) {
+                "PLL" -> return subsetCases.indexOf(name)
+                "OLL" -> {
+                    if (name.length >= 6) {
+                        return name.substring(4).toInt() - 1
+                    }
+                }
+                "CMLL" -> return subsetCasesCMLL.indexOf(name.replace("CMLL ", ""))
+            }
+        } catch (_: Exception) {
+            return -1
         }
-        return 0
+        return -1
     }
 
     /**

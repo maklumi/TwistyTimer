@@ -19,12 +19,15 @@ fun TwistyTopBar(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    onSettingsClick: () -> Unit = {},
+    onSettingsClick: (() -> Unit)? = null,
+    onBackClick: (() -> Unit)? = null,
     onCategoryClick: (() -> Unit)? = null,
+    onTitleClick: (() -> Unit)? = null,
     showSpinnerIcon: Boolean = false
 ) {
     ElevatedCard(
         modifier = modifier
+            .statusBarsPadding()
             .padding(horizontal = 8.dp, vertical = 8.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -37,22 +40,35 @@ fun TwistyTopBar(
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            // Settings button (Left)
-            IconButton(
-                onClick = onSettingsClick,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = 8.dp)
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_outline_settings_24px),
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+            // Navigation button (Left)
+            if (onBackClick != null) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back_black_24dp),
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            } else if (onSettingsClick != null) {
+                IconButton(
+                    onClick = onSettingsClick,
+                    modifier = Modifier.align(Alignment.CenterStart).padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_outline_settings_24px),
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             // Title and Subtitle (Center)
             Column(
                 modifier = Modifier
-                    .clickable { /* Handle spinner click if needed */ }
+                    .let { if (onTitleClick != null) it.clickable { onTitleClick() } else it }
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {

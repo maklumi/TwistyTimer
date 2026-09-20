@@ -101,6 +101,8 @@ dependencies {
     implementation 'com.caverock:androidsvg:1.4'
     // MPAndroidChart
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    // Compose Charts
+    implementation 'io.github.ehsannarmani:compose-charts:1.0.0'
     // Material color picker
     implementation "com.github.skydoves:colorpickerview:2.4.0"
 

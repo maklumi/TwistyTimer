@@ -29,7 +29,7 @@ class ChartStatistics private constructor(
      * The collection of statistics that are required to support the calculation of any number of
      * average-of-N lines in the graph.
      */
-    private val mStatistics: Statistics
+    val statistics: Statistics = statistics
 
     /**
      * The styles that will be applied to the data sets of the chart.
@@ -135,7 +135,6 @@ class ChartStatistics private constructor(
     init {
         require(statistics.isForCurrentSessionOnly) { "Statistics must be for current session only." }
 
-        mStatistics = statistics
         mChartStyle = chartStyle
         mNsOfAverages = statistics.nsOfAverages
         this.isForCurrentSessionOnly = isForCurrentSessionOnly
@@ -163,7 +162,7 @@ class ChartStatistics private constructor(
      * Resets all chart data and statistics to their initial, empty state.
      */
     fun reset() {
-        mStatistics.reset()
+        statistics.reset()
         mXIndex = 0
         mBestTime = Long.MAX_VALUE
         mPrevEntryDay = null
@@ -393,7 +392,7 @@ class ChartStatistics private constructor(
         var isEntryAdded = false
 
         // The value of "time" is validated by "Statistics.addTime".
-        mStatistics.addTime(time, true) // May throw IAE.
+        statistics.addTime(time, true) // May throw IAE.
 
         if (time != AverageCalculator.DNF) {
             mChartData!!.addEntry(Entry(mXIndex.toFloat(), time / 1000f), DS_ALL)
@@ -408,7 +407,7 @@ class ChartStatistics private constructor(
         }
 
         for (nIndex in mNsOfAverages.indices) {
-            val ac = mStatistics.getAverageOf(mNsOfAverages[nIndex], true)
+            val ac = statistics.getAverageOf(mNsOfAverages[nIndex], true)
             val averageTime = ac!!.currentAverage
 
             if (averageTime != AverageCalculator.DNF && averageTime != AverageCalculator.UNKNOWN) {
@@ -429,7 +428,7 @@ class ChartStatistics private constructor(
                 if (bestAoNDS.entryCount > 0) { // Should be 0 or 1, nothing more.
                     val oldEntry = bestAoNDS.getEntryForIndex(0) // Not an X-index.
 
-                    if (aonYValue < oldEntry.y) {
+                    if (aonYValue < oldEntry.y.toFloat()) {
                         // A new best AoN time! Replace the old one with this new one.
                         bestAoNDS.removeEntry(oldEntry)
                         bestAoNDS.addEntry(Entry(mXIndex.toFloat(), aonYValue))
@@ -450,6 +449,39 @@ class ChartStatistics private constructor(
         }
         // If the new solve and all current averages were DNF or UNKNOWN, then no entry was added
         // to the chart, so do not add any X-axis value and do not increment the X-index.
+    }
+
+    fun getAllSolvePoints(): List<Pair<Float, Float>> {
+        val points = mutableListOf<Pair<Float, Float>>()
+        val ds = mChartData?.getDataSetByIndex(DS_ALL) ?: return points
+        for (i in 0 until ds.entryCount) {
+            val entry = ds.getEntryForIndex(i)
+            points.add(entry.x to entry.y)
+        }
+        return points
+    }
+
+    fun getBestSolvePoints(): List<Pair<Float, Float>> {
+        val points = mutableListOf<Pair<Float, Float>>()
+        val ds = mChartData?.getDataSetByIndex(DS_BEST) ?: return points
+        for (i in 0 until ds.entryCount) {
+            val entry = ds.getEntryForIndex(i)
+            points.add(entry.x to entry.y)
+        }
+        return points
+    }
+
+    fun getAveragePoints(n: Int): List<Pair<Float, Float>> {
+        val points = mutableListOf<Pair<Float, Float>>()
+        val nIndex = statistics.nsOfAverages.indexOf(n)
+        if (nIndex == -1) return points
+        val dsIndex = DS_AVG_0 + 2 * nIndex
+        val ds = mChartData?.getDataSetByIndex(dsIndex) ?: return points
+        for (i in 0 until ds.entryCount) {
+            val entry = ds.getEntryForIndex(i)
+            points.add(entry.x to entry.y)
+        }
+        return points
     }
 
     /**

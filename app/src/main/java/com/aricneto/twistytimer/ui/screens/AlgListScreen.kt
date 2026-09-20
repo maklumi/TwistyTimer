@@ -17,6 +17,7 @@ fun AlgListScreen(
     algorithms: List<Algorithm>,
     subsetName: String?,
     onItemClick: (Algorithm) -> Unit,
+    onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -25,6 +26,7 @@ fun AlgListScreen(
             TwistyTopBar(
                 title = "Algorithms",
                 subtitle = subsetName,
+                onBackClick = onBackClick,
                 onSettingsClick = onSettingsClick
             )
         }

@@ -6,14 +6,23 @@ import androidx.lifecycle.viewModelScope
 import com.aricneto.twistytimer.TwistyTimer
 import com.aricneto.twistytimer.stats.ChartStatistics
 import com.aricneto.twistytimer.stats.ChartStyle
+import com.aricneto.twistytimer.stats.Statistics
 import com.aricneto.twistytimer.utils.PuzzleUtils
 import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+data class StatsGraphUiState(
+    val allTimes: List<Pair<Float, Float>> = emptyList(),
+    val bestTimes: List<Pair<Float, Float>> = emptyList(),
+    val averages: Map<Int, List<Pair<Float, Float>>> = emptyMap(),
+    val statistics: Statistics? = null,
+    val improvementStats: List<String> = emptyList(),
+    val averageStats: List<String> = emptyList(),
+    val otherStats: List<String> = emptyList()
+)
 
 class TimerGraphViewModel : ViewModel() {
 
@@ -31,6 +40,26 @@ class TimerGraphViewModel : ViewModel() {
 
     private val _chartStatistics = MutableStateFlow<ChartStatistics?>(null)
     val chartStatistics: StateFlow<ChartStatistics?> = _chartStatistics.asStateFlow()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<StatsGraphUiState> = _chartStatistics
+        .map { stats ->
+            if (stats == null) return@map StatsGraphUiState()
+            
+            val ns = stats.statistics.nsOfAverages
+            val averagesMap = mutableMapOf<Int, List<Pair<Float, Float>>>()
+            ns.forEach { n ->
+                 averagesMap[n] = stats.getAveragePoints(n)
+            }
+
+            StatsGraphUiState(
+                allTimes = stats.getAllSolvePoints(),
+                bestTimes = stats.getBestSolvePoints(),
+                averages = averagesMap,
+                statistics = stats.statistics
+            )
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatsGraphUiState())
 
     private var chartStyle: ChartStyle? = null
 

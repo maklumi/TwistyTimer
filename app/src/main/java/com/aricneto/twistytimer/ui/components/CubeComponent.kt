@@ -9,7 +9,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.aricneto.twistytimer.utils.AlgUtils
 
 @Composable

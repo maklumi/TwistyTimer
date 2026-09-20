@@ -1,8 +1,0 @@
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/locale_item"
-    style="@style/DialogItem"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    app:drawableLeftCompat="@drawable/flag_united_kingdom"
-    android:text="@string/language_english" />

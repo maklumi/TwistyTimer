@@ -7,6 +7,7 @@ import com.aricneto.twistytimer.database.AlgRepository
 import com.aricneto.twistytimer.items.Algorithm
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class AlgViewModel : ViewModel() {
 
@@ -27,5 +28,12 @@ class AlgViewModel : ViewModel() {
 
     fun setSubset(subset: String?) {
         _subset.value = subset
+    }
+
+    fun updateAlgorithm(algorithm: Algorithm) {
+        viewModelScope.launch {
+            repository.updateAlgorithmAlg(algorithm.id, algorithm.algs)
+            repository.updateAlgorithmProgress(algorithm.id, algorithm.progress.toLong())
+        }
     }
 }

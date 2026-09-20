@@ -40,6 +40,9 @@ class ScrambleGenerator(private val puzzleType: String) {
      *
      */
     fun generateImageFromScramble(sp: SharedPreferences, scramble: String?): Drawable? {
+        if (scramble == null || scramble.startsWith("To start training")) {
+            return null
+        }
         // Getting the color scheme
         val top: String
         val left: String
@@ -90,12 +93,20 @@ class ScrambleGenerator(private val puzzleType: String) {
      * into standard WCA-style wide moves or equivalent move sequences that TNoodle can process for 3x3.
      */
     private fun normalizeScramble(scramble: String?): String? {
-        if (scramble == null || puzzleType != PuzzleUtils.TYPE_333) return scramble
+        if (scramble == null) return null
+        
+        // Normalize for any puzzle that uses 3x3 base (including trainer subsets)
+        val isThreeByThree = puzzleType == PuzzleUtils.TYPE_333 || 
+                           puzzleType == "OLL" || 
+                           puzzleType == "PLL" || 
+                           puzzleType == "CMLL"
+        
+        if (!isThreeByThree) return scramble
 
         val moves = scramble.split("\\s+".toRegex())
         val normalizedMoves = moves.map { move ->
             when {
-                // Lowercase wide moves to WCA wide moves (e.g., r -> Rw)
+                // Lowercase wide moves to WCA wide moves (e.g., r -> Rw, r' -> Rw')
                 move.startsWith("r") -> move.replaceFirst("r", "Rw")
                 move.startsWith("l") -> move.replaceFirst("l", "Lw")
                 move.startsWith("f") -> move.replaceFirst("f", "Fw")

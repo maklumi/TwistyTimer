@@ -17,6 +17,9 @@ import kotlin.math.roundToInt
  * Created by Ari on 17/01/2016.
  */
 object PuzzleUtils {
+    const val TIMER_MODE_TIMER: String = "TIMER_MODE_TIMER"
+    const val TIMER_MODE_TRAINER: String = "TIMER_MODE_TRAINER"
+
     const val TYPE_222 = "222"
     const val TYPE_333 = "333"
     const val TYPE_444 = "444"
