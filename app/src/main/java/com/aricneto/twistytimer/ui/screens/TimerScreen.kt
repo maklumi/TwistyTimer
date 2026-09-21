@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.aricneto.twistytimer.ui.components.CubeComponent
 import com.aricneto.twistytimer.ui.components.QAButtons
@@ -51,11 +53,14 @@ fun TimerScreen(
     onPlusTwoClick: () -> Unit = {},
     onCommentClick: () -> Unit = {},
     manualEntryEnabled: Boolean = false,
-    onManualEntryClick: () -> Unit = {}
+    onManualEntryClick: () -> Unit = {},
+    scrambleTextSize: Int = 100,
+    timerTextSize: Int = 100
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
+            .then(if (isRunning) Modifier.safeDrawingPadding() else Modifier)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -78,7 +83,8 @@ fun TimerScreen(
                 onResetClick = onScrambleReset,
                 onEditClick = onScrambleEdit,
                 onHintClick = onScrambleHintClick,
-                onManualEntryClick = onManualEntryClick
+                onManualEntryClick = onManualEntryClick,
+                fontSize = (18 * (scrambleTextSize / 100f)).sp
             )
 
             if (isPersonalBest) {
@@ -94,7 +100,8 @@ fun TimerScreen(
 
             TimerDisplay(
                 timeMillis = currentTimeMillis,
-                color = if (isReady) Color.Green else if (isRunning) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.primary
+                color = if (isReady) Color.Green else if (isRunning) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.primary,
+                fontSize = (76 * (timerTextSize / 100f)).sp
             )
 
             if (showQAButtons) {

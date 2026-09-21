@@ -14,7 +14,12 @@ fun HintComposeDialog(
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .systemBarsPadding()
+                .padding(16.dp)
+        ) {
             Text("Hints", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
             Text(

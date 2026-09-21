@@ -1,20 +1,24 @@
 package com.aricneto.twistytimer.ui.screens
 
 import android.graphics.drawable.Drawable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
-import com.aricneto.twistify.R
-import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
+import com.aricneto.twistify.R
 import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.ui.components.TimerStats
 import com.aricneto.twistytimer.ui.components.TwistyTopBar
+import com.aricneto.twistytimer.ui.theme.LocalTwistyColors
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,11 +59,15 @@ fun MainPagerScreen(
     onCommentClick: () -> Unit = {},
     manualEntryEnabled: Boolean = false,
     onManualEntryClick: () -> Unit = {},
+    scrambleTextSize: Int = 100,
+    timerTextSize: Int = 100,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = 1, pageCount = { 3 })
     
     Scaffold(
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             if (!isRunning) {
                 if (selectedSolveIds.isNotEmpty()) {
@@ -116,11 +124,19 @@ fun MainPagerScreen(
                     )
                 }
             }
-        }
+        },
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    LocalTwistyColors.current.backgroundGradientStart,
+                    LocalTwistyColors.current.backgroundGradientEnd
+                )
+            )
+        )
     ) { paddingValues ->
         HorizontalPager(
             state = pagerState,
-            modifier = modifier.padding(paddingValues),
+            modifier = Modifier.padding(paddingValues),
             userScrollEnabled = !isRunning
         ) { page ->
             when (page) {
@@ -128,7 +144,7 @@ fun MainPagerScreen(
                     currentPuzzle = currentPuzzle,
                     currentSubtype = currentCategory,
                     mode = mode,
-                    isForCurrentSessionOnly = true // Handle toggle
+                    isForCurrentSessionOnly = true
                 )
                 1 -> TimerScreen(
                     scramble = scramble,
@@ -150,7 +166,9 @@ fun MainPagerScreen(
                     onCommentClick = onCommentClick,
                     manualEntryEnabled = manualEntryEnabled,
                     onManualEntryClick = onManualEntryClick,
-                    stats = stats
+                    stats = stats,
+                    scrambleTextSize = scrambleTextSize,
+                    timerTextSize = timerTextSize
                 )
                 2 -> SolvesListScreen(
                     solves = solves,

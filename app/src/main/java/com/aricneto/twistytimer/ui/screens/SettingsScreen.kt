@@ -1,29 +1,14 @@
 package com.aricneto.twistytimer.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +17,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aricneto.twistify.R
 import com.aricneto.twistytimer.ui.components.NumberPickerDialog
+import com.aricneto.twistytimer.ui.theme.LocalTwistyColors
+import com.aricneto.twistytimer.utils.TTIntent
 import com.aricneto.twistytimer.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +28,7 @@ fun SettingsScreen(
     onThemeClick: () -> Unit,
     onLanguageClick: () -> Unit,
     onBackupClick: () -> Unit,
+    onColorSchemeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val viewModel: SettingsViewModel = viewModel()
@@ -48,8 +36,12 @@ fun SettingsScreen(
     
     var showInspectionTimeDialog by remember { mutableStateOf(false) }
     var showTrimSizeDialog by remember { mutableStateOf(false) }
+    var showScrambleSizeDialog by remember { mutableStateOf(false) }
+    var showTimerSizeDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets.systemBars,
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
@@ -62,161 +54,182 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    LocalTwistyColors.current.backgroundGradientStart,
+                    LocalTwistyColors.current.backgroundGradientEnd
+                )
+            )
+        )
     ) { paddingValues ->
-        key(updateVersion) {
-            LazyColumn(
-                modifier = modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-            ) {
-                item {
-                    SettingsCategory("General")
-                    SettingsItem(
-                        title = "Language",
-                        subtitle = viewModel.getString(R.string.pk_locale, "System Default"),
-                        icon = R.drawable.ic_translate_black_24dp,
-                        onClick = onLanguageClick
-                    )
-                    
-                    SettingsItem(
-                        title = "Backup and Restore",
-                        subtitle = "Import or export your data",
-                        icon = R.drawable.ic_outline_archive_24dp,
-                        onClick = onBackupClick
-                    )
-                }
+        LazyColumn(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            item {
+                // key(updateVersion) ensures this block recomposes when any setting changes,
+                // but since it's inside an 'item', the LazyColumn's scroll state is preserved.
+                key(updateVersion) {
+                    Column {
+                        SettingsCategory("General")
+                        SettingsItem(
+                            title = "Language",
+                            subtitle = viewModel.getString(R.string.pk_locale, "System Default"),
+                            icon = R.drawable.ic_translate_black_24dp,
+                            onClick = onLanguageClick
+                        )
+                        
+                        SettingsItem(
+                            title = "Backup and Restore",
+                            subtitle = "Import or export your data",
+                            icon = R.drawable.ic_outline_archive_24dp,
+                            onClick = onBackupClick
+                        )
 
-                item {
-                    SettingsCategory("Inspection Behavior")
-                    
-                    SwitchSettingsItem(
-                        title = "Enable Inspection",
-                        subtitle = "15s inspection time",
-                        icon = R.drawable.ic_outline_wb_incandescent_24px,
-                        checked = viewModel.getBoolean(R.string.pk_inspection_enabled, false),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_inspection_enabled, it) }
-                    )
+                        SettingsCategory("Inspection Behavior")
+                        
+                        SwitchSettingsItem(
+                            title = "Enable Inspection",
+                            subtitle = "15s inspection time",
+                            icon = R.drawable.ic_outline_wb_incandescent_24px,
+                            checked = viewModel.getBoolean(R.string.pk_inspection_enabled, false),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_inspection_enabled, it) }
+                        )
 
-                    SettingsItem(
-                        title = "Inspection Time",
-                        subtitle = "${viewModel.getInt(R.string.pk_inspection_time, 15)} seconds",
-                        icon = R.drawable.ic_outline_timer_24px,
-                        enabled = viewModel.getBoolean(R.string.pk_inspection_enabled, false),
-                        onClick = { showInspectionTimeDialog = true }
-                    )
+                        SettingsItem(
+                            title = "Inspection Time",
+                            subtitle = "${viewModel.getInt(R.string.pk_inspection_time, 15)} seconds",
+                            icon = R.drawable.ic_outline_timer_24px,
+                            enabled = viewModel.getBoolean(R.string.pk_inspection_enabled, false),
+                            onClick = { showInspectionTimeDialog = true }
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Inspection Alerts",
-                        subtitle = "Sound/vibration warnings",
-                        icon = R.drawable.ic_outline_help_outline_24px,
-                        checked = viewModel.getBoolean(R.string.pk_inspection_alert_enabled, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_inspection_alert_enabled, it) },
-                        enabled = viewModel.getBoolean(R.string.pk_inspection_enabled, false)
-                    )
-                }
+                        SwitchSettingsItem(
+                            title = "Inspection Alerts",
+                            subtitle = "Sound/vibration warnings",
+                            icon = R.drawable.ic_outline_help_outline_24px,
+                            checked = viewModel.getBoolean(R.string.pk_inspection_alert_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_inspection_alert_enabled, it) },
+                            enabled = viewModel.getBoolean(R.string.pk_inspection_enabled, false)
+                        )
 
-                item {
-                    SettingsCategory("Timer Control")
-                    
-                    SwitchSettingsItem(
-                        title = "Manual Entry",
-                        subtitle = "Enter times manually",
-                        icon = R.drawable.ic_outline_edit_24px,
-                        checked = viewModel.getBoolean(R.string.pk_enable_manual_entry, false),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_enable_manual_entry, it) }
-                    )
+                        SettingsCategory("Timer Control")
+                        
+                        SwitchSettingsItem(
+                            title = "Manual Entry",
+                            subtitle = "Enter times manually",
+                            icon = R.drawable.ic_outline_edit_24px,
+                            checked = viewModel.getBoolean(R.string.pk_enable_manual_entry, false),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_enable_manual_entry, it) }
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Start Cue",
-                        subtitle = "Visual cue when ready",
-                        icon = R.drawable.ic_outline_wb_incandescent_24px,
-                        checked = viewModel.getBoolean(R.string.pk_start_cue_enabled, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_start_cue_enabled, it) }
-                    )
+                        SwitchSettingsItem(
+                            title = "Start Cue",
+                            subtitle = "Visual cue when ready",
+                            icon = R.drawable.ic_outline_wb_incandescent_24px,
+                            checked = viewModel.getBoolean(R.string.pk_start_cue_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_start_cue_enabled, it) }
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Hold to Start",
-                        subtitle = "Requirement for timing",
-                        icon = R.drawable.ic_outline_radio_button_unchecked_24px,
-                        checked = viewModel.getBoolean(R.string.pk_hold_to_start_enabled, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_hold_to_start_enabled, it) }
-                    )
-                }
+                        SwitchSettingsItem(
+                            title = "Hold to Start",
+                            subtitle = "Requirement for timing",
+                            icon = R.drawable.ic_outline_radio_button_unchecked_24px,
+                            checked = viewModel.getBoolean(R.string.pk_hold_to_start_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_hold_to_start_enabled, it) }
+                        )
 
-                item {
-                    SettingsCategory("Scramble")
-                    
-                    SwitchSettingsItem(
-                        title = "Enable Scramble",
-                        icon = R.drawable.ic_outline_casino_24px,
-                        checked = viewModel.getBoolean(R.string.pk_scramble_enabled, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_scramble_enabled, it) }
-                    )
+                        SettingsCategory("Scramble")
+                        
+                        SwitchSettingsItem(
+                            title = "Enable Scramble",
+                            icon = R.drawable.ic_outline_casino_24px,
+                            checked = viewModel.getBoolean(R.string.pk_scramble_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_scramble_enabled, it) }
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Show Hints",
-                        subtitle = "Cross solutions",
-                        icon = R.drawable.ic_outline_wb_incandescent_24px,
-                        checked = viewModel.getBoolean(R.string.pk_show_scramble_hints, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_show_scramble_hints, it) },
-                        enabled = viewModel.getBoolean(R.string.pk_scramble_enabled, true)
-                    )
-                }
+                        SwitchSettingsItem(
+                            title = "Show Hints",
+                            subtitle = "Cross solutions",
+                            icon = R.drawable.ic_outline_wb_incandescent_24px,
+                            checked = viewModel.getBoolean(R.string.pk_show_scramble_hints, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_scramble_hints, it) },
+                            enabled = viewModel.getBoolean(R.string.pk_scramble_enabled, true)
+                        )
 
-                item {
-                    SettingsCategory("Appearance")
-                    
-                    SettingsItem(
-                        title = "Theme",
-                        subtitle = "App colors and fonts",
-                        icon = R.drawable.ic_outline_palette_24px,
-                        onClick = onThemeClick
-                    )
+                        SettingsCategory("Appearance")
+                        
+                        SettingsItem(
+                            title = "Theme",
+                            subtitle = "App colors and fonts",
+                            icon = R.drawable.ic_outline_palette_24px,
+                            onClick = onThemeClick
+                        )
+                        
+                        SettingsItem(
+                            title = "Cube Color Scheme",
+                            subtitle = "Customize face colors",
+                            icon = R.drawable.ic_outline_palette_24px,
+                            onClick = onColorSchemeClick
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Show Scramble Image",
-                        icon = R.drawable.ic_outline_casino_24px,
-                        checked = viewModel.getBoolean(R.string.pk_show_scramble_image, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_show_scramble_image, it) }
-                    )
+                        SettingsItem(
+                            title = "Scramble Text Size",
+                            subtitle = "${viewModel.getInt(R.string.pk_scramble_text_size, 100)}%",
+                            icon = R.drawable.ic_outline_text_fields_24px,
+                            onClick = { showScrambleSizeDialog = true }
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Show Session Stats",
-                        icon = R.drawable.ic_outline_timeline_24px,
-                        checked = viewModel.getBoolean(R.string.pk_show_session_stats, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_show_session_stats, it) }
-                    )
+                        SettingsItem(
+                            title = "Timer Text Size",
+                            subtitle = "${viewModel.getInt(R.string.pk_timer_text_size, 100)}%",
+                            icon = R.drawable.ic_outline_text_fields_24px,
+                            onClick = { showTimerSizeDialog = true }
+                        )
 
-                    SwitchSettingsItem(
-                        title = "Show Quick Actions",
-                        icon = R.drawable.ic_format_shapes_black_24dp,
-                        checked = viewModel.getBoolean(R.string.pk_show_quick_actions, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_show_quick_actions, it) }
-                    )
-                }
+                        SwitchSettingsItem(
+                            title = "Show Scramble Image",
+                            icon = R.drawable.ic_outline_casino_24px,
+                            checked = viewModel.getBoolean(R.string.pk_show_scramble_image, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_scramble_image, it) }
+                        )
 
-                item {
-                    SettingsCategory("Advanced")
-                    
-                    SettingsItem(
-                        title = "Trim Size",
-                        subtitle = "${viewModel.getInt(R.string.pk_stat_trim_size, 5)}%",
-                        icon = R.drawable.ic_outline_track_changes_18px,
-                        onClick = { showTrimSizeDialog = true }
-                    )
-                    
-                    SwitchSettingsItem(
-                        title = "Show Clear Button",
-                        subtitle = "In solve list",
-                        icon = R.drawable.ic_outline_delete_sweep_18px,
-                        checked = viewModel.getBoolean(R.string.pk_show_clear_button, true),
-                        onCheckedChange = { viewModel.setBoolean(R.string.pk_show_clear_button, it) }
-                    )
-                }
-                
-                item {
-                    Spacer(Modifier.height(32.dp))
+                        SwitchSettingsItem(
+                            title = "Show Session Stats",
+                            icon = R.drawable.ic_outline_timeline_24px,
+                            checked = viewModel.getBoolean(R.string.pk_show_session_stats, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_session_stats, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Show Quick Actions",
+                            icon = R.drawable.ic_format_shapes_black_24dp,
+                            checked = viewModel.getBoolean(R.string.pk_show_quick_actions, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_quick_actions, it) }
+                        )
+
+                        SettingsCategory("Advanced")
+                        
+                        SettingsItem(
+                            title = "Trim Size",
+                            subtitle = "${viewModel.getInt(R.string.pk_stat_trim_size, 5)}%",
+                            icon = R.drawable.ic_outline_track_changes_18px,
+                            onClick = { showTrimSizeDialog = true }
+                        )
+                        
+                        SwitchSettingsItem(
+                            title = "Show Clear Button",
+                            subtitle = "In solve list",
+                            icon = R.drawable.ic_outline_delete_sweep_18px,
+                            checked = viewModel.getBoolean(R.string.pk_show_clear_button, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_clear_button, it) }
+                        )
+                        
+                        Spacer(Modifier.height(32.dp))
+                    }
                 }
             }
         }
@@ -247,6 +260,36 @@ fun SettingsScreen(
                 showTrimSizeDialog = false
             },
             onDismiss = { showTrimSizeDialog = false }
+        )
+    }
+
+    if (showScrambleSizeDialog) {
+        NumberPickerDialog(
+            title = "Scramble Text Size (%)",
+            initialValue = viewModel.getInt(R.string.pk_scramble_text_size, 100),
+            minValue = 50,
+            maxValue = 200,
+            onValueSelected = {
+                viewModel.setInt(R.string.pk_scramble_text_size, it)
+                showScrambleSizeDialog = false
+                TTIntent.broadcast(TTIntent.CATEGORY_UI_INTERACTIONS, TTIntent.ACTION_CHANGED_THEME)
+            },
+            onDismiss = { showScrambleSizeDialog = false }
+        )
+    }
+
+    if (showTimerSizeDialog) {
+        NumberPickerDialog(
+            title = "Timer Text Size (%)",
+            initialValue = viewModel.getInt(R.string.pk_timer_text_size, 100),
+            minValue = 50,
+            maxValue = 200,
+            onValueSelected = {
+                viewModel.setInt(R.string.pk_timer_text_size, it)
+                showTimerSizeDialog = false
+                TTIntent.broadcast(TTIntent.CATEGORY_UI_INTERACTIONS, TTIntent.ACTION_CHANGED_THEME)
+            },
+            onDismiss = { showTimerSizeDialog = false }
         )
     }
 }

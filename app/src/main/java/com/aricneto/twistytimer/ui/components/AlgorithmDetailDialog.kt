@@ -39,6 +39,7 @@ fun AlgorithmDetailDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .systemBarsPadding()
                 .padding(16.dp)
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally

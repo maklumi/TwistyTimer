@@ -1,13 +1,16 @@
 package com.aricneto.twistytimer.ui.screens
 
 import android.content.Intent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,7 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.aricneto.twistify.R
+import com.aricneto.twistytimer.ui.theme.LocalTwistyColors
 import com.aricneto.twistytimer.utils.StoreUtils
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +58,8 @@ fun AboutScreen(
     var showLicenses by remember { mutableStateOf(false) }
     
     Scaffold(
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets.systemBars,
         topBar = {
             TopAppBar(
                 title = { Text("About") },
@@ -64,7 +72,15 @@ fun AboutScreen(
                     }
                 }
             )
-        }
+        },
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    LocalTwistyColors.current.backgroundGradientStart,
+                    LocalTwistyColors.current.backgroundGradientEnd
+                )
+            )
+        )
     ) { paddingValues ->
         LazyColumn(
             modifier = modifier

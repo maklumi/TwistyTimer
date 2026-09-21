@@ -131,6 +131,8 @@ class TimerViewModel : ViewModel() {
 
     private var currentSolve: Solve? = null
 
+    private var lastRegularPuzzle = PuzzleUtils.TYPE_333
+
     enum class TimerState { Stopped, Ready, Running }
 
     private var startTime = 0L
@@ -165,12 +167,25 @@ class TimerViewModel : ViewModel() {
         dir: String = SolveRepository.DIR_DESC
     ) {
         val oldParams = _params.value
-        _params.value = SolveParams(type, subtype, mode, history, subset, search, key, dir)
+        
+        var newType = type
+        if (mode == 0) {
+            // Ensure we use a regular puzzle in mode 0
+            if (newType == null || PuzzleUtils.getPositionOfPuzzle(newType) == 0 && newType != PuzzleUtils.TYPE_222) {
+                // If type is invalid or not a regular puzzle (assuming getPositionOfPuzzle returns 0 for non-matches, 
+                // but wait, 222 is index 0. I should check PuzzleUtils.kt)
+                newType = lastRegularPuzzle
+            } else {
+                lastRegularPuzzle = newType
+            }
+        }
+
+        _params.value = SolveParams(newType, subtype, mode, history, subset, search, key, dir)
         
         // Refresh statistics if puzzle or mode or subset changed
-        if (type != oldParams.type || subtype != oldParams.subtype || mode != oldParams.mode || subset != oldParams.subset) {
+        if (newType != oldParams.type || subtype != oldParams.subtype || mode != oldParams.mode || subset != oldParams.subset) {
             refreshStatistics()
-            updateScrambleHintVisibility(type)
+            updateScrambleHintVisibility(newType)
         }
         updateManualEntryStatus()
     }

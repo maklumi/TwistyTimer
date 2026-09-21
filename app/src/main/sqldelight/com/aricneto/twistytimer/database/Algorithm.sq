@@ -25,3 +25,9 @@ UPDATE algs SET progress = ? WHERE _id = ?;
 insertAlg:
 INSERT INTO algs(subset, name, state, algs, progress)
 VALUES (?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM algs WHERE _id = ?;
+
+deleteBySubsetAndName:
+DELETE FROM algs WHERE subset = ? AND name = ?;

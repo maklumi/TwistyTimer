@@ -2,6 +2,7 @@ package com.aricneto.twistytimer.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -48,6 +50,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.aricneto.twistify.R
@@ -64,6 +67,7 @@ import com.aricneto.twistytimer.ui.components.HintComposeDialog
 import com.aricneto.twistytimer.ui.components.SolveDetailDialog
 import com.aricneto.twistytimer.ui.screens.AboutScreen
 import com.aricneto.twistytimer.ui.screens.AlgListScreen
+import com.aricneto.twistytimer.ui.screens.ColorSchemeScreen
 import com.aricneto.twistytimer.ui.screens.ExportImportScreen
 import com.aricneto.twistytimer.ui.screens.LanguageSelectScreen
 import com.aricneto.twistytimer.ui.screens.MainPagerScreen
@@ -74,10 +78,12 @@ import com.aricneto.twistytimer.ui.screens.TrainerSubsetScreen
 import com.aricneto.twistytimer.utils.AlgUtils
 import com.aricneto.twistytimer.utils.Prefs
 import com.aricneto.twistytimer.utils.PuzzleUtils
+import com.aricneto.twistytimer.utils.TTEventBus
 import com.aricneto.twistytimer.utils.TTIntent
 import com.aricneto.twistytimer.viewmodel.AlgViewModel
 import com.aricneto.twistytimer.viewmodel.TimerViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -85,10 +91,34 @@ import kotlinx.coroutines.withContext
 @Composable
 fun TwistyApp() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val currentSubset = navBackStackEntry?.arguments?.getString("subset")
+    
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val timerViewModel: TimerViewModel = viewModel()
     val algViewModel: AlgViewModel = viewModel()
+
+    // App Settings
+    val scrambleTextSize by remember { mutableStateOf(Prefs.getInt(R.string.pk_scramble_text_size, 100)) }.let { state ->
+        var current by state
+        LaunchedEffect(Unit) {
+            TTEventBus.events.filter { it.action == TTIntent.ACTION_CHANGED_THEME }.collect {
+                current = Prefs.getInt(R.string.pk_scramble_text_size, 100)
+            }
+        }
+        state
+    }
+    val timerTextSize by remember { mutableStateOf(Prefs.getInt(R.string.pk_timer_text_size, 100)) }.let { state ->
+        var current by state
+        LaunchedEffect(Unit) {
+            TTEventBus.events.filter { it.action == TTIntent.ACTION_CHANGED_THEME }.collect {
+                current = Prefs.getInt(R.string.pk_timer_text_size, 100)
+            }
+        }
+        state
+    }
 
     // Global Dialog States
     var solveToShowDetails by remember { mutableStateOf<Solve?>(null) }
@@ -97,6 +127,7 @@ fun TwistyApp() {
     var showAddTimeManually by remember { mutableStateOf(false) }
     var showHintDialog by remember { mutableStateOf(false) }
     var currentHintText by remember { mutableStateOf("") }
+    var isHintLoading by remember { mutableStateOf(false) }
     var showSortOptions by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var showClearSessionConfirmation by remember { mutableStateOf(false) }
@@ -122,7 +153,7 @@ fun TwistyApp() {
                 NavigationDrawerItem(
                     icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_timer_24px), contentDescription = null) },
                     label = { Text("Timer") },
-                    selected = false,
+                    selected = currentRoute == "main",
                     onClick = {
                         scope.launch { drawerState.close() }
                         navController.navigate("main")
@@ -136,15 +167,15 @@ fun TwistyApp() {
                     icon = R.drawable.ic_outline_track_changes_18px
                 )
 
-                TrainerItem("OLL", icon = { Icon(painterResource(R.drawable.ic_oll_black_24dp), null) }) {
+                TrainerItem("OLL", icon = { Icon(painterResource(R.drawable.ic_oll_black_24dp), null) }, selected = currentRoute == "trainer/{subset}" && currentSubset == "OLL") {
                     scope.launch { drawerState.close() }
                     navController.navigate("trainer/OLL")
                 }
-                TrainerItem("PLL", icon = { Icon(painterResource(R.drawable.ic_pll_black_24dp), null) }) {
+                TrainerItem("PLL", icon = { Icon(painterResource(R.drawable.ic_pll_black_24dp), null) }, selected = currentRoute == "trainer/{subset}" && currentSubset == "PLL") {
                     scope.launch { drawerState.close() }
                     navController.navigate("trainer/PLL")
                 }
-                TrainerItem("CMLL", icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_casino_24px), null) }) {
+                TrainerItem("CMLL", icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_casino_24px), null) }, selected = currentRoute == "trainer/{subset}" && currentSubset == "CMLL") {
                     scope.launch { drawerState.close() }
                     navController.navigate("trainer/CMLL")
                 }
@@ -156,15 +187,15 @@ fun TwistyApp() {
                     icon = R.drawable.ic_outline_library_books_24px
                 )
 
-                TrainerItem("OLL Algs", icon = { Icon(painterResource(R.drawable.ic_oll_black_24dp), null) }) {
+                TrainerItem("OLL Algs", icon = { Icon(painterResource(R.drawable.ic_oll_black_24dp), null) }, selected = currentRoute == "algs/{subset}" && currentSubset == "OLL") {
                     scope.launch { drawerState.close() }
                     navController.navigate("algs/OLL")
                 }
-                TrainerItem("PLL Algs", icon = { Icon(painterResource(R.drawable.ic_pll_black_24dp), null) }) {
+                TrainerItem("PLL Algs", icon = { Icon(painterResource(R.drawable.ic_pll_black_24dp), null) }, selected = currentRoute == "algs/{subset}" && currentSubset == "PLL") {
                     scope.launch { drawerState.close() }
                     navController.navigate("algs/PLL")
                 }
-                TrainerItem("CMLL Algs", icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_casino_24px), null) }) {
+                TrainerItem("CMLL Algs", icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_casino_24px), null) }, selected = currentRoute == "algs/{subset}" && currentSubset == "CMLL") {
                     scope.launch { drawerState.close() }
                     navController.navigate("algs/CMLL")
                 }
@@ -174,7 +205,7 @@ fun TwistyApp() {
                 NavigationDrawerItem(
                     icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_settings_24px), null) },
                     label = { Text("Settings") },
-                    selected = false,
+                    selected = currentRoute == "settings",
                     onClick = {
                         scope.launch { drawerState.close() }
                         navController.navigate("settings")
@@ -183,7 +214,7 @@ fun TwistyApp() {
                 NavigationDrawerItem(
                     icon = { Icon(imageVector = ImageVector.vectorResource(R.drawable.ic_outline_help_outline_24px), null) },
                     label = { Text("About") },
-                    selected = false,
+                    selected = currentRoute == "about",
                     onClick = {
                         scope.launch { drawerState.close() }
                         navController.navigate("about")
@@ -219,7 +250,7 @@ fun TwistyApp() {
                 }
 
                 MainPagerScreen(
-                    currentPuzzle = params.type ?: "3x3 Cube",
+                    currentPuzzle = stringResource(PuzzleUtils.getPuzzleName(params.type).let { if (it == 0) R.string.cube_333_informal else it }),
                     currentCategory = params.subtype ?: "Normal",
                     mode = params.mode,
                     scramble = scramble,
@@ -238,10 +269,17 @@ fun TwistyApp() {
                     onScrambleReset = { timerViewModel.generateScramble() },
                     onScrambleEdit = { showEditScramble = true },
                     onScrambleHintClick = {
-                        val cross = RubiksCubeOptimalCross(TwistyTimer.getAppContext().getString(R.string.optimal_cross))
-                        val xcross = RubiksCubeOptimalXCross(TwistyTimer.getAppContext().getString(R.string.optimal_x_cross))
-                        currentHintText = cross.getTip(scramble) + "\n\n" + xcross.getTip(scramble)
-                        showHintDialog = true
+                        scope.launch {
+                            isHintLoading = true
+                            val hintText = withContext(Dispatchers.Default) {
+                                val cross = RubiksCubeOptimalCross(TwistyTimer.getAppContext().getString(R.string.optimal_cross))
+                                val xcross = RubiksCubeOptimalXCross(TwistyTimer.getAppContext().getString(R.string.optimal_x_cross))
+                                cross.getTip(scramble) + "\n\n" + xcross.getTip(scramble)
+                            }
+                            currentHintText = hintText
+                            isHintLoading = false
+                            showHintDialog = true
+                        }
                     },
                     onRemoveClick = { timerViewModel.removeLastSolve() },
                     onDnfClick = { timerViewModel.applyDnf() },
@@ -259,7 +297,9 @@ fun TwistyApp() {
                     showClearButton = Prefs.getBoolean(R.string.pk_show_clear_button, true),
                     onClearClick = { showClearSessionConfirmation = true },
                     manualEntryEnabled = manualEntryEnabled,
-                    onManualEntryClick = { showAddTimeManually = true }
+                    onManualEntryClick = { showAddTimeManually = true },
+                    scrambleTextSize = scrambleTextSize,
+                    timerTextSize = timerTextSize
                 )
             }
             composable(
@@ -324,7 +364,13 @@ fun TwistyApp() {
                     onSolveClick = { solve -> if (selectedSolveIds.isNotEmpty()) timerViewModel.toggleSelection(solve.id) else solveToShowDetails = solve },
                     onSolveLongClick = { solve -> timerViewModel.toggleSelection(solve.id) },
                     onSearchChange = { query -> timerViewModel.updateParams(params.type, params.subtype, params.mode, params.history, params.subset, query) },
-                    onSortClick = { showSortOptions = true }
+                    onSortClick = { showSortOptions = true },
+                    showClearButton = Prefs.getBoolean(R.string.pk_show_clear_button, true),
+                    onClearClick = { showClearSessionConfirmation = true },
+                    manualEntryEnabled = manualEntryEnabled,
+                    onManualEntryClick = { showAddTimeManually = true },
+                    scrambleTextSize = scrambleTextSize,
+                    timerTextSize = timerTextSize
                 )
             }
             composable(
@@ -367,7 +413,8 @@ fun TwistyApp() {
                     onBackClick = { navController.popBackStack() },
                     onThemeClick = { navController.navigate("theme_select") },
                     onLanguageClick = { navController.navigate("language_select") },
-                    onBackupClick = { navController.navigate("export_import") }
+                    onBackupClick = { navController.navigate("export_import") },
+                    onColorSchemeClick = { navController.navigate("color_scheme") }
                 )
             }
             composable("about") {
@@ -378,6 +425,9 @@ fun TwistyApp() {
             }
             composable("language_select") {
                 LanguageSelectScreen(onBackClick = { navController.popBackStack() })
+            }
+            composable("color_scheme") {
+                ColorSchemeScreen(onBackClick = { navController.popBackStack() })
             }
             composable("export_import") {
                 ExportImportScreen(onBackClick = { navController.popBackStack() })
@@ -496,6 +546,19 @@ fun TwistyApp() {
                 onResetAlg = { val d = AlgUtils.getDefaultAlgs(algorithmToShowDetails!!.subset, algorithmToShowDetails!!.name); val u = algorithmToShowDetails!!.copy(algs = d); algViewModel.updateAlgorithm(u); algorithmToShowDetails = u }
             )
         }
+
+        if (isHintLoading) {
+            AlertDialog(
+                onDismissRequest = { },
+                confirmButton = { },
+                title = { Text("Calculating Hints...") },
+                text = {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -509,11 +572,16 @@ private fun DrawerSectionHeader(label: String, icon: Int) {
 }
 
 @Composable
-private fun TrainerItem(label: String, icon: @Composable () -> Unit = {}, onClick: () -> Unit) {
+private fun TrainerItem(
+    label: String,
+    icon: @Composable () -> Unit = {},
+    selected: Boolean = false,
+    onClick: () -> Unit
+) {
     NavigationDrawerItem(
         label = { Text(label) },
         icon = icon,
-        selected = false,
+        selected = selected,
         onClick = onClick,
         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
     )

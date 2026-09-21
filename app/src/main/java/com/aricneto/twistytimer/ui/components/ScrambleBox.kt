@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aricneto.twistify.R
@@ -23,7 +24,8 @@ fun ScrambleBox(
     onResetClick: () -> Unit = {},
     onEditClick: () -> Unit = {},
     onHintClick: () -> Unit = {},
-    onManualEntryClick: () -> Unit = {}
+    onManualEntryClick: () -> Unit = {},
+    fontSize: TextUnit = 18.sp
 ) {
     ElevatedCard(
         modifier = modifier
@@ -46,7 +48,7 @@ fun ScrambleBox(
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .fillMaxWidth(),
                 textAlign = TextAlign.Center,
-                fontSize = 18.sp,
+                fontSize = fontSize,
                 color = MaterialTheme.colorScheme.onSurface
             )
 

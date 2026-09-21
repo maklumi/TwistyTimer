@@ -16,7 +16,11 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.aricneto.twistify.R
+import com.aricneto.twistytimer.ui.theme.LocalTwistyColors
 import com.aricneto.twistytimer.viewmodel.SettingsViewModel
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +52,8 @@ fun ExportImportScreen(
     }
 
     Scaffold(
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets.systemBars,
         topBar = {
             TopAppBar(
                 title = { Text("Backup and Restore") },
@@ -60,7 +66,15 @@ fun ExportImportScreen(
                     }
                 }
             )
-        }
+        },
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    LocalTwistyColors.current.backgroundGradientStart,
+                    LocalTwistyColors.current.backgroundGradientEnd
+                )
+            )
+        )
     ) { paddingValues ->
         LazyColumn(
             modifier = modifier

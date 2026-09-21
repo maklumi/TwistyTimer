@@ -57,6 +57,10 @@ class AlgRepository(private val queries: AlgorithmQueries) {
     suspend fun updateAlgorithmProgress(id: Long, progress: Long) = withContext(Dispatchers.IO) {
         queries.updateProgress(progress, id)
     }
+
+    suspend fun deleteAlgorithm(subset: String, name: String) = withContext(Dispatchers.IO) {
+        queries.deleteBySubsetAndName(subset, name)
+    }
     
     suspend fun getAlgorithmById(id: Long) = withContext(Dispatchers.IO) {
         queries.selectById(id).executeAsOneOrNull()?.let { sqAlg ->

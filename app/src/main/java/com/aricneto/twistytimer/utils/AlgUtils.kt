@@ -111,7 +111,7 @@ object AlgUtils {
             return CASES_PLL
         }
 
-    private val subsetCasesCMLL: MutableList<String>
+    val subsetCasesCMLL: MutableList<String>
         get() {
             if (CASES_CMLL.isEmpty()) {
                 val cases = arrayOf(
@@ -142,7 +142,10 @@ object AlgUtils {
                         return name.substring(4).toInt() - 1
                     }
                 }
-                "CMLL" -> return subsetCasesCMLL.indexOf(name.replace("CMLL ", ""))
+                "CMLL" -> {
+                    val baseName = name.replace("CMLL ", "")
+                    return subsetCasesCMLL.indexOf(baseName)
+                }
             }
         } catch (_: Exception) {
             return -1

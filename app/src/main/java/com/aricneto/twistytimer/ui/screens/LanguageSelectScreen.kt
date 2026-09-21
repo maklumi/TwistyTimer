@@ -13,7 +13,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.aricneto.twistify.R
+import com.aricneto.twistytimer.ui.theme.LocalTwistyColors
 import com.aricneto.twistytimer.utils.LocaleUtils
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.background
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +28,8 @@ fun LanguageSelectScreen(
     var currentLocale by remember { mutableStateOf(LocaleUtils.locale ?: "en_US") }
 
     Scaffold(
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets.systemBars,
         topBar = {
             TopAppBar(
                 title = { Text("Select Language") },
@@ -37,7 +42,15 @@ fun LanguageSelectScreen(
                     }
                 }
             )
-        }
+        },
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                colors = listOf(
+                    LocalTwistyColors.current.backgroundGradientStart,
+                    LocalTwistyColors.current.backgroundGradientEnd
+                )
+            )
+        )
     ) { paddingValues ->
         LazyColumn(
             modifier = modifier

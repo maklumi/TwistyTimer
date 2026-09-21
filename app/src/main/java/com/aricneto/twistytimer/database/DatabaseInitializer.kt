@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import androidx.core.content.edit
+import com.aricneto.twistytimer.utils.AlgUtils
 
 object DatabaseInitializer {
 
@@ -20,7 +21,19 @@ object DatabaseInitializer {
 
     suspend fun initialize(repository: AlgRepository, solveRepository: SolveRepository) = withContext(Dispatchers.IO) {
         initializeAlgorithms(repository)
+        cleanupOldAlgorithms(repository)
         migrateTrainingMode(solveRepository)
+    }
+
+    private suspend fun cleanupOldAlgorithms(repository: AlgRepository) {
+        val allAlgs = repository.getAllAlgorithms()
+        val validCmllNames = AlgUtils.subsetCasesCMLL.toSet()
+        
+        allAlgs.filter { it.subset == "CMLL" }.forEach { alg ->
+            if (!validCmllNames.contains(alg.name)) {
+                repository.deleteAlgorithm(alg.subset, alg.name)
+            }
+        }
     }
 
     private suspend fun initializeAlgorithms(repository: AlgRepository) {
