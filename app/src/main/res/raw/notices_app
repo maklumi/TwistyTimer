@@ -5,11 +5,6 @@
         <name>All relevant licenses can be found on the bottom of this list</name>
     </notice>
     <notice>
-        <name>MPAndroidChart</name>
-        <url>https://github.com/PhilJay/MPAndroidChart</url>
-        <copyright>Copyright 2016 Philipp Jahoda - Apache Software License 2.0</copyright>
-    </notice>
-    <notice>
         <name>Material Color Picker Dialog</name>
         <url>https://github.com/Pes8/android-material-color-picker-dialog</url>
         <copyright>Copyright (c) 2015 Simone Pessotto (http://www.simonepessotto.it) - MIT License</copyright>

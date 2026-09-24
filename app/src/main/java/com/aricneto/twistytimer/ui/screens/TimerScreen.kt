@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,44 +31,56 @@ import com.aricneto.twistytimer.ui.components.StatsBar
 import com.aricneto.twistytimer.ui.components.TimerDisplay
 import com.aricneto.twistytimer.ui.components.TimerStats
 
+data class TimerUiState(
+    val scramble: String = "",
+    val currentTimeMillis: Long = 0L,
+    val isRunning: Boolean = false,
+    val isReady: Boolean = false,
+    val isScrambleLoading: Boolean = false,
+    val showScrambleHint: Boolean = false,
+    val scrambleState: String? = null,
+    val scrambleDrawable: Drawable? = null,
+    val stats: TimerStats? = null,
+    val showQAButtons: Boolean = false,
+    val isPersonalBest: Boolean = false,
+    val manualEntryEnabled: Boolean = false,
+    val scrambleTextSize: Int = 100,
+    val timerTextSize: Int = 100,
+    val hideTimeWhileRunning: Boolean = false,
+    val showMillis: Boolean = true
+)
+
+data class TimerActions(
+    val onTimerDown: () -> Unit = {},
+    val onTimerUp: () -> Unit = {},
+    val onScrambleReset: () -> Unit = {},
+    val onScrambleEdit: () -> Unit = {},
+    val onScrambleHintClick: () -> Unit = {},
+    val onRemoveClick: () -> Unit = {},
+    val onDnfClick: () -> Unit = {},
+    val onPlusTwoClick: () -> Unit = {},
+    val onCommentClick: () -> Unit = {},
+    val onManualEntryClick: () -> Unit = {}
+)
+
 @Composable
 fun TimerScreen(
-    scramble: String,
-    currentTimeMillis: Long,
-    isRunning: Boolean,
-    isReady: Boolean,
-    onTimerDown: () -> Unit,
-    onTimerUp: () -> Unit,
+    uiState: TimerUiState,
     modifier: Modifier = Modifier,
-    isScrambleLoading: Boolean = false,
-    showScrambleHint: Boolean = false,
-    scrambleState: String? = null,
-    scrambleDrawable: Drawable? = null,
-    stats: TimerStats? = null,
-    showQAButtons: Boolean = false,
-    isPersonalBest: Boolean = false,
-    onScrambleReset: () -> Unit = {},
-    onScrambleEdit: () -> Unit = {},
-    onScrambleHintClick: () -> Unit = {},
-    onRemoveClick: () -> Unit = {},
-    onDnfClick: () -> Unit = {},
-    onPlusTwoClick: () -> Unit = {},
-    onCommentClick: () -> Unit = {},
-    manualEntryEnabled: Boolean = false,
-    onManualEntryClick: () -> Unit = {},
-    scrambleTextSize: Int = 100,
-    timerTextSize: Int = 100
+    actions: TimerActions = TimerActions()
 ) {
+    val currentActions by rememberUpdatedState(actions)
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .then(if (isRunning) Modifier.safeDrawingPadding() else Modifier)
+            .then(if (uiState.isRunning) Modifier.safeDrawingPadding() else Modifier)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
-                        onTimerDown()
+                        currentActions.onTimerDown()
                         tryAwaitRelease()
-                        onTimerUp()
+                        currentActions.onTimerUp()
                     }
                 )
             }
@@ -75,76 +89,80 @@ fun TimerScreen(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ScrambleBox(
-                scramble = scramble,
-                isLoading = isScrambleLoading,
-                showHint = showScrambleHint,
-                showManualEntry = manualEntryEnabled,
-                onResetClick = onScrambleReset,
-                onEditClick = onScrambleEdit,
-                onHintClick = onScrambleHintClick,
-                onManualEntryClick = onManualEntryClick,
-                fontSize = (18 * (scrambleTextSize / 100f)).sp
-            )
-
-            if (isPersonalBest) {
-                Text(
-                    text = "Personal Best!",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 16.dp)
+            if (!uiState.isRunning) {
+                ScrambleBox(
+                    scramble = uiState.scramble,
+                    isLoading = uiState.isScrambleLoading,
+                    showHint = uiState.showScrambleHint,
+                    showManualEntry = uiState.manualEntryEnabled,
+                    onResetClick = currentActions.onScrambleReset,
+                    onEditClick = currentActions.onScrambleEdit,
+                    onHintClick = currentActions.onScrambleHintClick,
+                    onManualEntryClick = currentActions.onManualEntryClick,
+                    fontSize = (18 * (uiState.scrambleTextSize / 100f)).sp
                 )
+
+                if (uiState.isPersonalBest) {
+                    Text(
+                        text = "Personal Best!",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
             TimerDisplay(
-                timeMillis = currentTimeMillis,
-                color = if (isReady) Color.Green else if (isRunning) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.primary,
-                fontSize = (76 * (timerTextSize / 100f)).sp
+                timeMillis = uiState.currentTimeMillis,
+                color = if (uiState.isReady) Color.Green else if (uiState.isRunning) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.primary,
+                fontSize = (76 * (uiState.timerTextSize / 100f)).sp,
+                showMillis = uiState.showMillis,
+                isSolvingHidden = uiState.isRunning && uiState.hideTimeWhileRunning
             )
 
-            if (showQAButtons) {
+            if (uiState.showQAButtons) {
                 QAButtons(
-                    onRemoveClick = onRemoveClick,
-                    onDnfClick = onDnfClick,
-                    onPlusTwoClick = onPlusTwoClick,
-                    onCommentClick = onCommentClick
+                    onRemoveClick = currentActions.onRemoveClick,
+                    onDnfClick = currentActions.onDnfClick,
+                    onPlusTwoClick = currentActions.onPlusTwoClick,
+                    onCommentClick = currentActions.onCommentClick
                 )
             }
 
-            Spacer(modifier = Modifier.weight(0.5f))
+            Spacer(modifier = Modifier.weight(1f))
 
-            // Scramble image below timer
-            if (!isRunning) {
+            if (!uiState.isRunning) {
+                // Scramble image below timer
                 Box(
                     modifier = Modifier
                         .size(width = 240.dp, height = 180.dp)
                         .padding(bottom = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (scrambleState != null) {
+                    if (uiState.scrambleState != null) {
                         CubeComponent(
-                            state = scrambleState,
+                            state = uiState.scrambleState,
                             modifier = Modifier.size(120.dp)
                         )
-                    } else if (scrambleDrawable != null) {
+                    } else if (uiState.scrambleDrawable != null) {
                         AndroidView(
                             factory = { context ->
                                 ImageView(context).apply {
                                     setLayerType(View.LAYER_TYPE_SOFTWARE, null)
-                                    setImageDrawable(scrambleDrawable)
+                                    setImageDrawable(uiState.scrambleDrawable)
                                 }
                             },
-                            update = { it.setImageDrawable(scrambleDrawable) },
+                            update = { it.setImageDrawable(uiState.scrambleDrawable) },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-            }
 
-            if (stats != null) {
-                StatsBar(stats = stats)
+                if (uiState.stats != null) {
+                    StatsBar(stats = uiState.stats)
+                }
             }
         }
     }

@@ -56,9 +56,12 @@ object Prefs {
      */
     @JvmStatic
     fun getString(@StringRes prefKeyResID: Int, defaultValue: String?): String? {
-        return getPrefs().getString(
-            TwistyTimer.getAppContext().getString(prefKeyResID), defaultValue
-        )
+        val key = TwistyTimer.getAppContext().getString(prefKeyResID)
+        return try {
+            getPrefs().getString(key, defaultValue)
+        } catch (_: Exception) {
+            getPrefs().all[key]?.toString() ?: defaultValue
+        }
     }
 
     /**
@@ -74,9 +77,16 @@ object Prefs {
      */
     @JvmStatic
     fun getInt(@StringRes prefKeyResID: Int, defaultValue: Int): Int {
-        return getPrefs().getInt(
-            TwistyTimer.getAppContext().getString(prefKeyResID), defaultValue
-        )
+        val key = TwistyTimer.getAppContext().getString(prefKeyResID)
+        return try {
+            getPrefs().getInt(key, defaultValue)
+        } catch (_: Exception) {
+            try {
+                getPrefs().getString(key, null)?.toIntOrNull() ?: defaultValue
+            } catch (_: Exception) {
+                defaultValue
+            }
+        }
     }
 
     /**
@@ -92,9 +102,16 @@ object Prefs {
      */
     @JvmStatic
     fun getBoolean(@StringRes prefKeyResID: Int, defaultValue: Boolean): Boolean {
-        return getPrefs().getBoolean(
-            TwistyTimer.getAppContext().getString(prefKeyResID), defaultValue
-        )
+        val key = TwistyTimer.getAppContext().getString(prefKeyResID)
+        return try {
+            getPrefs().getBoolean(key, defaultValue)
+        } catch (_: Exception) {
+            try {
+                getPrefs().getString(key, null)?.toBooleanStrictOrNull() ?: defaultValue
+            } catch (_: Exception) {
+                defaultValue
+            }
+        }
     }
 
     /**

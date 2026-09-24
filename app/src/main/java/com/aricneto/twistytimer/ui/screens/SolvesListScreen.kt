@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aricneto.twistify.R
@@ -34,17 +36,27 @@ import com.aricneto.twistytimer.utils.PuzzleUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 
+data class SolvesListUiState(
+    val solves: List<Solve> = emptyList(),
+    val selectedIds: Set<Long> = emptySet(),
+    val showClearButton: Boolean = false,
+    val isHistory: Boolean = false
+)
+
+data class SolvesListActions(
+    val onSolveClick: (Solve) -> Unit = {},
+    val onSolveLongClick: (Solve) -> Unit = {},
+    val onSearchChange: (String) -> Unit = {},
+    val onHistoryToggle: (Boolean) -> Unit = {},
+    val onSortClick: () -> Unit = {},
+    val onClearClick: () -> Unit = {}
+)
+
 @Composable
 fun SolvesListScreen(
-    solves: List<Solve>,
-    selectedIds: Set<Long>,
-    onSolveClick: (Solve) -> Unit,
-    onSolveLongClick: (Solve) -> Unit,
-    onSearchChange: (String) -> Unit,
-    onSortClick: () -> Unit,
-    showClearButton: Boolean = false,
-    onClearClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    uiState: SolvesListUiState,
+    modifier: Modifier = Modifier,
+    actions: SolvesListActions = SolvesListActions()
 ) {
     var searchQuery by remember { mutableStateOf("") }
     
@@ -59,22 +71,34 @@ fun SolvesListScreen(
                 value = searchQuery,
                 onValueChange = {
                     searchQuery = it
-                    onSearchChange(it)
+                    actions.onSearchChange(it)
                 },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Search comments...") },
+                placeholder = { Text(if (uiState.isHistory) "Search history..." else "Search comments...") },
                 leadingIcon = {
                     Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_outline_insert_comment_24px), // Placeholder for search icon
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_outline_insert_comment_24px),
                         contentDescription = null
                     )
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
+
+            IconButton(
+                onClick = { actions.onHistoryToggle(!uiState.isHistory) }
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(
+                        if (uiState.isHistory) R.drawable.ic_history_on else R.drawable.ic_history_off
+                    ),
+                    contentDescription = if (uiState.isHistory) "View Session Solves" else "View History Solves",
+                    tint = if (uiState.isHistory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             
-            if (showClearButton) {
-                IconButton(onClick = onClearClick) {
+            if (uiState.showClearButton && !uiState.isHistory) {
+                IconButton(onClick = actions.onClearClick) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.ic_outline_delete_sweep_24px),
                         contentDescription = "Clear All"
@@ -82,27 +106,77 @@ fun SolvesListScreen(
                 }
             }
 
-            IconButton(onClick = onSortClick) {
+            IconButton(onClick = actions.onSortClick) {
                 Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_outline_list_alt_24px), // Placeholder for sort icon
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_outline_list_alt_24px),
                     contentDescription = "Sort"
                 )
             }
         }
-        LazyVerticalGrid(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            columns = androidx.compose.foundation.lazy.grid.GridCells.Fixed(3)
-        ) {
-            items(solves) { solve ->
-                SolveItem(
-                    solve = solve,
-                    isSelected = selectedIds.contains(solve.id),
-                    onClick = { onSolveClick(solve) },
-                    onLongClick = { onSolveLongClick(solve) }
+
+        if (uiState.isHistory) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_history_on),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "History Mode (All Past Solves)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
+        }
+
+        if (uiState.solves.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (uiState.isHistory)
+                        stringResource(R.string.list_empty_state_message_history)
+                    else
+                        stringResource(R.string.list_empty_state_message),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
                 )
+            }
+        } else {
+            LazyVerticalGrid(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                columns = GridCells.Fixed(3)
+            ) {
+                items(uiState.solves) { solve ->
+                    SolveItem(
+                        solve = solve,
+                        isSelected = uiState.selectedIds.contains(solve.id),
+                        onClick = { actions.onSolveClick(solve) },
+                        onLongClick = { actions.onSolveLongClick(solve) }
+                    )
+                }
             }
         }
     }
@@ -175,17 +249,6 @@ private fun SolveItem(
                         }
                     }
                 }
-                /*
-                if (solve.scramble.isNotEmpty()) {
-                    Text(
-                        text = solve.scramble,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                } */
             }
 
             // Right part: Date and Icons

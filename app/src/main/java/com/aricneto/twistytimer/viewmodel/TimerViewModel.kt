@@ -24,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class TimerViewModel : ViewModel() {
 
@@ -276,6 +277,20 @@ class TimerViewModel : ViewModel() {
         }
     }
 
+    fun onTimerDown() {
+        if (_timerState.value == TimerState.Running) {
+            stopTimer()
+        } else if (_timerState.value == TimerState.Stopped) {
+            prepareTimer()
+        }
+    }
+
+    fun onTimerUp() {
+        if (_timerState.value == TimerState.Ready) {
+            startTimer()
+        }
+    }
+
     fun startTimer() {
         _timerState.value = TimerState.Running
         _showQAButtons.value = false
@@ -283,7 +298,7 @@ class TimerViewModel : ViewModel() {
         viewModelScope.launch {
             while (_timerState.value == TimerState.Running) {
                 _currentTimeMillis.value = System.currentTimeMillis() - startTime
-                delay(10)
+                delay(16.milliseconds)
             }
         }
     }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,7 +36,9 @@ fun SettingsScreen(
     val updateVersion by viewModel.updateVersion.collectAsState()
     
     var showInspectionTimeDialog by remember { mutableStateOf(false) }
+    var showInspectionAlertTypeDialog by remember { mutableStateOf(false) }
     var showTrimSizeDialog by remember { mutableStateOf(false) }
+    var showMaxDnfDialog by remember { mutableStateOf(false) }
     var showScrambleSizeDialog by remember { mutableStateOf(false) }
     var showTimerSizeDialog by remember { mutableStateOf(false) }
 
@@ -70,8 +73,6 @@ fun SettingsScreen(
                 .fillMaxSize()
         ) {
             item {
-                // key(updateVersion) ensures this block recomposes when any setting changes,
-                // but since it's inside an 'item', the LazyColumn's scroll state is preserved.
                 key(updateVersion) {
                     Column {
                         SettingsCategory("General")
@@ -116,6 +117,20 @@ fun SettingsScreen(
                             enabled = viewModel.getBoolean(R.string.pk_inspection_enabled, false)
                         )
 
+                        val alertType = viewModel.getString(R.string.pk_inspection_alert_type, "both")
+                        val alertTypeLabel = when (alertType) {
+                            "vibration" -> "Vibration only"
+                            "sound" -> "Sound only"
+                            else -> "Sound and Vibration"
+                        }
+                        SettingsItem(
+                            title = "Inspection Alert Type",
+                            subtitle = alertTypeLabel,
+                            icon = R.drawable.ic_outline_help_outline_24px,
+                            enabled = viewModel.getBoolean(R.string.pk_inspection_enabled, false) && viewModel.getBoolean(R.string.pk_inspection_alert_enabled, true),
+                            onClick = { showInspectionAlertTypeDialog = true }
+                        )
+
                         SettingsCategory("Timer Control")
                         
                         SwitchSettingsItem(
@@ -124,6 +139,22 @@ fun SettingsScreen(
                             icon = R.drawable.ic_outline_edit_24px,
                             checked = viewModel.getBoolean(R.string.pk_enable_manual_entry, false),
                             onCheckedChange = { viewModel.setBoolean(R.string.pk_enable_manual_entry, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Hide Time While Solving",
+                            subtitle = "Display time only when solve finishes",
+                            icon = R.drawable.ic_outline_timer_24px,
+                            checked = viewModel.getBoolean(R.string.pk_hide_time_while_running, false),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_hide_time_while_running, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Show Decimals",
+                            subtitle = "Display milliseconds on timer",
+                            icon = R.drawable.ic_outline_timer_24px,
+                            checked = viewModel.getBoolean(R.string.pk_show_hi_res_timer, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_hi_res_timer, it) }
                         )
 
                         SwitchSettingsItem(
@@ -142,6 +173,40 @@ fun SettingsScreen(
                             onCheckedChange = { viewModel.setBoolean(R.string.pk_hold_to_start_enabled, it) }
                         )
 
+                        SwitchSettingsItem(
+                            title = "Back Cancels Solve",
+                            subtitle = "Pressing back button during solve cancels it",
+                            icon = R.drawable.ic_arrow_back_black_24dp,
+                            checked = viewModel.getBoolean(R.string.pk_back_button_cancel_solve_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_back_button_cancel_solve_enabled, it) }
+                        )
+
+                        SettingsCategory("Alerts & Personal Bests")
+
+                        SwitchSettingsItem(
+                            title = "Best Time Alert",
+                            subtitle = "Notify when setting a single personal best",
+                            icon = R.drawable.ic_outline_star_border_18px,
+                            checked = viewModel.getBoolean(R.string.pk_show_best_time, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_best_time, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Best Average Alert",
+                            subtitle = "Notify when setting a new best average",
+                            icon = R.drawable.ic_outline_star_border_18px,
+                            checked = viewModel.getBoolean(R.string.pk_show_average_record_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_average_record_enabled, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Worst Time Alert",
+                            subtitle = "Notify when setting a worst solve",
+                            icon = R.drawable.ic_outline_star_border_18px,
+                            checked = viewModel.getBoolean(R.string.pk_show_worst_time, false),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_worst_time, it) }
+                        )
+
                         SettingsCategory("Scramble")
                         
                         SwitchSettingsItem(
@@ -158,6 +223,15 @@ fun SettingsScreen(
                             checked = viewModel.getBoolean(R.string.pk_show_scramble_hints, true),
                             onCheckedChange = { viewModel.setBoolean(R.string.pk_show_scramble_hints, it) },
                             enabled = viewModel.getBoolean(R.string.pk_scramble_enabled, true)
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Show Extended X-Cross Hints",
+                            subtitle = "Include X-Cross solutions (may load slower)",
+                            icon = R.drawable.ic_outline_wb_incandescent_24px,
+                            checked = viewModel.getBoolean(R.string.pk_show_scramble_x_cross_hints, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_show_scramble_x_cross_hints, it) },
+                            enabled = viewModel.getBoolean(R.string.pk_scramble_enabled, true) && viewModel.getBoolean(R.string.pk_show_scramble_hints, true)
                         )
 
                         SettingsCategory("Appearance")
@@ -191,6 +265,30 @@ fun SettingsScreen(
                         )
 
                         SwitchSettingsItem(
+                            title = "Swipe Between Tabs",
+                            subtitle = "Allow swiping left/right to change screens",
+                            icon = R.drawable.ic_outline_timeline_24px,
+                            checked = viewModel.getBoolean(R.string.pk_tab_swiping_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_tab_swiping_enabled, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Colored Background",
+                            subtitle = "Tint timer background with theme accent",
+                            icon = R.drawable.ic_outline_palette_24px,
+                            checked = viewModel.getBoolean(R.string.pk_timer_bg_enabled, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_timer_bg_enabled, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Tint Navigation Bar",
+                            subtitle = "Tint system navigation bar with theme color",
+                            icon = R.drawable.ic_outline_palette_24px,
+                            checked = viewModel.getBoolean(R.string.pk_tint_navigation_bar, false),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_tint_navigation_bar, it) }
+                        )
+
+                        SwitchSettingsItem(
                             title = "Show Scramble Image",
                             icon = R.drawable.ic_outline_casino_24px,
                             checked = viewModel.getBoolean(R.string.pk_show_scramble_image, true),
@@ -211,13 +309,36 @@ fun SettingsScreen(
                             onCheckedChange = { viewModel.setBoolean(R.string.pk_show_quick_actions, it) }
                         )
 
-                        SettingsCategory("Advanced")
+                        SettingsCategory("Advanced & Statistics")
                         
                         SettingsItem(
                             title = "Trim Size",
                             subtitle = "${viewModel.getInt(R.string.pk_stat_trim_size, 5)}%",
                             icon = R.drawable.ic_outline_track_changes_18px,
                             onClick = { showTrimSizeDialog = true }
+                        )
+
+                        SettingsItem(
+                            title = "Max DNF Attempts",
+                            subtitle = "${viewModel.getInt(R.string.pk_stat_acceptable_dnf_size, 1)}",
+                            icon = R.drawable.ic_outline_track_changes_18px,
+                            onClick = { showMaxDnfDialog = true }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Disqualify Average on Max DNF",
+                            subtitle = "Automatically DNF averages exceeding max DNF limit",
+                            icon = R.drawable.ic_outline_track_changes_18px,
+                            checked = viewModel.getBoolean(R.string.pk_stat_disqualify_dnf, true),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_stat_disqualify_dnf, it) }
+                        )
+
+                        SwitchSettingsItem(
+                            title = "Discrete Graph Dataset",
+                            subtitle = "Draw solve history as points instead of a line",
+                            icon = R.drawable.ic_outline_timeline_24px,
+                            checked = viewModel.getBoolean(R.string.pk_stat_discrete_graph_dataset, false),
+                            onCheckedChange = { viewModel.setBoolean(R.string.pk_stat_discrete_graph_dataset, it) }
                         )
                         
                         SwitchSettingsItem(
@@ -249,6 +370,45 @@ fun SettingsScreen(
         )
     }
 
+    if (showInspectionAlertTypeDialog) {
+        val currentType = viewModel.getString(R.string.pk_inspection_alert_type, "both")
+        AlertDialog(
+            onDismissRequest = { showInspectionAlertTypeDialog = false },
+            title = { Text("Inspection Alert Type") },
+            text = {
+                Column {
+                    listOf("both" to "Sound and Vibration", "vibration" to "Vibration only", "sound" to "Sound only").forEach { (key, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setString(R.string.pk_inspection_alert_type, key)
+                                    showInspectionAlertTypeDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentType == key,
+                                onClick = {
+                                    viewModel.setString(R.string.pk_inspection_alert_type, key)
+                                    showInspectionAlertTypeDialog = false
+                                }
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(label)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showInspectionAlertTypeDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (showTrimSizeDialog) {
         NumberPickerDialog(
             title = "Trim Size",
@@ -260,6 +420,20 @@ fun SettingsScreen(
                 showTrimSizeDialog = false
             },
             onDismiss = { showTrimSizeDialog = false }
+        )
+    }
+
+    if (showMaxDnfDialog) {
+        NumberPickerDialog(
+            title = "Max DNF Attempts",
+            initialValue = viewModel.getInt(R.string.pk_stat_acceptable_dnf_size, 1),
+            minValue = 1,
+            maxValue = 10,
+            onValueSelected = {
+                viewModel.setInt(R.string.pk_stat_acceptable_dnf_size, it)
+                showMaxDnfDialog = false
+            },
+            onDismiss = { showMaxDnfDialog = false }
         )
     }
 
@@ -347,6 +521,8 @@ private fun SwitchSettingsItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    var localChecked by remember(checked) { mutableStateOf(checked) }
+
     ListItem(
         headlineContent = { 
             Text(
@@ -369,8 +545,12 @@ private fun SwitchSettingsItem(
             )
         } },
         trailingContent = {
-            Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+            Switch(checked = localChecked, onCheckedChange = null, enabled = enabled)
         },
-        modifier = Modifier.clickable(enabled = enabled) { onCheckedChange(!checked) }
+        modifier = Modifier.clickable(enabled = enabled) {
+            val newValue = !localChecked
+            localChecked = newValue
+            onCheckedChange(newValue)
+        }
     )
 }

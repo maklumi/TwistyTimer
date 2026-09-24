@@ -9,11 +9,7 @@
 
 # Add any project specific keep options here:
 
--keep class com.github.mikephil.charting.** { *; }
-
 -dontskipnonpubliclibraryclassmembers
-
--dontwarn com.github.mikephil.charting.data.realm.**
 
 -dontwarn com.caverock.androidsvg.**
 

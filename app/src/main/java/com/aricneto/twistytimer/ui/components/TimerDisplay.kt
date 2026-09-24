@@ -8,7 +8,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
@@ -23,9 +25,12 @@ fun TimerDisplay(
     color: Color = MaterialTheme.colorScheme.primary,
     fontWeight: FontWeight = FontWeight.Bold,
     showMillis: Boolean = true,
-    smallMillis: Boolean = true
+    smallMillis: Boolean = true,
+    isSolvingHidden: Boolean = false
 ) {
-    val annotatedTime = if (timeMillis < 0) {
+    val annotatedTime = if (isSolvingHidden) {
+        AnnotatedString("...")
+    } else if (timeMillis < 0) {
         AnnotatedString("DNF")
     } else if (timeMillis == 0L) {
         AnnotatedString("--")
@@ -74,6 +79,9 @@ fun TimerDisplay(
         color = color,
         fontWeight = fontWeight,
         textAlign = TextAlign.Center,
-        fontFamily = MaterialTheme.typography.bodyLarge.fontFamily // Matches Lato/Quicksand via TwistyTheme
+        style = TextStyle(
+            fontFamily = FontFamily.Monospace,
+            fontFeatureSettings = "tnum"
+        )
     )
 }

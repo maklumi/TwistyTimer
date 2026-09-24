@@ -80,17 +80,17 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'org.worldcubeassociation.tnoodle:lib-scrambles:0.19.2'
     implementation 'com.opencsv:opencsv:5.12.0'
-    implementation 'app.cash.sqldelight:android-driver:2.3.2'
-    implementation 'app.cash.sqldelight:coroutines-extensions:2.3.2'
+    implementation 'app.cash.sqldelight:android-driver:2.4.0'
+    implementation 'app.cash.sqldelight:coroutines-extensions:2.4.0'
     implementation 'androidx.appcompat:appcompat:1.8.0'
     implementation "androidx.appcompat:appcompat-resources:1.8.0"
     implementation 'androidx.activity:activity:1.13.0'
     implementation 'androidx.activity:activity-ktx:1.13.0'
-    implementation 'androidx.fragment:fragment-ktx:1.9.0'
+    implementation 'androidx.fragment:fragment-ktx:1.9.1'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'com.google.android.material:material:1.14.0'
-    implementation "androidx.annotation:annotation:1.10.0"
+    implementation "androidx.annotation:annotation:1.11.0"
     implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
     implementation 'androidx.preference:preference:1.2.1'
     // Material Drawer
@@ -99,12 +99,10 @@ dependencies {
 
     // Android SVG
     implementation 'com.caverock:androidsvg:1.4'
-    // MPAndroidChart
-    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     // Compose Charts
     implementation 'io.github.ehsannarmani:compose-charts:1.0.0'
     // Material color picker
-    implementation "com.github.skydoves:colorpickerview:2.4.0"
+    implementation "com.github.skydoves:colorpickerview:2.5.0"
 
     implementation "org.jetbrains.kotlinx:kotlinx-datetime:0.8.0"
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
@@ -113,7 +111,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.11.0"
 
-    def nav_version = "2.10.1"
+    def nav_version = "2.10.2"
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
 
@@ -129,7 +127,7 @@ dependencies {
 
     implementation 'androidx.activity:activity-compose:1.13.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0'
-    implementation 'androidx.navigation:navigation-compose:2.10.1'
+    implementation 'androidx.navigation:navigation-compose:2.10.2'
 
     testImplementation 'junit:junit:4.13.2'
 }

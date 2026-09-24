@@ -73,7 +73,14 @@ import com.aricneto.twistytimer.ui.screens.LanguageSelectScreen
 import com.aricneto.twistytimer.ui.screens.MainPagerScreen
 import com.aricneto.twistytimer.ui.screens.PuzzleSelectScreen
 import com.aricneto.twistytimer.ui.screens.SettingsScreen
+import com.aricneto.twistytimer.ui.screens.SolvesListActions
+import com.aricneto.twistytimer.ui.screens.SolvesListScreen
+import com.aricneto.twistytimer.ui.screens.SolvesListUiState
+import com.aricneto.twistytimer.ui.screens.StatsGraphScreen
 import com.aricneto.twistytimer.ui.screens.ThemeSelectScreen
+import com.aricneto.twistytimer.ui.screens.TimerActions
+import com.aricneto.twistytimer.ui.screens.TimerScreen
+import com.aricneto.twistytimer.ui.screens.TimerUiState
 import com.aricneto.twistytimer.ui.screens.TrainerSubsetScreen
 import com.aricneto.twistytimer.utils.AlgUtils
 import com.aricneto.twistytimer.utils.Prefs
@@ -249,57 +256,102 @@ fun TwistyApp() {
                     }
                 }
 
+                val isRunning = timerState == TimerViewModel.TimerState.Running
+                val isReady = timerState == TimerViewModel.TimerState.Ready
+
                 MainPagerScreen(
                     currentPuzzle = stringResource(PuzzleUtils.getPuzzleName(params.type).let { if (it == 0) R.string.cube_333_informal else it }),
                     currentCategory = params.subtype ?: "Normal",
-                    mode = params.mode,
-                    scramble = scramble,
-                    currentTimeMillis = currentTimeMillis,
-                    isRunning = timerState == TimerViewModel.TimerState.Running,
-                    isReady = timerState == TimerViewModel.TimerState.Ready,
-                    isScrambleLoading = isScrambleLoading,
-                    showScrambleHint = showScrambleHint,
-                    showQAButtons = showQAButtons,
-                    scrambleDrawable = scrambleDrawable,
-                    solves = solves,
-                    stats = stats,
-                    selectedSolveIds = selectedSolveIds,
-                    onTimerDown = { if (timerState == TimerViewModel.TimerState.Running) timerViewModel.stopTimer() else timerViewModel.prepareTimer() },
-                    onTimerUp = { if (timerState == TimerViewModel.TimerState.Ready) timerViewModel.startTimer() },
-                    onScrambleReset = { timerViewModel.generateScramble() },
-                    onScrambleEdit = { showEditScramble = true },
-                    onScrambleHintClick = {
-                        scope.launch {
-                            isHintLoading = true
-                            val hintText = withContext(Dispatchers.Default) {
-                                val cross = RubiksCubeOptimalCross(TwistyTimer.getAppContext().getString(R.string.optimal_cross))
-                                val xcross = RubiksCubeOptimalXCross(TwistyTimer.getAppContext().getString(R.string.optimal_x_cross))
-                                cross.getTip(scramble) + "\n\n" + xcross.getTip(scramble)
-                            }
-                            currentHintText = hintText
-                            isHintLoading = false
-                            showHintDialog = true
-                        }
-                    },
-                    onRemoveClick = { timerViewModel.removeLastSolve() },
-                    onDnfClick = { timerViewModel.applyDnf() },
-                    onPlusTwoClick = { timerViewModel.applyPlusTwo() },
-                    onCommentClick = { /* Handled via solve detail */ },
-                    onClearSelection = { timerViewModel.clearSelection() },
-                    onDeleteSelected = { showDeleteConfirmation = true },
+                    isRunning = isRunning,
+                    swipingEnabled = Prefs.getBoolean(R.string.pk_tab_swiping_enabled, true),
+                    selectedSolveCount = selectedSolveIds.size,
                     onSettingsClick = { scope.launch { drawerState.open() } },
                     onCategoryClick = { showCategorySelect = true },
                     onTitleClick = { navController.navigate("puzzle_select") },
-                    onSolveClick = { solve -> if (selectedSolveIds.isNotEmpty()) timerViewModel.toggleSelection(solve.id) else solveToShowDetails = solve },
-                    onSolveLongClick = { solve -> timerViewModel.toggleSelection(solve.id) },
-                    onSearchChange = { query -> timerViewModel.updateParams(params.type, params.subtype, params.mode, params.history, params.subset, query) },
-                    onSortClick = { showSortOptions = true },
-                    showClearButton = Prefs.getBoolean(R.string.pk_show_clear_button, true),
-                    onClearClick = { showClearSessionConfirmation = true },
-                    manualEntryEnabled = manualEntryEnabled,
-                    onManualEntryClick = { showAddTimeManually = true },
-                    scrambleTextSize = scrambleTextSize,
-                    timerTextSize = timerTextSize
+                    onClearSelection = { timerViewModel.clearSelection() },
+                    onDeleteSelected = { showDeleteConfirmation = true },
+                    statsPage = {
+                        StatsGraphScreen(
+                            currentPuzzle = params.type ?: PuzzleUtils.TYPE_333,
+                            currentSubtype = params.subtype ?: "Normal",
+                            mode = params.mode,
+                            isForCurrentSessionOnly = true
+                        )
+                    },
+                    timerPage = {
+                        TimerScreen(
+                            uiState = TimerUiState(
+                                scramble = scramble,
+                                currentTimeMillis = currentTimeMillis,
+                                isRunning = isRunning,
+                                isReady = isReady,
+                                isScrambleLoading = isScrambleLoading,
+                                showScrambleHint = showScrambleHint,
+                                scrambleDrawable = scrambleDrawable,
+                                stats = stats,
+                                showQAButtons = showQAButtons,
+                                manualEntryEnabled = manualEntryEnabled,
+                                scrambleTextSize = scrambleTextSize,
+                                timerTextSize = timerTextSize,
+                                hideTimeWhileRunning = Prefs.getBoolean(R.string.pk_hide_time_while_running, false),
+                                showMillis = Prefs.getBoolean(R.string.pk_show_hi_res_timer, true)
+                            ),
+                            actions = TimerActions(
+                                onTimerDown = { timerViewModel.onTimerDown() },
+                                onTimerUp = { timerViewModel.onTimerUp() },
+                                onScrambleReset = { timerViewModel.generateScramble() },
+                                onScrambleEdit = { showEditScramble = true },
+                                onScrambleHintClick = {
+                                    scope.launch {
+                                        isHintLoading = true
+                                        try {
+                                            val hintText = withContext(Dispatchers.Default) {
+                                                val showXCross = Prefs.getBoolean(R.string.pk_show_scramble_x_cross_hints, false)
+                                                val cross = RubiksCubeOptimalCross(TwistyTimer.getAppContext().getString(R.string.optimal_cross))
+                                                val crossTip = cross.getTip(scramble)
+                                                if (showXCross) {
+                                                    val xcross = RubiksCubeOptimalXCross(TwistyTimer.getAppContext().getString(R.string.optimal_x_cross))
+                                                    crossTip + "\n\n" + xcross.getTip(scramble)
+                                                } else {
+                                                    crossTip
+                                                }
+                                            }
+                                            currentHintText = hintText
+                                            showHintDialog = true
+                                        } catch (_: Exception) {
+                                            currentHintText = "Could not generate hint for this scramble."
+                                            showHintDialog = true
+                                        } finally {
+                                            isHintLoading = false
+                                        }
+                                    }
+                                },
+                                onRemoveClick = { timerViewModel.removeLastSolve() },
+                                onDnfClick = { timerViewModel.applyDnf() },
+                                onPlusTwoClick = { timerViewModel.applyPlusTwo() },
+                                onCommentClick = { /* Handled via solve detail */ },
+                                onManualEntryClick = { showAddTimeManually = true }
+                            )
+                        )
+                    },
+                    solvesListPage = {
+                        SolvesListScreen(
+                            uiState = SolvesListUiState(
+                                solves = solves,
+                                selectedIds = selectedSolveIds,
+                                showClearButton = Prefs.getBoolean(R.string.pk_show_clear_button, true),
+                                isHistory = params.history
+                            ),
+                            actions = SolvesListActions(
+                                onSolveClick = { solve -> if (selectedSolveIds.isNotEmpty()) timerViewModel.toggleSelection(solve.id) else solveToShowDetails = solve },
+                                onSolveLongClick = { solve -> timerViewModel.toggleSelection(solve.id) },
+                                onSearchChange = { query -> timerViewModel.updateParams(params.type, params.subtype, params.mode, params.history, params.subset, query) },
+                                onHistoryToggle = { showHistory -> timerViewModel.updateParams(params.type, params.subtype, params.mode, showHistory, params.subset, params.search) },
+                                onSortClick = { showSortOptions = true },
+                                onClearClick = { showClearSessionConfirmation = true }
+                            )
+                        )
+                    }
                 )
             }
             composable(
@@ -324,53 +376,86 @@ fun TwistyApp() {
                     timerViewModel.generateScramble()
                 }
 
+                val isRunningTrainer = timerState == TimerViewModel.TimerState.Running
+                val isReadyTrainer = timerState == TimerViewModel.TimerState.Ready
+
                 MainPagerScreen(
                     currentPuzzle = "Training $subset",
                     currentCategory = params.subtype ?: "Normal",
-                    mode = params.mode,
-                    scramble = scramble,
-                    currentTimeMillis = currentTimeMillis,
-                    isRunning = timerState == TimerViewModel.TimerState.Running,
-                    isReady = timerState == TimerViewModel.TimerState.Ready,
-                    isScrambleLoading = isScrambleLoading,
-                    showScrambleHint = showScrambleHint,
-                    showQAButtons = showQAButtons,
-                    scrambleDrawable = scrambleDrawable,
-                    solves = solves,
-                    stats = stats,
-                    selectedSolveIds = selectedSolveIds,
-                    onTimerDown = { if (timerState == TimerViewModel.TimerState.Running) timerViewModel.stopTimer() else timerViewModel.prepareTimer() },
-                    onTimerUp = { if (timerState == TimerViewModel.TimerState.Ready) timerViewModel.startTimer() },
-                    onScrambleReset = { timerViewModel.generateScramble() },
-                    onScrambleEdit = { /* Not needed in trainer */ },
-                    onScrambleHintClick = {
-                        if (currentCaseId != null) {
-                            scope.launch {
-                                val algs = withContext(Dispatchers.IO) { TwistyTimer.getAlgRepository().getAllAlgorithms() }
-                                algorithmToShowDetails = algs.find { it.id == currentCaseId }
-                            }
-                        } else {
-                            navController.navigate("trainer/$subset/select")
-                        }
-                    },
-                    onRemoveClick = { timerViewModel.removeLastSolve() },
-                    onDnfClick = { timerViewModel.applyDnf() },
-                    onPlusTwoClick = { timerViewModel.applyPlusTwo() },
-                    onClearSelection = { timerViewModel.clearSelection() },
-                    onDeleteSelected = { showDeleteConfirmation = true },
+                    isRunning = isRunningTrainer,
+                    swipingEnabled = Prefs.getBoolean(R.string.pk_tab_swiping_enabled, true),
+                    selectedSolveCount = selectedSolveIds.size,
                     onSettingsClick = { scope.launch { drawerState.open() } },
                     onCategoryClick = { showCategorySelect = true },
                     onTitleClick = { navController.navigate("trainer/$subset/select") },
-                    onSolveClick = { solve -> if (selectedSolveIds.isNotEmpty()) timerViewModel.toggleSelection(solve.id) else solveToShowDetails = solve },
-                    onSolveLongClick = { solve -> timerViewModel.toggleSelection(solve.id) },
-                    onSearchChange = { query -> timerViewModel.updateParams(params.type, params.subtype, params.mode, params.history, params.subset, query) },
-                    onSortClick = { showSortOptions = true },
-                    showClearButton = Prefs.getBoolean(R.string.pk_show_clear_button, true),
-                    onClearClick = { showClearSessionConfirmation = true },
-                    manualEntryEnabled = manualEntryEnabled,
-                    onManualEntryClick = { showAddTimeManually = true },
-                    scrambleTextSize = scrambleTextSize,
-                    timerTextSize = timerTextSize
+                    onClearSelection = { timerViewModel.clearSelection() },
+                    onDeleteSelected = { showDeleteConfirmation = true },
+                    statsPage = {
+                        StatsGraphScreen(
+                            currentPuzzle = subset,
+                            currentSubtype = params.subtype ?: "Normal",
+                            mode = params.mode,
+                            isForCurrentSessionOnly = true
+                        )
+                    },
+                    timerPage = {
+                        TimerScreen(
+                            uiState = TimerUiState(
+                                scramble = scramble,
+                                currentTimeMillis = currentTimeMillis,
+                                isRunning = isRunningTrainer,
+                                isReady = isReadyTrainer,
+                                isScrambleLoading = isScrambleLoading,
+                                showScrambleHint = showScrambleHint,
+                                scrambleDrawable = scrambleDrawable,
+                                stats = stats,
+                                showQAButtons = showQAButtons,
+                                manualEntryEnabled = manualEntryEnabled,
+                                scrambleTextSize = scrambleTextSize,
+                                timerTextSize = timerTextSize,
+                                hideTimeWhileRunning = Prefs.getBoolean(R.string.pk_hide_time_while_running, false),
+                                showMillis = Prefs.getBoolean(R.string.pk_show_hi_res_timer, true)
+                            ),
+                            actions = TimerActions(
+                                onTimerDown = { timerViewModel.onTimerDown() },
+                                onTimerUp = { timerViewModel.onTimerUp() },
+                                onScrambleReset = { timerViewModel.generateScramble() },
+                                onScrambleEdit = { /* Not needed in trainer */ },
+                                onScrambleHintClick = {
+                                    if (currentCaseId != null) {
+                                        scope.launch {
+                                            val algs = withContext(Dispatchers.IO) { TwistyTimer.getAlgRepository().getAllAlgorithms() }
+                                            algorithmToShowDetails = algs.find { it.id == currentCaseId }
+                                        }
+                                    } else {
+                                        navController.navigate("trainer/$subset/select")
+                                    }
+                                },
+                                onRemoveClick = { timerViewModel.removeLastSolve() },
+                                onDnfClick = { timerViewModel.applyDnf() },
+                                onPlusTwoClick = { timerViewModel.applyPlusTwo() },
+                                onManualEntryClick = { showAddTimeManually = true }
+                            )
+                        )
+                    },
+                    solvesListPage = {
+                        SolvesListScreen(
+                            uiState = SolvesListUiState(
+                                solves = solves,
+                                selectedIds = selectedSolveIds,
+                                showClearButton = Prefs.getBoolean(R.string.pk_show_clear_button, true),
+                                isHistory = params.history
+                            ),
+                            actions = SolvesListActions(
+                                onSolveClick = { solve -> if (selectedSolveIds.isNotEmpty()) timerViewModel.toggleSelection(solve.id) else solveToShowDetails = solve },
+                                onSolveLongClick = { solve -> timerViewModel.toggleSelection(solve.id) },
+                                onSearchChange = { query -> timerViewModel.updateParams(params.type, params.subtype, params.mode, params.history, params.subset, query) },
+                                onHistoryToggle = { showHistory -> timerViewModel.updateParams(params.type, params.subtype, params.mode, showHistory, params.subset, params.search) },
+                                onSortClick = { showSortOptions = true },
+                                onClearClick = { showClearSessionConfirmation = true }
+                            )
+                        )
+                    }
                 )
             }
             composable(
@@ -494,7 +579,9 @@ fun TwistyApp() {
                 confirmButton = {
                     TextButton(onClick = {
                         scope.launch {
-                            TwistyTimer.getSolveRepository().deleteAllFromSession(params.type!!, params.subtype!!, params.mode)
+                            val currentType = params.type ?: PuzzleUtils.TYPE_333
+                            val currentSubtype = params.subtype ?: "Normal"
+                            TwistyTimer.getSolveRepository().deleteAllFromSession(currentType, currentSubtype, params.mode)
                             TTIntent.broadcast(TTIntent.CATEGORY_TIME_DATA_CHANGES, TTIntent.ACTION_TIMES_MODIFIED)
                             showClearSessionConfirmation = false
                         }
