@@ -1,5 +1,6 @@
 package com.aricneto.twistytimer.ui
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,8 @@ import com.aricneto.twistytimer.database.SolveRepository
 import com.aricneto.twistytimer.items.Algorithm
 import com.aricneto.twistytimer.items.Solve
 import com.aricneto.twistytimer.solver.RubiksCubeOptimalCross
+import com.aricneto.twistytimer.solver.RubiksCubeOptimalFirstBlock
+import com.aricneto.twistytimer.solver.RubiksCubeOptimalSecondBlock
 import com.aricneto.twistytimer.solver.RubiksCubeOptimalXCross
 import com.aricneto.twistytimer.ui.components.AddTimeComposeDialog
 import com.aricneto.twistytimer.ui.components.AlgorithmDetailDialog
@@ -287,6 +290,8 @@ fun TwistyApp() {
                                 isReady = isReady,
                                 isScrambleLoading = isScrambleLoading,
                                 showScrambleHint = showScrambleHint,
+                                showRouxHint = showScrambleHint,
+                                showRouxSecondBlockHint = showScrambleHint,
                                 scrambleDrawable = scrambleDrawable,
                                 stats = stats,
                                 showQAButtons = showQAButtons,
@@ -316,10 +321,55 @@ fun TwistyApp() {
                                                     crossTip
                                                 }
                                             }
+                                            Log.d("TwistyTimer", "=== CROSS HINT ===")
+                                            Log.d("TwistyTimer", "Scramble: $scramble")
+                                            Log.d("TwistyTimer", "Hint:\n$hintText")
                                             currentHintText = hintText
                                             showHintDialog = true
                                         } catch (_: Exception) {
                                             currentHintText = "Could not generate hint for this scramble."
+                                            showHintDialog = true
+                                        } finally {
+                                            isHintLoading = false
+                                        }
+                                    }
+                                },
+                                onRouxHintClick = {
+                                    scope.launch {
+                                        isHintLoading = true
+                                        try {
+                                            val hintText = withContext(Dispatchers.Default) {
+                                                val fbSolver = RubiksCubeOptimalFirstBlock("Optimal Roux First Block (1x2x3):")
+                                                fbSolver.getTip(scramble)
+                                            }
+                                            Log.d("TwistyTimer", "=== ROUX FIRST BLOCK HINT ===")
+                                            Log.d("TwistyTimer", "Scramble: $scramble")
+                                            Log.d("TwistyTimer", "Hint:\n$hintText")
+                                            currentHintText = hintText
+                                            showHintDialog = true
+                                        } catch (_: Exception) {
+                                            currentHintText = "Could not generate First Block hint for this scramble."
+                                            showHintDialog = true
+                                        } finally {
+                                            isHintLoading = false
+                                        }
+                                    }
+                                },
+                                onRouxSecondBlockHintClick = {
+                                    scope.launch {
+                                        isHintLoading = true
+                                        try {
+                                            val hintText = withContext(Dispatchers.Default) {
+                                                val sbSolver = RubiksCubeOptimalSecondBlock("Optimal Roux Second Block (1x2x3):")
+                                                sbSolver.getTip(scramble)
+                                            }
+                                            Log.d("TwistyTimer", "=== ROUX SECOND BLOCK HINT ===")
+                                            Log.d("TwistyTimer", "Scramble: $scramble")
+                                            Log.d("TwistyTimer", "Hint:\n$hintText")
+                                            currentHintText = hintText
+                                            showHintDialog = true
+                                        } catch (_: Exception) {
+                                            currentHintText = "Could not generate Second Block hint for this scramble."
                                             showHintDialog = true
                                         } finally {
                                             isHintLoading = false
@@ -407,6 +457,7 @@ fun TwistyApp() {
                                 isReady = isReadyTrainer,
                                 isScrambleLoading = isScrambleLoading,
                                 showScrambleHint = showScrambleHint,
+                                showRouxHint = showScrambleHint,
                                 scrambleDrawable = scrambleDrawable,
                                 stats = stats,
                                 showQAButtons = showQAButtons,
@@ -429,6 +480,24 @@ fun TwistyApp() {
                                         }
                                     } else {
                                         navController.navigate("trainer/$subset/select")
+                                    }
+                                },
+                                onRouxHintClick = {
+                                    scope.launch {
+                                        isHintLoading = true
+                                        try {
+                                            val hintText = withContext(Dispatchers.Default) {
+                                                val fbSolver = RubiksCubeOptimalFirstBlock("Optimal Roux First Block (1x2x3):")
+                                                fbSolver.getTip(scramble)
+                                            }
+                                            currentHintText = hintText
+                                            showHintDialog = true
+                                        } catch (_: Exception) {
+                                            currentHintText = "Could not generate First Block hint for this scramble."
+                                            showHintDialog = true
+                                        } finally {
+                                            isHintLoading = false
+                                        }
                                     }
                                 },
                                 onRemoveClick = { timerViewModel.removeLastSolve() },

@@ -14,7 +14,7 @@ class RubiksCubeOptimalCross(private val description: String) : Tip {
 
     override fun getTip(scramble: String): String {
         val maxCount = 3
-        var count = 0
+        var count: Int
         val state = RubiksCubeSolver.State.id.applySequence(
             scramble.split(" ".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         )
@@ -135,24 +135,18 @@ class RubiksCubeOptimalCross(private val description: String) : Tip {
     }
 
     companion object {
-        private val x: RubiksCubeSolver.State
-        private val z: RubiksCubeSolver.State
-
-        init {
-            x = RubiksCubeSolver.State(
-                byteArrayOf(3, 2, 6, 7, 0, 1, 5, 4),
-                byteArrayOf(2, 1, 2, 1, 1, 2, 1, 2),
-                byteArrayOf(7, 5, 9, 11, 6, 2, 10, 3, 4, 1, 8, 0),
-                byteArrayOf(0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0)
-            )
-
-            z = RubiksCubeSolver.State(
-                byteArrayOf(4, 0, 3, 7, 5, 1, 2, 6),
-                byteArrayOf(1, 2, 1, 2, 2, 1, 2, 1),
-                byteArrayOf(8, 4, 6, 10, 0, 7, 3, 11, 1, 5, 2, 9),
-                byteArrayOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-            )
-        }
+        private val x: RubiksCubeSolver.State = RubiksCubeSolver.State(
+            byteArrayOf(3, 2, 6, 7, 0, 1, 5, 4),
+            byteArrayOf(2, 1, 2, 1, 1, 2, 1, 2),
+            byteArrayOf(7, 5, 9, 11, 6, 2, 10, 3, 4, 1, 8, 0),
+            byteArrayOf(0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0)
+        )
+        private val z: RubiksCubeSolver.State = RubiksCubeSolver.State(
+            byteArrayOf(4, 0, 3, 7, 5, 1, 2, 6),
+            byteArrayOf(1, 2, 1, 2, 2, 1, 2, 1),
+            byteArrayOf(8, 4, 6, 10, 0, 7, 3, 11, 1, 5, 2, 9),
+            byteArrayOf(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        )
     }
 }
 
